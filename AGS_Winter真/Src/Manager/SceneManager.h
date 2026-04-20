@@ -53,7 +53,8 @@ private:
 	SCENE_ID waitSceneId_;
 
 	// 各種シーン
-	SceneBase* scene_;
+	//SceneBase* scene_; // 生ポインタ
+	std::unique_ptr<SceneBase> scene_; // ユニークポインタ
 
 	// フェード
 	Fader* fader_;

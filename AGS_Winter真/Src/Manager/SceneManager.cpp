@@ -141,10 +141,10 @@ void SceneManager::Draw(void)
 void SceneManager::Destroy(void)
 {
 
-	if (scene_ != nullptr)
-	{
-		delete scene_;
-	}
+	//if (scene_ != nullptr)
+	//{
+	//	delete scene_;
+	//}
 
 	delete fader_;
 	delete camera_;
@@ -215,19 +215,21 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 	// シーンを変更する
 	sceneId_ = sceneId;
 
-	// 現在のシーンを解放
-	if (scene_ != nullptr)
-	{
-		delete scene_;
-	}
+	//// 現在のシーンを解放
+	//if (scene_ != nullptr)
+	//{
+	//	delete scene_;
+	//}
 
 	switch (sceneId_)
 	{
 	case SCENE_ID::TITLE:
-		scene_ = new TitleScene();
+		//scene_ = new TitleScene();
+		scene_ = std::make_unique<TitleScene>();
 		break;
 	case SCENE_ID::GAME:
-		scene_ = new GameScene();
+		//scene_ = new GameScene();
+		scene_ = std::make_unique<GameScene>();
 		break;
 	}
 
