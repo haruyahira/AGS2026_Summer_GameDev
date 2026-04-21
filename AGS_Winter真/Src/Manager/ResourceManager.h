@@ -12,7 +12,7 @@ public:
 	enum class SRC
 	{
 		TITLE,
-
+		PLAYER,
 	};
 
 	// 明示的にインステンスを生成する

@@ -21,6 +21,6 @@ public:
 
 private:
 
-
+	std::unique_ptr < Player> player_;
 
 };

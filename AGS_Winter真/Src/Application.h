@@ -7,6 +7,11 @@ class Application
 {
 
 public:
+	/*
+	* 学習メモ
+	* 上のはアクセス修飾子という。
+	* 関数はメンバ関数、変数はメンバ変数という
+	*/
 
 	// スクリーンサイズ
 	static constexpr int SCREEN_SIZE_X = 1024;

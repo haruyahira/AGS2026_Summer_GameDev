@@ -3,6 +3,7 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
+#include "../Object/Player.h"
 #include "GameScene.h"
 
 GameScene::GameScene(void)
@@ -16,7 +17,8 @@ GameScene::~GameScene(void)
 
 void GameScene::Init(void)
 {
-
+	player_ = std::make_unique <Player>();
+	player_->Init();
 	
 
 	//SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
