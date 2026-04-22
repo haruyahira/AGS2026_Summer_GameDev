@@ -22,8 +22,8 @@ void TitleScene::Init(void)
 
 void TitleScene::Update(void)
 {
-
 	// シーン遷移
+	// スペースを押したらゲームシーンへ
 	InputManager& ins = InputManager::GetInstance();
 	if (ins.IsTrgDown(KEY_INPUT_SPACE))
 	{
@@ -34,4 +34,5 @@ void TitleScene::Update(void)
 
 void TitleScene::Draw(void)
 {
+
 }

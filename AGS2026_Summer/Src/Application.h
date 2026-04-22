@@ -68,6 +68,10 @@ public:
 	// 解放成功／失敗の判定
 	bool IsReleaseFail(void) const;
 
+	inline static int getSizeX_;
+	inline static int getSizeY_;
+	inline static int getFps_;
+
 private:
 
 	// 静的インスタンス
@@ -87,5 +91,7 @@ private:
 
 	// Effekseerの初期化
 	void InitEffekseer(void);
+
+	
 
 };

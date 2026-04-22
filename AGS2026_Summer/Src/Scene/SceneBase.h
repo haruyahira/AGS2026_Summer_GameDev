@@ -29,5 +29,7 @@ protected:
 	// リソース管理
 	ResourceManager& resMng_;
 
+	int screenX_, screenY_; // 画面サイズ
+
 };
 

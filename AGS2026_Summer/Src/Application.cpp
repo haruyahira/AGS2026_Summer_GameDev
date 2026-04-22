@@ -1,8 +1,8 @@
 #include <DxLib.h>
 #include <EffekseerForDXLib.h>
-//#include "Manager/InputManager.h"
-//#include "Manager/ResourceManager.h"
-//#include "Manager/SceneManager.h"
+#include "Manager/InputManager.h"
+#include "Manager/ResourceManager.h"
+#include "Manager/SceneManager.h"
 #include "Application.h"
 
 Application* Application::instance_ = nullptr;
@@ -29,11 +29,12 @@ void Application::Init(void)
 {
 
 	// アプリケーションの初期設定
-	SetWindowText("3DAction");
+	SetWindowText("AGS2026_Summer");
 
 	// ウィンドウサイズ
-	SetGraphMode(SCREEN_SIZE_X, SCREEN_SIZE_Y, 32);
-	ChangeWindowMode(true);
+	GetDefaultState(&getSizeX_, &getSizeY_, NULL, &getFps_); // 情報取得
+    ChangeWindowMode(true); // ウィンドウモード
+	SetGraphMode(getSizeX_, getSizeY_, 32);
 
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
@@ -49,31 +50,32 @@ void Application::Init(void)
 
 	// キー制御初期化
 	SetUseDirectInputFlag(true);
-	//InputManager::CreateInstance();
+	InputManager::CreateInstance();
 
-	//// リソース管理初期化
-	//ResourceManager::CreateInstance();
+	// リソース管理初期化
+	ResourceManager::CreateInstance();
 
 	//// シーン管理初期化
-	//SceneManager::CreateInstance();
+	SceneManager::CreateInstance();
 
 }
 
 void Application::Run(void)
 {
 
-	/*auto& inputManager = InputManager::GetInstance();
-	auto& sceneManager = SceneManager::GetInstance();*/
+	auto& inputManager = InputManager::GetInstance();
+	auto& sceneManager = SceneManager::GetInstance();
+
 
 	// ゲームループ
 	// ESC押したらウィンドウを閉じます
 	while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
 	{
 
-		/*inputManager.Update();
-		sceneManager.Update();*/
+		inputManager.Update();
+		sceneManager.Update();
 
-		/*sceneManager.Draw();*/
+		sceneManager.Draw();
 
 		ScreenFlip();
 
@@ -84,9 +86,9 @@ void Application::Run(void)
 void Application::Destroy(void)
 {
 
-	/*InputManager::GetInstance().Destroy();
+	InputManager::GetInstance().Destroy();
 	ResourceManager::GetInstance().Destroy();
-	SceneManager::GetInstance().Destroy();*/
+	SceneManager::GetInstance().Destroy();
 
 	// Effekseerを終了する。
 	Effkseer_End();
