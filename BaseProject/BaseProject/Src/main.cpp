@@ -6,6 +6,12 @@
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	_In_ LPSTR lpCmdLine, _In_ int nCmdShow)
+	/*
+	WindowsのGUIアプリケーションにおけるプログラムの「エン
+	トリポイント（開始地点）」となる関数
+	ウィンドウの生成やメッセージループの処理を行い、アプリ
+	ケーションの寿命を管理する重要な関数
+	*/
 {
 
 	// インスタンスの生成

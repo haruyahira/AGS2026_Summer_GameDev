@@ -129,6 +129,8 @@ void SceneManager::Draw(void)
 
 	// 主にポストエフェクト用
 	camera_->Draw();
+	// カメラの目の前に黄色い球体を表示する
+	DrawSphere3D(VGet(0, 0, 0), 50.0f, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
 
 	// Effekseerにより再生中のエフェクトを描画する。
 	DrawEffekseer3D();

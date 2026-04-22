@@ -104,7 +104,7 @@ void TitleScene::Draw(void)
 	MV1DrawModel(movePlanet_.modelId);
 	MV1DrawModel(charactor_.modelId);
 
-	DrawRotaGraph(Application::SCREEN_SIZE_X / 2, 250, 1.0, 0.0, imgTitle_, true);
-	DrawRotaGraph(Application::SCREEN_SIZE_X / 2, 500, 1.0, 0.0, imgPush_, true);
+	DrawRotaGraph(Application::getSizeX_ / 2, 250, 1.0, 0.0, imgTitle_, true);
+	DrawRotaGraph(Application::getSizeX_ / 2, 500, 1.0, 0.0, imgPush_, true);
 
 }

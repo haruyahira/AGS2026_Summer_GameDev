@@ -1,11 +1,13 @@
 #include <DxLib.h>
 #include <EffekseerForDXLib.h>
+#include "Common/FpsController.h"
 #include "Manager/InputManager.h"
 #include "Manager/ResourceManager.h"
 #include "Manager/SceneManager.h"
 #include "Application.h"
 
-Application* Application::instance_ = nullptr;
+//Application* Application::instance_ = nullptr;
+std::unique_ptr<Application> Application::instance_ = nullptr;
 
 const std::string Application::PATH_IMAGE = "Data/Image/";
 const std::string Application::PATH_MODEL = "Data/Model/";
@@ -15,7 +17,14 @@ void Application::CreateInstance(void)
 {
 	if (instance_ == nullptr)
 	{
-		instance_ = new Application();
+		//instance_ = new Application();
+		//instance_ = std::make_unique<Application>();
+		instance_.reset(new Application());
+		/*
+		* 学習メモ
+		* make_uniqueはここではクラスの外側からNEWできないので上の対処法
+		* 作ったインスタンスがunique_pterに移している
+		*/
 	}
 	instance_->Init();
 }
@@ -28,12 +37,16 @@ Application& Application::GetInstance(void)
 void Application::Init(void)
 {
 
-	// アプリケーションの初期設定
-	SetWindowText("3DAction");
+	SetWindowText("AGS2026_Summer");
 
 	// ウィンドウサイズ
-	SetGraphMode(SCREEN_SIZE_X, SCREEN_SIZE_Y, 32);
-	ChangeWindowMode(true);
+	GetDefaultState(&getSizeX_, &getSizeY_, NULL, &getFps_); // 情報取得
+	ChangeWindowMode(false); // ウィンドウモード
+	SetGraphMode(getSizeX_, getSizeY_, 32); // 
+
+	// FPS
+	//fpsController_ = new FpsController(getFps_);
+	fpsController_ = std::make_unique<FpsController>(getFps_);
 
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
@@ -74,7 +87,14 @@ void Application::Run(void)
 
 		sceneManager.Draw();
 
+		// FPS描画
+		fpsController_->Draw();
+
 		ScreenFlip();
+
+		// 理想FPS経過待ち
+		fpsController_->Wait();
+
 
 	}
 
@@ -95,8 +115,12 @@ void Application::Destroy(void)
 	{
 		isReleaseFail_ = true;
 	}
+	// FPS制御のメモリ解放
+	//delete fpsController_;
 
-	delete instance_;
+	//delete instance_;
+
+
 
 }
 
@@ -114,6 +138,7 @@ Application::Application(void)
 {
 	isInitFail_ = false;
 	isReleaseFail_ = false;
+	fpsController_ = nullptr;
 }
 
 void Application::InitEffekseer(void)

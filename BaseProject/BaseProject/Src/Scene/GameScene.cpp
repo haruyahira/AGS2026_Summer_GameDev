@@ -28,6 +28,15 @@ GameScene::~GameScene(void)
 void GameScene::Init(void)
 {
 
+	// 全体を照らす光を極限まで暗くする
+	SetLightDifColor(GetColorF(0.05f, 0.05f, 0.1f, 0.0f)); // 当たっている場所も暗い
+	SetLightAmbColor(GetColorF(0.02f, 0.02f, 0.05f, 0.0f)); // 光が届かない場所はほぼ真っ暗
+
+    // フォグの設定
+	SetFogEnable(TRUE);
+	SetFogColor(0, 0, 10); // フォグの色を限りなく黒に近い紺に
+	SetFogStartEnd(100.0f, 1500.0f); // 1500先は完全な闇
+
 	// プレイヤー
 	player_ = new Player();
 	player_->Init();
@@ -68,6 +77,8 @@ void GameScene::Update(void)
 
 void GameScene::Draw(void)
 {
+	// 全体を夜の色にする（少し青みを残して暗くする）
+	SetDrawBright(50, 50, 100);
 
 	// 背景
 	skyDome_->Draw();
@@ -75,10 +86,11 @@ void GameScene::Draw(void)
 	
 	player_->Draw();
 
-	// ヘルプ
-	DrawFormatString(840, 20, 0x000000, "移動　　：WASD");
-	DrawFormatString(840, 40, 0x000000, "カメラ　：矢印キー");
-	DrawFormatString(840, 60, 0x000000, "ダッシュ：右Shift");
-	DrawFormatString(840, 80, 0x000000, "ジャンプ：＼(バクスラ)");
+	// 描画設定を元に戻す
+	SetDrawBright(255, 255, 255);
 
+
+
+
+	
 }

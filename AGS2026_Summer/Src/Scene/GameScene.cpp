@@ -4,6 +4,7 @@
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
 #include "../Object/Player.h"
+#include "../Object/Stage.h"
 #include "GameScene.h"
 
 GameScene::GameScene(void)
@@ -17,11 +18,17 @@ GameScene::~GameScene(void)
 
 void GameScene::Init(void)
 {
-	player_ = std::make_unique <Player>();
+	//player_ = std::make_unique <Player>();
+	player_ = new Player();
 	player_->Init();
-	
 
-	//SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
+	// ステージ
+	stage_ = new Stage(player_);
+	stage_->Init();
+	
+	// ステージの初期設定
+	stage_->ChangeStage(Stage::NAME::MAIN_PLANET);
+	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
 
 }
@@ -38,11 +45,18 @@ void GameScene::Update(void)
 
 	
 
+	stage_->Update();
+
+	player_->Update();
+
 }
 
 void GameScene::Draw(void)
 {
 
+	stage_->Draw();
+
+	player_->Draw();
 	// ヘルプ
 	DrawFormatString(840, 20, 0x000000, "移動　　：WASD");
 	DrawFormatString(840, 40, 0x000000, "カメラ　：矢印キー");

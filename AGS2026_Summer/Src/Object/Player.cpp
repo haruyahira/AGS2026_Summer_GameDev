@@ -9,7 +9,7 @@
 #include "Common/Capsule.h"
 //#include "Common/TestRenderer.h"
 #include "Common/Collider.h"
-//#include "Planet.h"
+#include "Planet.h"
 #include "Player.h"
 
 Player::Player(void)
@@ -70,7 +70,7 @@ void Player::Init(void)
 	capsule_->SetRadius(20.0f);
 
 	// 丸影画像
-//	imgShadow_ = resMng_.Load(ResourceManager::SRC::PLAYER_SHADOW).handleId_;
+	imgShadow_ = resMng_.Load(ResourceManager::SRC::PLAYER_SHADOW).handleId_;
 
 	// 初期状態
 	ChangeState(STATE::PLAY);
@@ -116,6 +116,7 @@ void Player::Draw(void)
 void Player::AddCollider(Collider* collider)
 {
 	colliders_.push_back(collider);
+
 }
 
 void Player::ClearCollider(void)
@@ -467,53 +468,53 @@ void Player::Collision(void)
 void Player::CollisionGravity(void)
 {
 
-	//// ジャンプ量を加算
-	//movedPos_ = VAdd(movedPos_, jumpPow_);
+	// ジャンプ量を加算
+	movedPos_ = VAdd(movedPos_, jumpPow_);
 
-	//// 重力方向
-	//VECTOR dirGravity = AsoUtility::DIR_D;
+	// 重力方向
+	VECTOR dirGravity = AsoUtility::DIR_D;
 
-	//// 重力方向の反対
-	//VECTOR dirUpGravity = AsoUtility::DIR_U;
+	// 重力方向の反対
+	VECTOR dirUpGravity = AsoUtility::DIR_U;
 
-	//// 重力の強さ
-	////float gravityPow = Planet::DEFAULT_GRAVITY_POW;
+	// 重力の強さ
+	float gravityPow = Planet::DEFAULT_GRAVITY_POW;
 
-	//float checkPow = 10.0f;
-	//gravHitPosUp_ = VAdd(movedPos_, VScale(dirUpGravity, gravityPow));
-	//gravHitPosUp_ = VAdd(gravHitPosUp_, VScale(dirUpGravity, checkPow * 2.0f));
-	//gravHitPosDown_ = VAdd(movedPos_, VScale(dirGravity, checkPow));
-	//for (const auto c : colliders_)
-	//{
+	float checkPow = 10.0f;
+	gravHitPosUp_ = VAdd(movedPos_, VScale(dirUpGravity, gravityPow));
+	gravHitPosUp_ = VAdd(gravHitPosUp_, VScale(dirUpGravity, checkPow * 2.0f));
+	gravHitPosDown_ = VAdd(movedPos_, VScale(dirGravity, checkPow));
+	for (const auto c : colliders_)
+	{
 
-	//	// 地面との衝突
-	//	auto hit = MV1CollCheck_Line(
-	//		c->modelId_, -1, gravHitPosUp_, gravHitPosDown_);
+		// 地面との衝突
+		auto hit = MV1CollCheck_Line(
+			c->modelId_, -1, gravHitPosUp_, gravHitPosDown_);
 
-	//	// 最初は上の行のように実装して、木の上に登ってしまうことを確認する
-	//	//if (hit.HitFlag > 0)
-	//	if (hit.HitFlag > 0 && VDot(dirGravity, jumpPow_) > 0.9f)
-	//	{
+		// 最初は上の行のように実装して、木の上に登ってしまうことを確認する
+		//if (hit.HitFlag > 0)
+		if (hit.HitFlag > 0 && VDot(dirGravity, jumpPow_) > 0.9f)
+		{
 
-	//		// 衝突地点から、少し上に移動
-	//		movedPos_ = VAdd(hit.HitPosition, VScale(dirUpGravity, 2.0f));
+			// 衝突地点から、少し上に移動
+			movedPos_ = VAdd(hit.HitPosition, VScale(dirUpGravity, 2.0f));
 
-	//		// ジャンプリセット
-	//		jumpPow_ = AsoUtility::VECTOR_ZERO;
-	//		stepJump_ = 0.0f;
+			// ジャンプリセット
+			jumpPow_ = AsoUtility::VECTOR_ZERO;
+			stepJump_ = 0.0f;
 
-	//		if (isJump_)
-	//		{
-	//			// 着地モーション
-	//			animationController_->Play(
-	//				(int)ANIM_TYPE::JUMP, false, 29.0f, 45.0f, false, true);
-	//		}
+			if (isJump_)
+			{
+				// 着地モーション
+				animationController_->Play(
+					(int)ANIM_TYPE::JUMP, false, 29.0f, 45.0f, false, true);
+			}
 
-	//		isJump_ = false;
+			isJump_ = false;
 
-	//	}
+		}
 
-	//}
+	}
 
 }
 
@@ -571,24 +572,24 @@ void Player::CollisionCapsule(void)
 void Player::CalcGravityPow(void)
 {
 
-	//// 重力方向
-	//VECTOR dirGravity = AsoUtility::DIR_D;
+	// 重力方向
+	VECTOR dirGravity = AsoUtility::DIR_D;
 
-	//// 重力の強さ
-	////float gravityPow = Planet::DEFAULT_GRAVITY_POW;
+	// 重力の強さ
+	float gravityPow = Planet::DEFAULT_GRAVITY_POW;
 
-	//// 重力
-	//VECTOR gravity = VScale(dirGravity, gravityPow);
-	//jumpPow_ = VAdd(jumpPow_, gravity);
+	// 重力
+	VECTOR gravity = VScale(dirGravity, gravityPow);
+	jumpPow_ = VAdd(jumpPow_, gravity);
 
-	//// 最初は実装しない。地面と突き抜けることを確認する。
-	//// 内積
-	//float dot = VDot(dirGravity, jumpPow_);
-	//if (dot >= 0.0f)
-	//{
-	//	// 重力方向と反対方向(マイナス)でなければ、ジャンプ力を無くす
-	//	jumpPow_ = gravity;
-	//}
+	// 最初は実装しない。地面と突き抜けることを確認する。
+	// 内積
+	float dot = VDot(dirGravity, jumpPow_);
+	if (dot >= 0.0f)
+	{
+		// 重力方向と反対方向(マイナス)でなければ、ジャンプ力を無くす
+		jumpPow_ = gravity;
+	}
 
 }
 

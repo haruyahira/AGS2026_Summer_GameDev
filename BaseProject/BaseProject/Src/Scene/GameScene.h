@@ -30,4 +30,6 @@ private:
 	// ƒvƒŒƒCƒ„[
 	Player* player_;
 
+	int lightHandle_;
+
 };
