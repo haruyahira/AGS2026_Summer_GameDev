@@ -18,19 +18,19 @@ int WINAPI WinMain(
 	Application::CreateInstance();
 
 	// インスタンスの取得
-	Application& instance = Application::GetInstance();
+	Application& app = Application::GetInstance();
 
-	if (instance.IsInitFail())
+	if (app.IsInitFail())
 	{
 		// 初期化失敗
 		return -1;
 	}
 
 	// 実行
-	instance.Run();
+	app.Run();
 
 	// 解放
-	instance.Destroy();
+	app.Destroy();
 
 	return 0;
 

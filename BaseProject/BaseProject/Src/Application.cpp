@@ -43,6 +43,7 @@ void Application::Init(void)
 	GetDefaultState(&getSizeX_, &getSizeY_, NULL, &getFps_); // 情報取得
 	ChangeWindowMode(false); // ウィンドウモード
 	SetGraphMode(getSizeX_, getSizeY_, 32); // 
+	
 
 	// FPS
 	//fpsController_ = new FpsController(getFps_);
