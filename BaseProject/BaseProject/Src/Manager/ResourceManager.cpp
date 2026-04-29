@@ -31,13 +31,29 @@ void ResourceManager::Init(void)
 
 	Resource* res;
 
-	// タイトル画像
-	res = new RES(RES_T::IMG, PATH_IMG + "Title.png");
-	resourcesMap_.emplace(SRC::TITLE, res);
-
-	// PushSpace
-	res = new RES(RES_T::IMG, PATH_IMG + "PushSpace.png");
-	resourcesMap_.emplace(SRC::PUSH_SPACE, res);
+	// タイトル関連
+	// 画像
+	// タイトル背景画像
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleBackground.png");
+	resourcesMap_.emplace(SRC::BACK_GROUND, res);
+	// タイトルロゴ
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleLogo.png");
+	resourcesMap_.emplace(SRC::TITLE_LOGO, res);
+	// レッサーパンダ
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleRedpanda2.png");
+	resourcesMap_.emplace(SRC::TITLE_READ_PANDA, res);
+	// 選択肢
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectNormal.png");
+	resourcesMap_.emplace(SRC::TITLE_SELECT, res);
+	// 選択肢１（光る）
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright1.png");
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT1, res);
+	// 選択肢２（光る）
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright2.png");
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT2, res);
+	// 選択肢３（光る）
+	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png");
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3, res);
 
 	// 吹き出し
 	res = new RES(RES_T::IMG, PATH_IMG + "SpeechBalloon.png");

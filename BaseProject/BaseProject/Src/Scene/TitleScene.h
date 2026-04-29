@@ -23,8 +23,20 @@ public:
 private:
 
 	// 画像
-	int imgTitle_;
-	int imgPush_;
+	int imgTitleBack_;
+	int imgTitleLogo_;
+	int imgTitleRedpanda_;
+	int imgTitleSelect_;
+	int imgTitleSelectBright1_;
+	int imgTitleSelectBright2_;
+	int imgTitleSelectBright3_;
+
+	int imgW, imgH;
+
+	// 変数
+	float angleTime = 0.0f;
+	float currentAngle = 0.0f;
+	float driftX;
 
 	// スカイドーム用
 	Transform spaceDomeTran_;

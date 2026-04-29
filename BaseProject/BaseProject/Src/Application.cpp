@@ -41,9 +41,18 @@ void Application::Init(void)
 
 	// ウィンドウサイズ
 	GetDefaultState(&getSizeX_, &getSizeY_, NULL, &getFps_); // 情報取得
-	ChangeWindowMode(false); // ウィンドウモード
-	SetGraphMode(getSizeX_, getSizeY_, 32); // 
+
+	// モニターのアスペクト比によって１９２０を基準に縦のサイズを調整
+	adjustedSizeY_ = (int)(SCREEN_SIZE_X * ((float)getSizeY_ / (float)getSizeX_));
 	
+	SetGraphMode(SCREEN_SIZE_X, adjustedSizeY_, 32);
+
+	// 2. フルスクリーン時にデスクトップ解像度に合わせる
+	//SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_DESKTOP);
+
+	SetWindowSizeExtendRate(1.0);
+
+	ChangeWindowMode(false); // 最初はフルスクリーン
 
 	// FPS
 	//fpsController_ = new FpsController(getFps_);

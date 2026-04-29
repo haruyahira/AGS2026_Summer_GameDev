@@ -4,8 +4,10 @@
 #include "../Common/Fader.h"
 #include "../Scene/TitleScene.h"
 #include "../Scene/GameScene.h"
+#include "../Application.h"
 #include "Camera.h"
 #include "ResourceManager.h"
+#include "InputManager.h"
 #include "SceneManager.h"
 
 SceneManager* SceneManager::instance_ = nullptr;
@@ -85,6 +87,19 @@ void SceneManager::Update(void)
 	if (scene_ == nullptr)
 	{
 		return;
+	}
+
+	// --- 画面モード切り替え処理を追加 ---
+	InputManager& ins = InputManager::GetInstance();
+	// Alt + Enter を検知
+	if ((ins.IsNew(KEY_INPUT_LALT) || ins.IsNew(KEY_INPUT_RALT)) && ins.IsTrgDown(KEY_INPUT_ENTER))
+	{
+		bool isWindow = (GetWindowModeFlag() == FALSE);
+		ChangeWindowMode(isWindow);
+
+		// 切り替え後の再設定（これだけでOK）
+		SetGraphMode(Application::SCREEN_SIZE_X, Application::adjustedSizeY_, 32);
+		if (!isWindow) SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_DESKTOP);
 	}
 
 	// デルタタイム

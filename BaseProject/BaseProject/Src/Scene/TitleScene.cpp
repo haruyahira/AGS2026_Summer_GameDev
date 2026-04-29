@@ -12,10 +12,12 @@
 
 TitleScene::TitleScene(void)
 {
-	imgPush_ = -1;
-	imgTitle_ = -1;
+	
 	/*skyDome_ = nullptr;
 	animationController_ = nullptr;*/
+	angleTime = 0.0f;
+	currentAngle = 0.0f;
+	driftX = 0.0f;
 }
 
 TitleScene::~TitleScene(void)
@@ -28,8 +30,14 @@ void TitleScene::Init(void)
 {
 
 	// 画像読み込み
-	imgTitle_ = resMng_.Load(ResourceManager::SRC::TITLE).handleId_;
-	imgPush_ = resMng_.Load(ResourceManager::SRC::PUSH_SPACE).handleId_;
+	imgTitleBack_ = resMng_.Load(ResourceManager::SRC::BACK_GROUND).handleId_;
+	imgTitleLogo_ = resMng_.Load(ResourceManager::SRC::TITLE_LOGO).handleId_;
+    imgTitleRedpanda_ = resMng_.Load(ResourceManager::SRC::TITLE_READ_PANDA).handleId_;
+	imgTitleSelect_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT).handleId_;
+	imgTitleSelectBright1_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT1).handleId_;
+	imgTitleSelectBright2_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT2).handleId_;
+	imgTitleSelectBright3_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT3).handleId_; int imgW, imgH;
+	GetGraphSize(imgTitleRedpanda_, &imgW, &imgH);
 
 	//// 背景
 	//spaceDomeTran_.pos = AsoUtility::VECTOR_ZERO;
@@ -82,6 +90,13 @@ void TitleScene::Update(void)
 	{
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
 	}
+	
+	// 1. 時間を進める（この値を調整すると速さが変わる）
+	angleTime += 0.01f;
+
+	currentAngle = (25.0f * DX_PI_F / 180.0f) * sinf(angleTime);
+
+    //driftX = 20.0f * sinf(angleTime * 0.7f); // 角度と少し周期をズラすと自然
 
 	//// 惑星の回転
 	//movePlanet_.quaRot = movePlanet_.quaRot.Mult(
@@ -103,8 +118,32 @@ void TitleScene::Draw(void)
 	/*MV1DrawModel(planet_.modelId);
 	MV1DrawModel(movePlanet_.modelId);
 	MV1DrawModel(charactor_.modelId);*/
-
-	DrawRotaGraph(Application::getSizeX_ / 2, Application::getSizeY_/2, 1.0, 0.0, imgTitle_, true);
+	
+	// 背景
+	DrawExtendGraph(0,0,
+		Application::SCREEN_SIZE_X, Application::adjustedSizeY_, imgTitleBack_, true);
+	int imgW, imgH;
+	GetGraphSize(imgTitleRedpanda_, &imgW, &imgH);
+	int pivotX = imgW / 2;
+	int pivotY = imgH;
+	// レッサーパンダ
+	DrawRotaGraph3(
+		Application::SCREEN_SIZE_X,
+		Application::adjustedSizeY_ + 200,
+		(int)pivotX,
+		(int)pivotY,
+		0.7, 0.7,
+		currentAngle,
+		imgTitleRedpanda_,
+		true
+	);
+	// タイトルロゴ
+	DrawExtendGraph(0, 0,Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleLogo_, true);
+	// 選択肢
+	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleSelect_, true);
+	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleSelectBright1_, true);
+	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_, imgTitleSelectBright2_, true);
+	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleSelectBright3_, true);
 	
 	//DrawRotaGraph(Application::getSizeX_ / 2, 500, 1.0, 0.0, imgPush_, true);
 

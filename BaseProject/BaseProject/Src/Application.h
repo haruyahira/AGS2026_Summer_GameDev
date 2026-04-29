@@ -15,9 +15,9 @@ public:
 	* 関数はメンバ関数、変数はメンバ変数という
 	*/
 
-	// スクリーンサイズ
-	//static constexpr int SCREEN_SIZE_X = 1024;
-	//static constexpr int SCREEN_SIZE_Y = 640;
+	// スクリーンサイズ（初期は16：9）
+	static constexpr int SCREEN_SIZE_X = 1920;
+	static constexpr int SCREEN_SIZE_Y = 1080;
 
 	/*
 	* 学習メモ：
@@ -76,6 +76,7 @@ public:
 	inline static int getSizeX_;
 	inline static int getSizeY_;
 	inline static int getFps_;
+	inline static int adjustedSizeY_;
 private:
 
 	// 静的インスタンス
