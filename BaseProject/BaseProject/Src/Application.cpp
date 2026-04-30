@@ -44,11 +44,11 @@ void Application::Init(void)
 
 	// モニターのアスペクト比によって１９２０を基準に縦のサイズを調整
 	adjustedSizeY_ = (int)(SCREEN_SIZE_X * ((float)getSizeY_ / (float)getSizeX_));
-	
-	SetGraphMode(SCREEN_SIZE_X, adjustedSizeY_, 32);
+	/*注意
+	* UIを並べる時はadjustedSizeY_を基準のｘ％でする
+	*/
 
-	// 2. フルスクリーン時にデスクトップ解像度に合わせる
-	//SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_DESKTOP);
+	SetGraphMode(SCREEN_SIZE_X, adjustedSizeY_, 32);
 
 	SetWindowSizeExtendRate(1.0);
 

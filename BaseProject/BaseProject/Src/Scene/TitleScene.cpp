@@ -17,13 +17,21 @@ TitleScene::TitleScene(void)
 	animationController_ = nullptr;*/
 	angleTime = 0.0f;
 	currentAngle = 0.0f;
-	driftX = 0.0f;
+	imgPandaX_ = 0;
+	imgPandaY_ = 0;
+
+	imgTitleBack_ = -1;
+	imgTitleLogo_ = -1;
+	imgTitleRedpanda_ = -1;
+	imgTitleSelect_ = -1;
+	imgTitleSelectBright1_ = -1;
+	imgTitleSelectBright2_ = -1;
+	imgTitleSelectBright3_ = -1;
+
 }
 
 TitleScene::~TitleScene(void)
 {
-	/*delete skyDome_;
-	delete animationController_;*/
 }
 
 void TitleScene::Init(void)
@@ -36,45 +44,25 @@ void TitleScene::Init(void)
 	imgTitleSelect_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT).handleId_;
 	imgTitleSelectBright1_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT1).handleId_;
 	imgTitleSelectBright2_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT2).handleId_;
-	imgTitleSelectBright3_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT3).handleId_; int imgW, imgH;
-	GetGraphSize(imgTitleRedpanda_, &imgW, &imgH);
+	imgTitleSelectBright3_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT3).handleId_;
+	
+	// レッサーパンダの画像サイズを取得
+	GetGraphSize(imgTitleRedpanda_, &imgPandaX_, &imgPandaY_);
+	imgPandaX_ /= CENTER_DIVIDER;
 
-	//// 背景
-	//spaceDomeTran_.pos = AsoUtility::VECTOR_ZERO;
-	//skyDome_ = new SkyDome(spaceDomeTran_);
-	//skyDome_->Init();
 
-	float size;
-
-	//// メイン惑星
-	//planet_.SetModel(resMng_.LoadModelDuplicate(ResourceManager::SRC::FALL_PLANET));
-	//planet_.pos = AsoUtility::VECTOR_ZERO;
-	//planet_.scl = AsoUtility::VECTOR_ONE;
-	//planet_.Update();
-
-	//// 回転する惑星
-	//movePlanet_.SetModel(resMng_.LoadModelDuplicate(ResourceManager::SRC::LAST_PLANET));
-	//movePlanet_.pos = { -250.0f, -100.0f, -100.0f };
-	//size = 0.7f;
-	//movePlanet_.scl = { size, size, size };
-	//movePlanet_.quaRotLocal = Quaternion::Euler(
-	//	AsoUtility::Deg2RadF(90.0f), 0.0f, 0.0f);
-	//movePlanet_.Update();
-
-	//// キャラ
-	//charactor_.SetModel(resMng_.LoadModelDuplicate(ResourceManager::SRC::PLAYER));
-	//charactor_.pos = { -250.0f, -32.0f, -105.0f };
-	//size = 0.4f;
-	//charactor_.scl = { size, size, size };
-	//charactor_.quaRot = Quaternion::Euler(
-	//	0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f);
-	//charactor_.Update();
-
-	//// アニメーションの設定
-	//std::string path = Application::PATH_MODEL + "Player/";
-	//animationController_ = new AnimationController(charactor_.modelId);
-	//animationController_->Add(0, path + "Run.mv1", 20.0f);
-	//animationController_->Play(0);
+	fontHandle_ = CreateFontToHandle("ＭＳ Ｐゴシック", 64, 3, DX_FONTTYPE_ANTIALIASING_8X8);
+	
+	// ループで自動生成
+	for (int i = 0; i < messages.size(); ++i) {
+		telops_.push_back({
+			(float)Application::SCREEN_SIZE_X + (i * 300), // 重ならないようにずらす
+			(float)(100 + i * 80),                         // 高さをずらす
+			1.5f + (GetRand(20) / 10.0f),                  // スピードをランダムにする
+			messages[i],
+			GetColor(255, 255, 255)
+			});
+	}
 
 	// 定点カメラ
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIXED_POINT);
@@ -90,14 +78,23 @@ void TitleScene::Update(void)
 	{
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
 	}
-	
-	// 1. 時間を進める（この値を調整すると速さが変わる）
-	angleTime += 0.01f;
+	// レッサーパンダ
+	UpdateRedpanda();
 
-	currentAngle = (25.0f * DX_PI_F / 180.0f) * sinf(angleTime);
+	// 全てのテロップに対して処理を行う
+	for (auto& telop : telops_) {
+		telop.x -= telop.speed; // 左へ移動
 
-    //driftX = 20.0f * sinf(angleTime * 0.7f); // 角度と少し周期をズラすと自然
+		// 文字の横幅を取得
+		textX_ = GetDrawStringWidth(telop.text.c_str(), (int)telop.text.length());
 
+		// 画面左端に消えたら右端に戻す
+		if (telop.x < -textX_) {
+			telop.x = (float)Application::SCREEN_SIZE_X;
+			// 右に戻るついでに、高さをランダムに変えるとよりニコニコっぽい
+			telop.y = (float)(GetRand(Application::adjustedSizeY_));
+		}
+	}
 	//// 惑星の回転
 	//movePlanet_.quaRot = movePlanet_.quaRot.Mult(
 	//	Quaternion::Euler(0.0f, 0.0f, AsoUtility::Deg2RadF(-1.0f)));
@@ -122,21 +119,10 @@ void TitleScene::Draw(void)
 	// 背景
 	DrawExtendGraph(0,0,
 		Application::SCREEN_SIZE_X, Application::adjustedSizeY_, imgTitleBack_, true);
-	int imgW, imgH;
-	GetGraphSize(imgTitleRedpanda_, &imgW, &imgH);
-	int pivotX = imgW / 2;
-	int pivotY = imgH;
+	
 	// レッサーパンダ
-	DrawRotaGraph3(
-		Application::SCREEN_SIZE_X,
-		Application::adjustedSizeY_ + 200,
-		(int)pivotX,
-		(int)pivotY,
-		0.7, 0.7,
-		currentAngle,
-		imgTitleRedpanda_,
-		true
-	);
+	DrawRedpanda();
+
 	// タイトルロゴ
 	DrawExtendGraph(0, 0,Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleLogo_, true);
 	// 選択肢
@@ -145,6 +131,36 @@ void TitleScene::Draw(void)
 	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_, imgTitleSelectBright2_, true);
 	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleSelectBright3_, true);
 	
-	//DrawRotaGraph(Application::getSizeX_ / 2, 500, 1.0, 0.0, imgPush_, true);
-
+	for (const auto& t : telops_) {
+		// 縁取り文字で描画
+		DrawStringFToHandle((int)t.x, (int)t.y,
+			t.text.c_str(), t.color, fontHandle_);
+		//DrawString((int)t.x, (int)t.y, t.text.c_str(), t.color, GetColor(0, 0, 0));
+	}
 }
+
+void TitleScene::UpdateRedpanda(void)
+{
+	// 時間を進める（この値を調整すると速さが変わる）
+	angleTime += 0.015f;
+
+	currentAngle = (25.0f * DX_PI_F / 180.0f) * sinf(angleTime);
+}
+
+void TitleScene::DrawRedpanda(void)
+{
+
+	// レッサーパンダ
+	DrawRotaGraph3(
+		Application::SCREEN_SIZE_X,
+		Application::adjustedSizeY_ + REDPANDA_ADJUST_Y,
+		(int)imgPandaX_,
+		(int)imgPandaY_,
+		0.7, 0.7,
+		currentAngle,
+		imgTitleRedpanda_,
+		true
+	);
+}
+
+

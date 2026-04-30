@@ -89,17 +89,18 @@ void SceneManager::Update(void)
 		return;
 	}
 
-	// --- 画面モード切り替え処理を追加 ---
+	// フルスクリーン＜－＞ウィンドウの切り替え
 	InputManager& ins = InputManager::GetInstance();
 	// Alt + Enter を検知
-	if ((ins.IsNew(KEY_INPUT_LALT) || ins.IsNew(KEY_INPUT_RALT)) && ins.IsTrgDown(KEY_INPUT_ENTER))
+	if ((ins.IsNew(KEY_INPUT_LALT) || ins.IsNew(KEY_INPUT_RALT)) && ins.IsTrgDown(KEY_INPUT_RETURN))
 	{
-		bool isWindow = (GetWindowModeFlag() == FALSE);
-		ChangeWindowMode(isWindow);
+		// ウィンドウならtrue,フルスクリーンならfalse
+	    isWindow_ = (GetWindowModeFlag() == FALSE);
+		ChangeWindowMode(isWindow_);
 
-		// 切り替え後の再設定（これだけでOK）
+		// 切り替え後の再設定
 		SetGraphMode(Application::SCREEN_SIZE_X, Application::adjustedSizeY_, 32);
-		if (!isWindow) SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_DESKTOP);
+
 	}
 
 	// デルタタイム
@@ -163,7 +164,6 @@ void SceneManager::Destroy(void)
 
 	delete fader_;
 	delete camera_;
-
 	delete instance_;
 
 }
