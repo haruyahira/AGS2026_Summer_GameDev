@@ -11,7 +11,7 @@ public:
 
 	// ラジアン(rad)・度(deg)変換用
 	static constexpr float RAD2DEG = (180.0f / DX_PI_F);
-	static constexpr float DEG2RAD = (DX_PI_F / 180.0f);
+	static constexpr float DEG2RAD = (DX_PI_F / 180.0f); // 180度をラジアンに変換
 
 	static constexpr VECTOR VECTOR_ZERO = { 0.0f, 0.0f, 0.0f };
 	static constexpr VECTOR VECTOR_ONE = { 1.0f, 1.0f, 1.0f };
@@ -28,6 +28,9 @@ public:
 	static constexpr VECTOR DIR_L = { -1.0f, 0.0f, 0.0f };
 	static constexpr VECTOR DIR_U = { 0.0f, 1.0f, 0.0f };
 	static constexpr VECTOR DIR_D = { 0.0f, -1.0f, 0.0f };
+
+	
+	static constexpr float DEG_TO_RAD_SCALE = 180.0f;
 
 	static constexpr float kEpsilonNormalSqrt = 1e-15F;
 
@@ -115,5 +118,7 @@ public:
 	static void DrawLineXYZ(const VECTOR& pos, const MATRIX& rot, float len = 50.0f);
 	static void DrawLineXYZ(const VECTOR& pos, const Quaternion& rot, float len = 50.0f);
 
+	// 計算系
+	static float GetRandomFloat(float min, float max);
 };
 

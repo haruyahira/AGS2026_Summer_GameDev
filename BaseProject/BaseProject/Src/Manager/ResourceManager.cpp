@@ -1,4 +1,5 @@
 #include <DxLib.h>
+#include <memory>
 #include "../Application.h"
 #include "Resource.h"
 #include "ResourceManager.h"
@@ -34,31 +35,40 @@ void ResourceManager::Init(void)
 	// タイトル関連
 	// 画像
 	// タイトル背景画像
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleBackground.png");
-	resourcesMap_.emplace(SRC::BACK_GROUND, res);
+	resourcesMap_.emplace(SRC::BACK_GROUND,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleBackground.png"));
 	// タイトルロゴ
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleLogo.png");
-	resourcesMap_.emplace(SRC::TITLE_LOGO, res);
+	resourcesMap_.emplace(SRC::TITLE_LOGO,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleLogo.png"));
 	// レッサーパンダ
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleRedpanda2.png");
-	resourcesMap_.emplace(SRC::TITLE_READ_PANDA, res);
+	resourcesMap_.emplace(SRC::TITLE_READ_PANDA,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleRedpanda2.png"));
 	// 選択肢
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectNormal.png");
-	resourcesMap_.emplace(SRC::TITLE_SELECT, res);
+	resourcesMap_.emplace(SRC::TITLE_SELECT,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectNormal.png"));
+	// 選択肢当たり判定用
+	resourcesMap_.emplace(SRC::TITLE_SELECT2,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectNormal2.png"));
 	// 選択肢１（光る）
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright1.png");
-	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT1, res);
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT1,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright1.png"));
 	// 選択肢２（光る）
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright2.png");
-	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT2, res);
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT2,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright2.png"));
 	// 選択肢３（光る）
-	res = new RES(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png");
-	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3, res);
+	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png"));
 
-	// 吹き出し
-	res = new RES(RES_T::IMG, PATH_IMG + "SpeechBalloon.png");
-	resourcesMap_.emplace(SRC::SPEECH_BALLOON, res);
-	
+
+
+
+
+
+
+	//// 吹き出し
+	//res = new RES(RES_T::IMG, PATH_IMG + "SpeechBalloon.png");
+	//resourcesMap_.emplace(SRC::SPEECH_BALLOON, res);
+
 	// プレイヤー
 	res = new RES(RES_T::MODEL, PATH_MDL + "Player/Player.mv1");
 	resourcesMap_.emplace(SRC::PLAYER, res);
@@ -149,7 +159,7 @@ void ResourceManager::Destroy(void)
 	for (auto& res : resourcesMap_)
 	{
 		res.second->Release();
-		delete res.second;
+		/*delete res.second;*/
 	}
 	resourcesMap_.clear();
 	delete instance_;
@@ -208,5 +218,4 @@ Resource& ResourceManager::_Load(SRC src)
 	loadedMap_.emplace(src, *rPair->second);
 
 	return *rPair->second;
-
 }

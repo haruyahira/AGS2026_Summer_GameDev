@@ -100,7 +100,7 @@ void Resource::Release(void)
 		}
 		delete[] handleIds_;
 	}
-		break;
+	break;
 
 	case Resource::TYPE::MODEL:
 	{
@@ -111,7 +111,7 @@ void Resource::Release(void)
 			MV1DeleteModel(id);
 		}
 	}
-		break;
+	break;
 
 	case Resource::TYPE::EFFEKSEER:
 

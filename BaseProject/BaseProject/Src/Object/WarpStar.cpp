@@ -7,7 +7,7 @@
 WarpStar::WarpStar(
 	Player* player, const Transform& transform)
 {
-	
+
 	player_ = player;
 
 	transform_ = transform;

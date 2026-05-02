@@ -553,4 +553,12 @@ void AsoUtility::DrawLineXYZ(const VECTOR& pos, const Quaternion& rot, float len
 
 }
 
+float AsoUtility::GetRandomFloat(float min, float max)
+{
+    if (min >= max) return min;
+
+    int range = static_cast<int>((max - min) * 10);
+    return min + (GetRand(range) / 10.0f);
+}
+
 

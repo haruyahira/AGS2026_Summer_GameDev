@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <string>
+#include <memory>
 #include "Resource.h"
 
 class ResourceManager
@@ -15,6 +16,7 @@ public:
 		TITLE_LOGO,
 		TITLE_READ_PANDA,
 		TITLE_SELECT,
+		TITLE_SELECT2,
 		TITLE_SELECT_BRIGHT1,
 		TITLE_SELECT_BRIGHT2,
 		TITLE_SELECT_BRIGHT3,
@@ -67,7 +69,8 @@ private:
 	static ResourceManager* instance_;
 
 	// リソース管理の対象
-	std::map<SRC, Resource*> resourcesMap_;
+	//std::map<SRC, Resource*> resourcesMap_;
+	std::map<SRC, std::unique_ptr<Resource>> resourcesMap_;
 
 	// 読み込み済みリソース
 	std::map<SRC, Resource&> loadedMap_;

@@ -11,7 +11,7 @@
 #include "Common/Transform.h"
 #include "Stage.h"
 
-Stage::Stage(Player* player) 
+Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
 {
 	player_ = player;
@@ -21,14 +21,14 @@ Stage::Stage(Player* player)
 
 Stage::~Stage(void)
 {
-	
+
 	// ワープスター
 	for (auto star : warpStars_)
 	{
 		delete star;
 	}
 	warpStars_.clear();
-	
+
 	// 惑星
 	for (auto pair : planets_)
 	{

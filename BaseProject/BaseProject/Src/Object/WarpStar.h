@@ -17,7 +17,7 @@ public:
 
 	// エフェクトの位置
 	static constexpr VECTOR EFFECT_RELATIVE_POS = { 0.0f, 70.0f, 0.0f };
-	
+
 	// ワープ前の準備移動相対座標
 	static constexpr VECTOR WARP_RELATIVE_POS = { 0.0f, -80.0f, 10.0f };
 
