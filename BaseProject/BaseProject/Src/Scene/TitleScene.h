@@ -34,11 +34,17 @@ private:
 	static constexpr float CENTER_DIVIDER = 2.0f;    // 中心計算用
 	static constexpr int REDPANDA_ADJUST_Y = 200; // レッサーパンダのY座標調整用値
 
-	
+	void InitSelect(void);
+
+	// 描画
 	void DrawRedpanda(void);
 	void DrawSelect(void);
+	void DrawTelop(void);
+
+	// 更新
 	void UpdateRedpanda(void);
 	void UpdateSelect(void);
+	void UpdateTelop(void);
 
 	// テロップの内容一覧
 	std::vector<std::string> messages = {
