@@ -33,6 +33,11 @@ private:
 
 	static constexpr float CENTER_DIVIDER = 2.0f;    // 中心計算用
 	static constexpr int REDPANDA_ADJUST_Y = 200; // レッサーパンダのY座標調整用値
+	static constexpr float RESET_FADE = 0.0f;      // フェードの速さをリセットする値
+	static constexpr float RAISE＿FADE = 0.035f;      // フェードの速さを上げる値
+	static constexpr float ALPHA_HALF_RANGE = 0.5f; // サイン波の振幅調整用
+	static constexpr float ALPHA_OFFSET = 0.5f;     // サイン波の底上げ用
+	static constexpr int   MAX_ALPHA = 255;          // 最大不透明度
 
 	void InitSelect(void);
 
@@ -65,7 +70,7 @@ private:
 	int imgTitleSelectBright2_;
 	int imgTitleSelectBright3_;*/
 	int imgSelectHandles_[4];
-	int drawIndex_ = 0; // 現在どの画像を表示するか (0:通常, 1~3:光る)
+	int drawIndex_ = 0; // 現在どの画像を表示するか (0:何もなし, 1~3:光る)
 
 
 	// 当たり判定用の矩形構造体
@@ -77,12 +82,14 @@ private:
 	int fontHandle_;
 
 	// 変数
-	int imgPandaX_, imgPandaY_; // レッサーパンダの画像サイズ
+	int imgPandaX_;
+	int imgPandaY_; // レッサーパンダの画像サイズ
 
 	int textX_; // 文字の横幅
 
-	float angleTime = 0.0f;
-	float currentAngle = 0.0f;
+	float angleTime_;
+	float currentAngle_;
+	float fadeCount_;
 
 	// 配列
 	std::vector<Telop> telops_; // 複数のテロップを管理する動的配列

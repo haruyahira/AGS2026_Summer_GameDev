@@ -49,13 +49,13 @@ void ResourceManager::Init(void)
 	// 選択肢当たり判定用
 	resourcesMap_.emplace(SRC::TITLE_SELECT2,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectNormal2.png"));
-	// 選択肢１（光る）
+	// 選択肢（光るスタート）
 	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT1,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright1.png"));
-	// 選択肢２（光る）
+	// 選択肢（光るランキング）
 	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT2,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright2.png"));
-	// 選択肢３（光る）
+	// 選択肢（光る終了）
 	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png"));
 
