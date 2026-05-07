@@ -22,9 +22,6 @@ TitleScene::TitleScene(void)
 	imgTitleLogo_ = -1;
 	imgTitleRedpanda_ = -1;
 	imgTitleSelect_ = -1;
-	/*imgTitleSelectBright1_ = -1;
-	imgTitleSelectBright2_ = -1;
-	imgTitleSelectBright3_ = -1;*/
 
 }
 
@@ -34,15 +31,12 @@ TitleScene::~TitleScene(void)
 
 void TitleScene::Init(void)
 {
-	// マウスカーソルを表示する
-	SetMouseDispFlag(TRUE);
-
 	// 画像読み込み
 	imgTitleBack_ = resMng_.Load(ResourceManager::SRC::BACK_GROUND).handleId_;
 	imgTitleLogo_ = resMng_.Load(ResourceManager::SRC::TITLE_LOGO).handleId_;
-    imgTitleRedpanda_ = resMng_.Load(ResourceManager::SRC::TITLE_READ_PANDA).handleId_;
+    //imgTitleRedpanda_ = resMng_.Load(ResourceManager::SRC::TITLE_READ_PANDA).handleId_;
     imgTitleSelect_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT).handleId_;
-	imgTitleSelect2_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT2).handleId_;
+	imgTitleSelectHitBox_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT2).handleId_;
 	imgSelectHandles_[1] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT1).handleId_;
 	imgSelectHandles_[2] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT2).handleId_;
 	imgSelectHandles_[3] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT3).handleId_;
@@ -73,6 +67,8 @@ void TitleScene::Init(void)
 
 void TitleScene::Update(void)
 {
+	// マウスカーソルを表示する
+	SetMouseDispFlag(TRUE);
 
 	// シーン遷移
 	InputManager& ins = InputManager::GetInstance();
@@ -116,7 +112,7 @@ void TitleScene::InitSelect(void)
 {
 	// 1. 画像サイズを取得
 	int imgW, imgH;
-	GetGraphSize(imgTitleSelect2_, &imgW, &imgH);
+	GetGraphSize(imgTitleSelectHitBox_, &imgW, &imgH);
 
 	//// 2. 描画時と同じ拡大率と基準座標を設定
 	float scale = 0.73f;
@@ -207,6 +203,7 @@ void TitleScene::UpdateTelop(void)
 
 		// 画面左端に消えたら右端に戻す
 		if (telop.x < -textX_) {
+			telop.speed = (float)AsoUtility::GetRandomFloat(2.0f, 5.0f); // スピードをランダムにする
 			telop.x = (int)Application::SCREEN_SIZE_X;
 			// 右に戻るついでに、高さをランダムに変える
 			telop.y = (int)(GetRand(Application::adjustedSizeY_));

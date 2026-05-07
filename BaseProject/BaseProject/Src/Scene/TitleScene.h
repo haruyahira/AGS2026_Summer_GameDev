@@ -65,7 +65,7 @@ private:
 	int imgTitleLogo_;
 	int imgTitleRedpanda_;
 	int imgTitleSelect_;
-	int imgTitleSelect2_;
+	int imgTitleSelectHitBox_;
 	/*int imgTitleSelectBright1_;
 	int imgTitleSelectBright2_;
 	int imgTitleSelectBright3_;*/
