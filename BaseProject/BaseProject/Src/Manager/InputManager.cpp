@@ -40,6 +40,9 @@ void InputManager::Init(void)
 	InputManager::GetInstance().Add(KEY_INPUT_S);
 	InputManager::GetInstance().Add(KEY_INPUT_D);
 
+	InputManager::GetInstance().Add(KEY_INPUT_C);
+
+
 	InputManager::GetInstance().Add(KEY_INPUT_RSHIFT);
 
 	InputManager::GetInstance().Add(KEY_INPUT_BACKSLASH);
@@ -54,6 +57,8 @@ void InputManager::Init(void)
 	InputManager::GetInstance().Add(MOUSE_INPUT_RIGHT);
 
 
+	// 
+	InputManager::GetInstance().Add(KEY_INPUT_1);
 
 
 
@@ -140,6 +145,12 @@ bool InputManager::IsNew(int key) const
 {
 	return Find(key).keyNew;
 }
+
+bool InputManager::IsPress(int key) const
+{
+	return (CheckHitKey(key) != 0);
+}
+
 
 bool InputManager::IsTrgDown(int key) const
 {

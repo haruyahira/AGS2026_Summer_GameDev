@@ -45,6 +45,10 @@ void Camera::SetBeforeDraw(void)
 	case Camera::MODE::FOLLOW:
 		SetBeforeDrawFollow();
 		break;
+	case Camera::MODE::FIRST_PERSON:
+		SetBeforeDrawFirstPerson();
+		break;
+
 	}
 
 	// カメラの設定(位置と注視点による制御)
@@ -66,6 +70,12 @@ void Camera::Draw(void)
 void Camera::SetFollow(const Transform* follow)
 {
 	followTransform_ = follow;
+}
+
+void Camera::SetFirstPersonPos(const VECTOR& headPos)
+{
+	pos_ = headPos;
+
 }
 
 VECTOR Camera::GetPos(void) const
@@ -114,6 +124,8 @@ void Camera::ChangeMode(MODE mode)
 		break;
 	case Camera::MODE::FOLLOW:
 		break;
+	case Camera::MODE::FIRST_PERSON: // 一人称視点
+		break;
 	}
 
 }
@@ -130,7 +142,7 @@ void Camera::SetDefault(void)
 	// カメラの上方向
 	cameraUp_ = AsoUtility::DIR_U;
 
-	angles_.x = AsoUtility::Deg2RadF(30.0f);
+	angles_.x = 0.0f;//AsoUtility::Deg2RadF(30.0f);
 	angles_.y = 0.0f;
 	angles_.z = 0.0f;
 
@@ -164,6 +176,30 @@ void Camera::SyncFollow(void)
 	// カメラの上方向
 	cameraUp_ = AsoUtility::DIR_U;
 
+}
+
+// 一人称視点
+void Camera::SyncFirstPerson(void)
+{
+	if (followTransform_ == nullptr) return;
+
+	// 1. 左右回転は Follow と同じ
+	rotOutX_ = Quaternion::AngleAxis(angles_.y, AsoUtility::AXIS_Y);
+
+	// 2. 【ここを修正】
+	// 一人称の時だけ、上下角度 (angles_.x) を反転させてクォータニオンを作る
+	// これで Follow のロジックを壊さずに一人称の視点だけを正せます
+	rot_ = rotOutX_.Mult(Quaternion::AngleAxis(-angles_.x, AsoUtility::AXIS_X));
+
+	// 3. 注視点の計算
+	// Follow で注視点計算に使っている LOCAL_F2T_POS をそのまま使う
+	VECTOR localPos = rot_.PosAxis(LOCAL_F2T_POS);
+
+	// 注視点 = プレイヤーから送られる頭の位置(pos_) + 回転させたオフセット
+	targetPos_ = VAdd(pos_, localPos);
+
+	// 4. 上方向
+	cameraUp_ = AsoUtility::DIR_U;
 }
 
 void Camera::ProcessRot(void)
@@ -209,7 +245,7 @@ void Camera::ProcessRot(void)
 
 void Camera::SetBeforeDrawFixedPoint(void)
 {
-	// 何もしない
+
 }
 
 void Camera::SetBeforeDrawFollow(void)
@@ -225,4 +261,13 @@ void Camera::SetBeforeDrawFollow(void)
 
 void Camera::SetBeforeDrawSelfShot(void)
 {
+}
+
+void Camera::SetBeforeDrawFirstPerson(void)
+{
+	// カメラ操作
+	ProcessRot();
+
+	// 追従対象との相対位置を同期
+	SyncFirstPerson();
 }

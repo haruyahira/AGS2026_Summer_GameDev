@@ -83,6 +83,8 @@ public:
 	// キーの押下判定
 	bool IsNew(int key) const;
 
+	bool IsPress(int key) const;
+
 	// キーの押下判定(押しっぱなしはNG)
 	bool IsTrgDown(int key) const;
 

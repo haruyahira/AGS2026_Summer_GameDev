@@ -36,6 +36,7 @@ public:
 		NONE,
 		FIXED_POINT,
 		FOLLOW,
+		FIRST_PERSON,
 		SELF_SHOT
 	};
 
@@ -66,6 +67,8 @@ public:
 
 	// ’Ç]‘ÎÛ‚Ìİ’è
 	void SetFollow(const Transform* follow);
+
+	void SetFirstPersonPos(const VECTOR& headPos);
 
 private:
 
@@ -99,6 +102,9 @@ private:
 	// ’Ç]‘ÎÛ‚Æ‚ÌˆÊ’u“¯Šú‚ğæ‚é
 	void SyncFollow(void);
 
+	// ˆêlÌ
+	void SyncFirstPerson(void);
+
 	// ƒJƒƒ‰‘€ì
 	void ProcessRot(void);
 
@@ -106,6 +112,7 @@ private:
 	void SetBeforeDrawFixedPoint(void);
 	void SetBeforeDrawFollow(void);
 	void SetBeforeDrawSelfShot(void);
+	void SetBeforeDrawFirstPerson(void);
 
 };
 

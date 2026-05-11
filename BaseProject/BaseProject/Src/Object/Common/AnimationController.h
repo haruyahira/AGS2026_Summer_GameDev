@@ -42,6 +42,10 @@ public :
 	// 再生終了
 	bool IsEnd(void) const;
 
+	void SetSpeed(float speed) {
+		playAnim_.speed = speed;
+	}
+
 private :
 
 	// モデルのハンドルID

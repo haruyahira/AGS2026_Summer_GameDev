@@ -72,6 +72,8 @@ private:
 	int imgSelectHandles_[4];
 	int drawIndex_ = 0; // 現在どの画像を表示するか (0:何もなし, 1~3:光る)
 
+	int bgm_;
+
 
 	// 当たり判定用の矩形構造体
 	struct Rect { int x, y, w, h; };

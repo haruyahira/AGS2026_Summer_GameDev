@@ -34,7 +34,7 @@ void TitleScene::Init(void)
 	// 画像読み込み
 	imgTitleBack_ = resMng_.Load(ResourceManager::SRC::BACK_GROUND).handleId_;
 	imgTitleLogo_ = resMng_.Load(ResourceManager::SRC::TITLE_LOGO).handleId_;
-    //imgTitleRedpanda_ = resMng_.Load(ResourceManager::SRC::TITLE_READ_PANDA).handleId_;
+    imgTitleRedpanda_ = resMng_.Load(ResourceManager::SRC::TITLE_READ_PANDA).handleId_;
     imgTitleSelect_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT).handleId_;
 	imgTitleSelectHitBox_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT2).handleId_;
 	imgSelectHandles_[1] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT1).handleId_;
@@ -59,6 +59,15 @@ void TitleScene::Init(void)
 			messages[i],
 		    Color::WHITE
 			});
+	}
+
+	bgm_ = LoadSoundMem("Data/Bgm/TitleBgm.wav");
+
+	ChangeVolumeSoundMem(0, bgm_);
+
+	// 3. ループ再生を開始
+	if (bgm_ != -1) {
+		PlaySoundMem(bgm_, DX_PLAYTYPE_LOOP);
 	}
 
 	// 定点カメラ

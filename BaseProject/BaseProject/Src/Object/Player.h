@@ -29,6 +29,7 @@ public:
 	{
 		NONE,
 		PLAY,
+		PRONE,
 		WARP_RESERVE,
 		WARP_MOVE,
 		DEAD,
@@ -43,6 +44,9 @@ public:
 		RUN,
 		FAST_RUN,
 		JUMP,
+		PRONE_IDLE,
+		PRONE_WALK,
+		PRONE_RUN,
 		WARP_PAUSE,
 		FLY,
 		FALLING,
@@ -66,6 +70,13 @@ public:
 	// 衝突用カプセルの取得
 	const Capsule* GetCapsule(void) const;
 
+	// 頭の座標を返す関数
+	VECTOR GetHeadPosition() const {
+		// "Head"という名前のフレームを探してその座標を返す
+		// 名前はモデルによって違うので注意（"Head"、"頭"、"Neck"など）
+		int headFrame = MV1SearchFrame(transform_.modelId, "Head");
+		return MV1GetFramePosition(transform_.modelId, headFrame);
+	}
 private:
 
 	// アニメーション
@@ -73,6 +84,8 @@ private:
 
 	// 状態管理
 	STATE state_;
+
+	ANIM_TYPE animType_;
 
 	// 移動スピード
 	float speed_;
@@ -117,10 +130,12 @@ private:
 	void ChangeState(STATE state);
 	void ChangeStateNone(void);
 	void ChangeStatePlay(void);
+	void ChangeStateProne(void);
 
 	// 更新ステップ
 	void UpdateNone(void);
 	void UpdatePlay(void);
+	void UpdateProne(void);
 	
 	// 描画系
 	void DrawShadow(void);
@@ -143,5 +158,7 @@ private:
 
 	// 着地モーション終了
 	bool IsEndLanding(void);
+
+	bool IsProne() const { return state_ == STATE::PRONE; }
 
 };
