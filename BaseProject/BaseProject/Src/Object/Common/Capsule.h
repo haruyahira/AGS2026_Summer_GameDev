@@ -8,7 +8,7 @@ class Capsule
 public :
 
 	// デバッグ時の簡易カプセル表示の色
-	static constexpr int COLOR = 0xffffff;
+	static constexpr int COLOR = 0x111111;
 
 	// コンストラクタ
 	// カプセルをつけるオブジェクトを指定する
@@ -18,8 +18,12 @@ public :
 	// デストラクタ
 	~Capsule(void);
 
+	// 更新
+	void Update(void);
 	// 描画
 	void Draw(void);
+
+
 
 	// 親Transformからの相対位置を取得
 	VECTOR GetLocalPosTop(void) const;
@@ -46,6 +50,8 @@ public :
 	// カプセルの中心座標
 	VECTOR GetCenter(void) const;
 
+	void AttachToBone(int modelId, int topFrame, int downFrame);
+
 private :
 
 	// カプセルをくっつける相手
@@ -60,4 +66,9 @@ private :
 	// 半径
 	float radius_;
 
+	int targetModelId_ = -1;
+	int topBoneFrame_ = -1;
+	int downBoneFrame_ = -1;
+
+	VECTOR CalculateLocalBonePos(int frameIndex);
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <memory>
 #include <DxLib.h>
 #include "ActorBase.h"
 class AnimationController;
@@ -80,11 +81,12 @@ public:
 private:
 
 	// アニメーション
-	AnimationController* animationController_;
+	std::unique_ptr<AnimationController> animationController_;
 
 	// 状態管理
 	STATE state_;
 
+	// アニメーション種別
 	ANIM_TYPE animType_;
 
 	// 移動スピード
@@ -99,6 +101,11 @@ private:
 	// 移動後の座標
 	VECTOR movedPos_;
 
+	// 頭の座標
+	VECTOR headPos_;
+	VECTOR worldHeadPos_;
+	VECTOR localHeadPos_; 
+
 	// 回転
 	Quaternion playerRotY_;
 	Quaternion goalQuaRot_;
@@ -112,6 +119,7 @@ private:
 
 	// ジャンプの入力受付時間
 	float stepJump_;
+	
 
 	// 衝突判定に用いられるコライダ
 	std::vector<Collider*> colliders_;
@@ -123,7 +131,13 @@ private:
 
 	// 丸影
 	int imgShadow_;
+	int headFrame_;
+	// 頭のボーンフレーム
+	int headBoneFrame_;
+	// 足元のボーンフレーム
+	int SpineFrame_;
 
+	// アニメーションの初期化
 	void InitAnimation(void);
 
 	// 状態遷移
@@ -136,6 +150,7 @@ private:
 	void UpdateNone(void);
 	void UpdatePlay(void);
 	void UpdateProne(void);
+	void UpdateCommon(void);
 	
 	// 描画系
 	void DrawShadow(void);
@@ -159,6 +174,10 @@ private:
 	// 着地モーション終了
 	bool IsEndLanding(void);
 
+	// しゃがみ状態か
 	bool IsProne() const { return state_ == STATE::PRONE; }
+
+	// カメラ
+	void SetFirstPerson(void);
 
 };

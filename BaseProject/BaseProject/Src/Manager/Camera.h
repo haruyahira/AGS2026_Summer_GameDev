@@ -96,6 +96,8 @@ private:
 	// ƒJƒƒ‰‚Ìã•ûŒü
 	VECTOR cameraUp_;
 
+	float currentGoalAngleY_;
+
 	// ƒJƒƒ‰‚ğ‰ŠúˆÊ’u‚É–ß‚·
 	void SetDefault(void);
 

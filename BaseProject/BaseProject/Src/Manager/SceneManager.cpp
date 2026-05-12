@@ -103,6 +103,20 @@ void SceneManager::Update(void)
 
 	}
 
+	// シーンがプレイシーンなら
+	if (sceneId_ == SCENE_ID::GAME)
+	{
+		// マウスを隠して中央に固定する
+		SetMouseDispFlag(FALSE);
+		InputManager::GetInstance().SetFixMouse(true);
+	}
+	else if	 (sceneId_ == SCENE_ID::TITLE)
+	{
+		// メニュー画面ならマウスを表示して自由に動かせる
+		SetMouseDispFlag(TRUE);
+		InputManager::GetInstance().SetFixMouse(false);
+	}
+
 	// デルタタイム
 	auto nowTime = std::chrono::system_clock::now();
 	deltaTime_ = static_cast<float>(

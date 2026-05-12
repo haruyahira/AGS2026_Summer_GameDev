@@ -46,7 +46,7 @@ void TitleScene::Init(void)
 
 	// レッサーパンダの画像サイズを取得
 	GetGraphSize(imgTitleRedpanda_, &imgPandaX_, &imgPandaY_);
-	imgPandaX_ /= CENTER_DIVIDER;
+	imgPandaX_/= CENTER_DIVIDER;
 
 	fontHandle_ = CreateFontToHandle("ＭＳ Ｐゴシック", 64, 3, DX_FONTTYPE_ANTIALIASING_8X8);
 	
@@ -205,7 +205,7 @@ void TitleScene::UpdateTelop(void)
 {
 	// 全てのテロップに対して処理を行う
 	for (Telop& telop : telops_) {
-		telop.x -= telop.speed; // 左へ移動
+		telop.x -= static_cast<int>(telop.speed); // 左へ移動
 
 		// 文字の横幅を取得
 		textX_ = GetDrawStringWidth(telop.text.c_str(), (int)telop.text.length());

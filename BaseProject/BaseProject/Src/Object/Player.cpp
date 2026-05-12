@@ -1,4 +1,5 @@
 #include <string>
+#include <cassert>
 #include "../Application.h"
 #include "../Utility/AsoUtility.h"
 #include "../Manager/InputManager.h"
@@ -16,6 +17,7 @@ Player::Player(void)
 
 	animationController_ = nullptr;
 	state_ = STATE::NONE;
+	animType_ = ANIM_TYPE::IDLE;
 
 	speed_ = 0.0f;
 	moveDir_ = AsoUtility::VECTOR_ZERO;
@@ -30,6 +32,8 @@ Player::Player(void)
 	isJump_ = false;
 	stepJump_ = 0.0f;
 
+	
+
 	// 衝突チェック
 	gravHitPosDown_ = AsoUtility::VECTOR_ZERO;
 	gravHitPosUp_ = AsoUtility::VECTOR_ZERO;
@@ -43,7 +47,6 @@ Player::Player(void)
 Player::~Player(void)
 {
 	delete capsule_;
-	delete animationController_;
 }
 
 void Player::Init(void)
@@ -62,12 +65,22 @@ void Player::Init(void)
 
 	// アニメーションの設定
 	InitAnimation();
+	// 頭のフレーム（メッシュ）を探す
+    headFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone_end");
+	assert(headFrame_ >= 0);
+    headBoneFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone");
+	SpineFrame_ = MV1SearchFrame(transform_.modelId, "Spine");
+
+	headPos_ = MV1GetFramePosition(transform_.modelId, headFrame_);
+	//worldHeadPos_ = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
+	//localHeadPos_ = VSub(worldHeadPos_, transform_.pos);
 
 	// カプセルコライダ
 	capsule_ = new Capsule(transform_);
-	capsule_->SetLocalPosTop({ 0.0f, 110.0f, 0.0f });
-	capsule_->SetLocalPosDown({ 0.0f, 30.0f, 0.0f });
-	capsule_->SetRadius(20.0f);
+	capsule_->AttachToBone(transform_.modelId, headBoneFrame_, SpineFrame_);
+	//capsule_->SetLocalPosTop(worldHeadPos_);
+	//capsule_->SetLocalPosDown({ 0.0f, 15.0f, 0.0f });
+	capsule_->SetRadius(15.0f);
 
 	// 丸影画像
 	imgShadow_ = resMng_.Load(ResourceManager::SRC::PLAYER_SHADOW).handleId_;
@@ -75,11 +88,9 @@ void Player::Init(void)
 	// 初期状態
 	ChangeState(STATE::PLAY);
 
-	int headFrame = MV1SearchFrame(transform_.modelId, "Head");
-
 	// 頭だけを非表示にする
-	if (headFrame != -1) {
-		MV1SetFrameVisible(transform_.modelId, headFrame, FALSE);
+	if (headFrame_ != -1) {
+		MV1SetFrameVisible(transform_.modelId, headFrame_, FALSE);
 	}
 
 }
@@ -101,11 +112,16 @@ void Player::Update(void)
 		break;
 	}
 
+	// アニメーション再生
+	animationController_->Update();
+
 	// モデル制御更新
 	transform_.Update();
 
-	// アニメーション再生
-	animationController_->Update();
+	//SetFirstPerson();
+	capsule_->Update();
+
+	
 
 }
 
@@ -118,27 +134,8 @@ void Player::Draw(void)
 	// 丸影描画
 	DrawShadow();
 
-
-	// --- ここからカプセルのデバッグ表示 ---
-	if (capsule_ != nullptr)
-	{
-		// 座標を計算（現在のプレイヤーの位置に合わせた最新の座標を取得）
-		// ※capsule_->Update() のような仕組みがあるならそれを呼び出した後の座標
-		VECTOR top = capsule_->GetPosTop();
-		VECTOR down = capsule_->GetPosDown();
-		float radius = capsule_->GetRadius();
-
-		// 1. 上下の球体部分を描画（ワイヤーフレーム）
-		DrawSphere3D(top, radius, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), FALSE);
-		DrawSphere3D(down, radius, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), FALSE);
-
-		// 2. 側面をつなぐ線を描画（簡易的な円柱っぽく見せるため4本引く）
-		DrawLine3D(VAdd(top, { radius, 0, 0 }), VAdd(down, { radius, 0, 0 }), GetColor(0, 255, 0));
-		DrawLine3D(VAdd(top, { -radius, 0, 0 }), VAdd(down, { -radius, 0, 0 }), GetColor(0, 255, 0));
-		DrawLine3D(VAdd(top, { 0, 0, radius }), VAdd(down, { 0, 0, radius }), GetColor(0, 255, 0));
-		DrawLine3D(VAdd(top, { 0, 0, -radius }), VAdd(down, { 0, 0, -radius }), GetColor(0, 255, 0));
-	}
-	// --- ここまで ---
+	capsule_->Draw();
+	
 }
 
 void Player::AddCollider(Collider* collider)
@@ -160,7 +157,7 @@ void Player::InitAnimation(void)
 {
 
 	std::string path = Application::PATH_MODEL + "Player/";
-	animationController_ = new AnimationController(transform_.modelId);
+	animationController_ = std::make_unique <AnimationController>(transform_.modelId);
 	animationController_->Add((int)ANIM_TYPE::IDLE, path + "Player.mv1", 20.0f);
 	animationController_->Add((int)ANIM_TYPE::RUN, path + "Run.mv1", 20.0f);
 	animationController_->Add((int)ANIM_TYPE::FAST_RUN, path + "FastRun.mv1", 20.0f);
@@ -169,6 +166,8 @@ void Player::InitAnimation(void)
 	animationController_->Add((int)ANIM_TYPE::PRONE_IDLE, path + "ProneIdle.mv1", 0.0f);
 	animationController_->Add((int)ANIM_TYPE::PRONE_WALK, path + "ProneWalk.mv1", 30.0f);
 	animationController_->Add((int)ANIM_TYPE::PRONE_RUN, path + "ProneRun.mv1", 60.0f);
+
+
 	animationController_->Add((int)ANIM_TYPE::WARP_PAUSE, path + "WarpPose.mv1", 60.0f);
 	animationController_->Add((int)ANIM_TYPE::FLY, path + "Flying.mv1", 60.0f);
 	
@@ -216,58 +215,26 @@ void Player::UpdateNone(void)
 
 void Player::UpdatePlay(void)
 {
-	//
-	auto& ins = InputManager::GetInstance();
-
-	// --- トグル切り替え (Cキーを例に) ---
-	if (ins.IsTrgDown(KEY_INPUT_C))
-	{
-		// 現在がPLAYならPRONEへ、そうでなければPLAYへ
-		ChangeState(STATE::PRONE);
-	}
-
-	// 移動処理
-	ProcessMove();
-
-	// ジャンプ処理
-	ProcessJump();
-
-	// 移動方向に応じた回転
-	Rotate();
-
-	// 重力による移動量
-	CalcGravityPow();
-
-	// 衝突判定
-	Collision();
-
-	// 回転させる
-	transform_.quaRot = playerRotY_;
-
-	// カメラ視点関連
-	// 頭のボーン位置を取得（transform_.Update() の後に行うこと）
-	int headFrame = MV1SearchFrame(transform_.modelId, "Head_Bone");
-	VECTOR headPos = MV1GetFramePosition(transform_.modelId, headFrame);
-
-	// カメラのポインタを取得
-	auto camera = SceneManager::GetInstance().GetCamera();
-
-	// カメラの座標を頭の位置に上書き設定する関数を呼ぶ
-	// (Cameraクラスに SetPos 関数などを追加して pos_ = headPos する)
-	camera->SetFirstPersonPos(headPos);
-
+	// 共通の更新処理
+	UpdateCommon();
 }
 
 void Player::UpdateProne(void)
 {
-	//
+	// 共通の更新処理
+	UpdateCommon();
+
+	// うつ伏せ特有の処理
+}
+
+void Player::UpdateCommon(void)
+{
 	auto& ins = InputManager::GetInstance();
 
-	// --- トグル切り替え (Cキーを例に) ---
+	// 通常・うつ伏せ切り替え (Cキー)
 	if (ins.IsTrgDown(KEY_INPUT_C))
 	{
-		// PLAYへ
-		ChangeState(STATE::PLAY);
+		IsProne() ? ChangeState(STATE::PLAY):ChangeState(STATE::PRONE);
 	}
 
 	// 移動処理
@@ -288,17 +255,9 @@ void Player::UpdateProne(void)
 	// 回転させる
 	transform_.quaRot = playerRotY_;
 
-	// カメラ視点関連
-	// 頭のボーン位置を取得（transform_.Update() の後に行うこと）
-	int headFrame = MV1SearchFrame(transform_.modelId, "Head_Bone");
-	VECTOR headPos = MV1GetFramePosition(transform_.modelId, headFrame);
-
-	// カメラのポインタを取得
-	auto camera = SceneManager::GetInstance().GetCamera();
-
-	// カメラの座標を頭の位置に上書き設定する関数を呼ぶ
-	// (Cameraクラスに SetPos 関数などを追加して pos_ = headPos する)
-	camera->SetFirstPersonPos(headPos);
+	// カメラをプレイヤーの頭に合わせる
+	SetFirstPerson();
+	
 }
 
 void Player::DrawShadow(void)
@@ -440,6 +399,8 @@ void Player::ProcessMove(void)
 		dir = cameraRot.GetLeft();
 	}
 
+
+
 	if (!AsoUtility::EqualsVZero(dir) && (isJump_ || IsEndLanding())) {
 
 		
@@ -458,7 +419,7 @@ void Player::ProcessMove(void)
 
 		
 		// 回転処理
-		SetGoalRotate(rotRad);
+		//SetGoalRotate(rotRad);
 
 		// アニメショーン変更処理
 		 animType_ = IsProne() ?
@@ -548,12 +509,22 @@ void Player::SetGoalRotate(double rotRad)
 
 void Player::Rotate(void)
 {
+	//playerRotY_ = Quaternion::Slerp(playerRotY_, goalQuaRot_, 0.2f);
+	
+	//stepRotTime_ -= scnMng_.GetDeltaTime();
 
-	stepRotTime_ -= scnMng_.GetDeltaTime();
+	// カメラの現在の水平角度（Y軸）を取得
+	float cameraAngleY = SceneManager::GetInstance().GetCamera()->GetAngles().y;
 
-	// 回転の球面補間
-	playerRotY_ = Quaternion::Slerp(
-		playerRotY_, goalQuaRot_, (TIME_ROT - stepRotTime_) / TIME_ROT);
+	// キャラが常にカメラと同じ方向を向くように目標角度を設定
+	goalQuaRot_ = Quaternion::AngleAxis(cameraAngleY, AsoUtility::AXIS_Y);
+
+	// 0.2fの部分を大きくすると、カメラの回転にキャラがより素早く追従します
+	// 1.0f にすると完全に遊びがなく同期します
+	playerRotY_ = Quaternion::Slerp(playerRotY_, goalQuaRot_, 0.2f);
+	//// 回転の球面補間
+	//playerRotY_ = Quaternion::Slerp(
+	//	playerRotY_, goalQuaRot_, (TIME_ROT - stepRotTime_) / TIME_ROT);
 
 }
 
@@ -636,6 +607,8 @@ void Player::CollisionCapsule(void)
 	trans.Update();
 	Capsule cap = Capsule(*capsule_, trans);
 
+	VECTOR capDownPos = VAdd(movedPos_, VGet(0, cap.GetRadius(), 0));
+
 	// カプセルとの衝突判定
 	for (const auto c : colliders_)
 	{
@@ -653,7 +626,7 @@ void Player::CollisionCapsule(void)
 			{
 
 				int pHit = HitCheck_Capsule_Triangle(
-					cap.GetPosTop(), cap.GetPosDown(), cap.GetRadius(),
+					cap.GetPosTop(), capDownPos, cap.GetRadius(),
 					hit.Position[0], hit.Position[1], hit.Position[2]);
 
 				if (pHit)
@@ -721,4 +694,26 @@ bool Player::IsEndLanding(void)
 
 	return false;
 
+}
+
+void Player::SetFirstPerson(void)
+{
+	// カメラのポインタを取得
+	auto camera = SceneManager::GetInstance().GetCamera();
+
+	// カメラ視点関連
+	// 頭のボーン位置を取得（transform_.Update() の後に行うこと）
+	//headFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone");
+	headPos_ = MV1GetFramePosition(transform_.modelId, headFrame_);
+
+	//worldHeadPos_ = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
+	//localHeadPos_ = VSub(worldHeadPos_, transform_.pos);
+
+	//// カプセルの頭位置を頭のボーン位置に合わせる
+	//capsule_->SetLocalPosTop(localHeadPos_);
+
+
+	// カメラの座標を頭の位置に上書き設定する関数を呼ぶ
+	// (Cameraクラスに SetPos 関数などを追加して pos_ = headPos する)
+	camera->SetFirstPersonPos(headPos_);
 }

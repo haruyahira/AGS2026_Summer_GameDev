@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Common\Mouse.cpp" />
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
     <ClCompile Include="Src\Common\FpsController.cpp" />
     <ClCompile Include="Src\Object\ActorBase.cpp" />
@@ -48,6 +49,7 @@
     <ClCompile Include="Src\Utility\AsoUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Common\Mouse.h" />
     <ClInclude Include="Src\Utility\ColorUtility.h" />
     <ClInclude Include="Src\Common\FpsController.h" />
     <ClInclude Include="Src\Object\ActorBase.h" />

@@ -14,6 +14,8 @@ Camera::Camera(void)
 	pos_ = AsoUtility::VECTOR_ZERO;
 	targetPos_ = AsoUtility::VECTOR_ZERO;
 	followTransform_ = nullptr;
+	currentGoalAngleY_ = 0.0f;
+	//currentGoalAngleX_ = 0.0f;
 }
 
 Camera::~Camera(void)
@@ -142,7 +144,7 @@ void Camera::SetDefault(void)
 	// カメラの上方向
 	cameraUp_ = AsoUtility::DIR_U;
 
-	angles_.x = 0.0f;//AsoUtility::Deg2RadF(30.0f);
+	angles_.x = AsoUtility::Deg2RadF(30.0f);
 	angles_.y = 0.0f;
 	angles_.z = 0.0f;
 
@@ -240,6 +242,32 @@ void Camera::ProcessRot(void)
 			angles_.x = -LIMIT_X_DW_RAD;
 		}
 	}
+
+	// マウスの横移動量を取得
+	// --- マウス操作 ---
+	int mDiffX = ins.GetMouseDiffX();
+	int mDiffY = ins.GetMouseDiffY();
+
+	// 感度の設定
+	float sensitivity = 0.002f;
+
+	// 勝手に回るのを防ぐガード (デッドゾーン)
+	// InputManager側で修正済みの場合は不要ですが、ここでも念のため 0 以外を条件にします
+	if (mDiffX != 0)
+	{
+		// 直接カメラの角度(angles_.y)を更新する
+		angles_.y += (float)mDiffX * sensitivity;
+	}
+
+	if (mDiffY != 0)
+	{
+		// 縦方向も同様に更新
+		angles_.x -= (float)mDiffY * sensitivity;
+	}
+
+	// --- 角度の制限 (リミッター) ---
+	if (angles_.x > LIMIT_X_UP_RAD)  angles_.x = LIMIT_X_UP_RAD;
+	if (angles_.x < -LIMIT_X_DW_RAD) angles_.x = -LIMIT_X_DW_RAD;
 
 }
 

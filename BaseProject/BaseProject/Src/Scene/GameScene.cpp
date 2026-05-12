@@ -54,9 +54,18 @@ void GameScene::Init(void)
 
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
+
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
 	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
 
+
+
+	player_->Update();
+	//std::weak_ptr<Camera> camera_ = SceneManager::GetInstance().GetCamera();
+	Camera* camera = SceneManager::GetInstance().GetCamera();
+	/*if (auto camera = camera_.lock()) {*/
+		camera->Update();
+	//}
 }
 
 void GameScene::Update(void)

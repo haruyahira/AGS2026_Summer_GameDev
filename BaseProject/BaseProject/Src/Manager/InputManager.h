@@ -109,6 +109,14 @@ public:
 	// マウスが右クリックされたか(押しっぱなしはNG)
 	bool IsTrgMouseRight(void) const;
 
+	// マウスの移動量を取得
+	int GetMouseDiffX() const { return mouseDiffX_; }
+
+	int GetMouseDiffY() const { return mouseDiffY_; }
+
+	// マウスを中央に固定するかどうかの設定
+	void SetFixMouse(bool fix) { isFixMouse_ = fix; }
+
 	// コントローラの入力情報を取得する
 	JOYPAD_IN_STATE GetJPadInputState(JOYPAD_NO no);
 
@@ -139,6 +147,9 @@ private:
 		bool keyTrgUp;		// 現フレームでボタンが離されたか
 	};
 
+	int mouseX_, mouseY_;   // 現在のマウス座標
+	int mouseDiffX_, mouseDiffY_; // 前フレームからの移動量
+	bool isFixMouse_ = false; // 中央固定フラグ
 	// コントローラ情報
 	DINPUT_JOYSTATE joyDInState_;
 
@@ -188,5 +199,7 @@ private:
 
 	// コントローラの入力情報を更新する
 	void SetJPadInState(JOYPAD_NO jpNo);
+
+	void UpdateMouse();
 
 };

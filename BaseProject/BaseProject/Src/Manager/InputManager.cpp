@@ -116,6 +116,8 @@ void InputManager::Update(void)
 	SetJPadInState(JOYPAD_NO::PAD3);
 	SetJPadInState(JOYPAD_NO::PAD4);
 
+	// マウスの更新
+	UpdateMouse();
 }
 
 void InputManager::Destroy(void)
@@ -269,6 +271,60 @@ void InputManager::SetJPadInState(JOYPAD_NO jpNo)
 
 	}
 
+}
+
+void InputManager::UpdateMouse()
+{
+	// 1. 前回の座標を保存
+	int oldX = mouseX_;
+	int oldY = mouseY_;
+
+	// 2. 現在の座標を取得
+	GetMousePoint(&mouseX_, &mouseY_);
+
+	if (isFixMouse_)
+	{
+		// --- FPSモード（中央固定） ---
+		// 画面中央（例えば 640x480 なら 320, 240）
+		int centerX = 640 / 2;
+		int centerY = 480 / 2;
+
+		// 中央からのズレを移動量とする
+		mouseDiffX_ = mouseX_ - centerX;
+		mouseDiffY_ = mouseY_ - centerY;
+
+		// 1～2ピクセル程度の微細な動きは「0」として扱う
+		if (abs(mouseDiffX_) <= 1) mouseDiffX_ = 0;
+		if (abs(mouseDiffY_) <= 1) mouseDiffY_ = 0;
+
+		// マウスを中央に戻す（これで無限に回転できる）
+		SetMousePoint(centerX, centerY);
+
+		// 内部座標も中央にリセット
+		mouseX_ = centerX;
+		mouseY_ = centerY;
+	}
+	else
+	{
+		// --- 通常モード（メニュー操作など） ---
+		mouseDiffX_ = mouseX_ - oldX;
+		mouseDiffY_ = mouseY_ - oldY;
+	}
+
+	// mousePos_ (Vector2) に反映
+	mousePos_.x = static_cast<float>(mouseX_);
+	mousePos_.y = static_cast<float>(mouseY_);
+
+	// ボタン情報の更新（mouseInfos_ map を使って TrgDown などを計算）
+	// Add(MOUSE_INPUT_LEFT) などが呼ばれている前提
+	int currentInput = GetMouseInput();
+	for (auto& pair : mouseInfos_)
+	{
+		pair.second.keyOld = pair.second.keyNew;
+		pair.second.keyNew = (currentInput & pair.second.key) != 0;
+		pair.second.keyTrgDown = pair.second.keyNew && !pair.second.keyOld;
+		pair.second.keyTrgUp = !pair.second.keyNew && pair.second.keyOld;
+	}
 }
 
 InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
