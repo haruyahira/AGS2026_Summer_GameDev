@@ -15,7 +15,7 @@ Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
 {
 	player_ = player;
-	activeName_ = NAME::MAIN_PLANET;
+	activeName_ = NAME::FIRST_STAGE;
 	step_ = 0.0f;
 }
 
@@ -30,11 +30,17 @@ Stage::~Stage(void)
 	warpStars_.clear();
 
 	// 惑星
-	for (auto pair : planets_)
+	for (auto pair : stages_)
 	{
 		delete pair.second;
 	}
-	planets_.clear();
+	stages_.clear();
+
+	// 家具の削除
+	for (auto f : furnitures_) {
+		delete f;
+	}
+	furnitures_.clear();
 
 }
 
@@ -56,11 +62,15 @@ void Stage::Update(void)
 	}
 
 	// 惑星
-	for (const auto& s : planets_)
+	for (const auto& s : stages_)
 	{
 		s.second->Update();
 	}
 
+	// 家具の更新
+	for (auto f : furnitures_) {
+		f->Update();
+	}
 }
 
 void Stage::Draw(void)
@@ -73,11 +83,15 @@ void Stage::Draw(void)
 	}
 
 	// 惑星
-	for (const auto& s : planets_)
+	for (const auto& s : stages_)
 	{
 		s.second->Draw();
 	}
 
+	//家具の描画
+	for (auto f : furnitures_) {
+		f->Draw();
+	}
 }
 
 void Stage::ChangeStage(NAME type)
@@ -98,23 +112,23 @@ void Stage::ChangeStage(NAME type)
 
 Planet* Stage::GetPlanet(NAME type)
 {
-	if (planets_.count(type) == 0)
+	if (stages_.count(type) == 0)
 	{
 		return nullPlanet;
 	}
 
-	return planets_[type];
+	return stages_[type];
 }
 
 void Stage::MakeMainStage(void)
 {
 
-	// 最初の惑星
+	// 最初のステージ
 	//------------------------------------------------------------------------------
 	Transform planetTrans;
 	planetTrans.SetModel(
 		resMng_.LoadModelDuplicate(ResourceManager::SRC::MAIN_PLANET));
-	planetTrans.scl = AsoUtility::VECTOR_ONE;
+	planetTrans.scl = { 10.0f, 10.0f, 10.0f };
 	planetTrans.quaRot = Quaternion();
 	planetTrans.pos = { 0.0f, -100.0f, 0.0f };
 
@@ -123,14 +137,21 @@ void Stage::MakeMainStage(void)
 
 	planetTrans.Update();
 
-	NAME name = NAME::MAIN_PLANET;
-	Planet* planet =
+	NAME name = NAME::FIRST_STAGE;
+	Planet* stage =
 		new Planet(
 			name, Planet::TYPE::GROUND, planetTrans);
-	planet->Init();
-	planets_.emplace(name, planet);
+	stage->Init();
+	// 生成したステージをリストに登録
+	stages_.emplace(name, stage);
 	//------------------------------------------------------------------------------
 
+
+	CreateFurniture({
+		ResourceManager::SRC::F_TABLE,
+		{5.0f, 0.0f, 5.0f}, 
+		{1.0f, 1.0f, 1.0f}, 
+		{0.0f, 0.0f, 0.0f} });
 }
 
 void Stage::MakeWarpStar(void)
@@ -154,4 +175,34 @@ void Stage::MakeWarpStar(void)
 	warpStars_.push_back(star);
 	//------------------------------------------------------------------------------
 
+}
+
+void Stage::CreateFurniture(const FurnitureData& data)
+{
+	Transform trans;
+	// 1. 引数 data からモデル、座標、スケールを設定
+	trans.SetModel(resMng_.LoadModelDuplicate(data.modelSrc));
+	trans.pos.x = data.pos.x;
+	trans.pos.y = data.pos.y;
+	trans.pos.z = data.pos.z;
+
+	trans.scl.x = data.scl.x;
+	trans.scl.y = data.scl.y;
+	trans.scl.z = data.scl.z;
+
+	// 回転の設定（data.rot を使用）
+	trans.quaRot = Quaternion::Euler(data.rot.x, data.rot.y, data.rot.z);
+
+	// 2. コライダの設定（コメントアウトを外せば有効になります）
+	//trans.MakeCollider(Collider::TYPE::MESH);
+	trans.Update();
+
+	// 3. Furnitureインスタンスの生成
+	// 第2引数は上で設定した 'trans' を渡します
+	Furniture* f = new Furniture(NAME::INTERIOR, &trans);
+	f->Init();
+
+	// 4. Stageクラスのリストに追加
+	// objects_ もしくは furnitures_ など、ヘッダーで定義した名前に合わせます
+	furnitures_.push_back(f);
 }

@@ -1,5 +1,6 @@
 #include <DxLib.h>
 #include <memory>
+#include <assert.h>
 #include "../Application.h"
 #include "Resource.h"
 #include "ResourceManager.h"
@@ -60,8 +61,11 @@ void ResourceManager::Init(void)
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png"));
 
 
+	// â∆ãÔ
 
-
+	// ä˜
+	resourcesMap_.emplace(SRC::F_TABLE,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/F_Table.mv1"));
 
 
 
@@ -84,7 +88,7 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::SKY_DOME, res);
 
 	// ç≈èâÇÃòfêØ
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/MainPlanet.mv1");
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Stage.mv1");
 	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
 
 	// óéÇ∆ÇµåäÇÃòfêØ

@@ -3,9 +3,10 @@
 #include "../Manager/SceneManager.h"
 #include "Common/Transform.h"
 #include "WarpStar.h"
+#include "Name.h"
 #include "Planet.h"
 
-Planet::Planet(const Stage::NAME& name, const TYPE& type, const Transform& transform)
+Planet::Planet(const NAME& name, const TYPE& type, const Transform& transform)
 {
 
 	name_ = name;
@@ -90,7 +91,7 @@ void Planet::SetDeadLength(float len)
 	deadLength_ = len;
 }
 
-const Stage::NAME& Planet::GetName(void) const
+const NAME& Planet::GetName(void) const
 {
 	return name_;
 }

@@ -28,7 +28,7 @@ public:
 	};
 
 	// コンストラクタ
-	Planet(const Stage::NAME& name, const TYPE& type, const Transform& transform);
+	Planet(const NAME& name, const TYPE& type, const Transform& transform);
 
 	// デストラクタ
 	~Planet(void);
@@ -41,7 +41,7 @@ public:
 	const TYPE& GetType(void) const;
 
 	// 惑星名
-	const Stage::NAME& GetName(void) const;
+	const NAME& GetName(void) const;
 
 	// 位置の設定
 	void SetPosition(const VECTOR& pos);
@@ -72,7 +72,7 @@ private:
 	TYPE type_;
 
 	// 惑星名
-	Stage::NAME name_;
+	NAME name_;
 
 	// 重力の強さ
 	float gravityPow_;

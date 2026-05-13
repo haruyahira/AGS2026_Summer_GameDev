@@ -1,6 +1,11 @@
 #pragma once
 #include <map>
+#include <vector>
+#include "../Manager/ResourceManager.h"
+#include "../Utility/AsoUtility.h"
+#include "../Common/Vector3.h"
 #include "Common/Transform.h"
+#include "Furniture.h"
 class ResourceManager;
 class WarpStar;
 class Planet;
@@ -14,21 +19,30 @@ public:
 	// ステージの切り替え間隔
 	static constexpr float TIME_STAGE_CHANGE = 1.0f;
 
-	// ステージ名
-	enum class NAME
-	{
-		MAIN_PLANET,
-		FALL_PLANET,
-		FLAT_PLANET_BASE,
-		FLAT_PLANET_ROT01,
-		FLAT_PLANET_ROT02,
-		FLAT_PLANET_ROT03,
-		FLAT_PLANET_ROT04,
-		FLAT_PLANET_FIXED01,
-		FLAT_PLANET_FIXED02,
-		PLANET10,
-		LAST_STAGE,
-		SPECIAL_STAGE
+	//// ステージ名
+	//enum class NAME
+	//{
+	//	FIRST_STAGE,
+	//	FALL_PLANET,
+	//	FLAT_PLANET_BASE,
+	//	FLAT_PLANET_ROT01,
+	//	FLAT_PLANET_ROT02,
+	//	FLAT_PLANET_ROT03,
+	//	FLAT_PLANET_ROT04,
+	//	FLAT_PLANET_FIXED01,
+	//	FLAT_PLANET_FIXED02,
+	//	PLANET10,
+	//	LAST_STAGE,
+	//	SPECIAL_STAGE,
+	//	INTERIOR
+	//};
+
+	// 家具の設計図
+	struct FurnitureData {
+		ResourceManager::SRC modelSrc; // どのモデルか
+		Vector3 pos;                   // どこに
+		Vector3 scl;                   // どの大きさで
+		Vector3 rot;                   // どの向きで
 	};
 
 	// コンストラクタ
@@ -47,6 +61,8 @@ public:
 	// 対象ステージを取得
 	Planet* GetPlanet(NAME type);
 
+	void CreateFurniture(const FurnitureData& data);
+
 private:
 
 	// シングルトン参照
@@ -59,7 +75,11 @@ private:
 	Planet* activePlanet_;
 
 	// 惑星
-	std::map<NAME, Planet*> planets_;
+	std::map<NAME, Planet*> stages_;
+
+
+	// 家具
+	std::vector<Furniture*> furnitures_;
 
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
@@ -74,5 +94,8 @@ private:
 
 	// ワープスター
 	void MakeWarpStar(void);
+
+	void CreateFirstStage(void);
+	
 
 };

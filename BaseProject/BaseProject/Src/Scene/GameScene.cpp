@@ -46,7 +46,7 @@ void GameScene::Init(void)
 	stage_->Init();
 
 	// ステージの初期設定
-	stage_->ChangeStage(Stage::NAME::MAIN_PLANET);
+	stage_->ChangeStage(NAME::FIRST_STAGE);
 
 	// スカイドーム
 	skyDome_ = new SkyDome(player_->GetTransform());
