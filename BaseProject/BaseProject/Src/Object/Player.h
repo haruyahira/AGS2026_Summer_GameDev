@@ -6,6 +6,7 @@
 class AnimationController;
 class Collider;
 class Capsule;
+class Furniture;
 
 class Player : public ActorBase
 {
@@ -13,8 +14,8 @@ class Player : public ActorBase
 public:
 
 	// スピード
-	static constexpr float SPEED_MOVE = 5.0f;
-	static constexpr float SPEED_RUN = 10.0f;
+	static constexpr float SPEED_MOVE = 3.0f;
+	static constexpr float SPEED_RUN = 5.0f;
 
 	// 回転完了までの時間
 	static constexpr float TIME_ROT = 1.0f;
@@ -23,7 +24,7 @@ public:
 	static constexpr float POW_JUMP = 35.0f;
 
 	// ジャンプ受付時間
-	static constexpr float TIME_JUMP_IN = 0.5f;
+	static constexpr float TIME_JUMP_IN = 0.3f;
 
 	// 状態
 	enum class STATE
@@ -78,6 +79,10 @@ public:
 		int headFrame = MV1SearchFrame(transform_.modelId, "Head");
 		return MV1GetFramePosition(transform_.modelId, headFrame);
 	}
+
+	void AddFurniture(Furniture* furniture) {
+		furnitures_.push_back(furniture);
+	}
 private:
 
 	// アニメーション
@@ -123,7 +128,10 @@ private:
 
 	// 衝突判定に用いられるコライダ
 	std::vector<Collider*> colliders_;
+	std::vector<Furniture*> furnitures_;
 	Capsule* capsule_;
+	Furniture* furniture;
+	
 
 	// 衝突チェック
 	VECTOR gravHitPosDown_;
@@ -167,6 +175,7 @@ private:
 	void Collision(void);
 	void CollisionGravity(void);
 	void CollisionCapsule(void);
+	void CollisionBox(void);
 
 	// 移動量の計算
 	void CalcGravityPow(void);

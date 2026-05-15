@@ -5,7 +5,7 @@
 #include "../Utility/AsoUtility.h"
 #include "../Common/Vector3.h"
 #include "Common/Transform.h"
-#include "Furniture.h"
+#include "Furniture/Furniture.h"
 class ResourceManager;
 class WarpStar;
 class Planet;

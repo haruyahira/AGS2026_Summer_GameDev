@@ -10,6 +10,7 @@
 #include "Common/Collider.h"
 #include "Common/Transform.h"
 #include "Stage.h"
+#include "Furniture/Table.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -149,8 +150,8 @@ void Stage::MakeMainStage(void)
 
 	CreateFurniture({
 		ResourceManager::SRC::F_TABLE,
-		{5.0f, 0.0f, 5.0f}, 
-		{1.0f, 1.0f, 1.0f}, 
+		{5.0f, -100, 5.0f},
+		{0.5f, 0.5f, 0.5f},
 		{0.0f, 0.0f, 0.0f} });
 }
 
@@ -186,6 +187,7 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	trans.pos.y = data.pos.y;
 	trans.pos.z = data.pos.z;
 
+
 	trans.scl.x = data.scl.x;
 	trans.scl.y = data.scl.y;
 	trans.scl.z = data.scl.z;
@@ -199,10 +201,14 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	// 3. Furnitureインスタンスの生成
 	// 第2引数は上で設定した 'trans' を渡します
-	Furniture* f = new Furniture(NAME::INTERIOR, &trans);
+	//Furniture* f = new Furniture(NAME::INTERIOR, &trans);
+	Table* f = new Table(&trans);
 	f->Init();
 
 	// 4. Stageクラスのリストに追加
 	// objects_ もしくは furnitures_ など、ヘッダーで定義した名前に合わせます
+	player_->AddFurniture(f);
+
+	// 4. Stageクラスのリストに追加
 	furnitures_.push_back(f);
 }

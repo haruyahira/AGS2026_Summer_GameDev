@@ -1,7 +1,7 @@
 #pragma once
-#include "Common/Transform.h"
-#include "../Manager/ResourceManager.h"
-#include "Name.h"
+#include "../Common/Transform.h"
+#include "../../Manager/ResourceManager.h"
+#include "../Name.h"
 #include "Furniture.h"
 
     // コンストラクタで必要な情報を全部もらう
@@ -19,4 +19,8 @@ Furniture::Furniture(NAME name, const Transform* trans)
 
     void Furniture::Draw() {
         MV1DrawModel(trans_.modelId);
+
+        for (const auto& box : colliders_) {
+            box.DrawDebug(GetColor(0, 255, 0));
+        }
     }

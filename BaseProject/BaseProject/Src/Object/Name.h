@@ -8,5 +8,5 @@ enum class NAME
     FALL_PLANET,
     FLAT_PLANET_BASE,
     INTERIOR,           // 家具・インテリア用
-    // ... 今後増える名前（PLAYER, ENEMY, ITEMなど）をここに並べていく
+    TABLE
 };

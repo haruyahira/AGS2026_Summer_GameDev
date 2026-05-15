@@ -19,7 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Object\Furniture.cpp" />
+    <ClCompile Include="Src\Object\Common\BoxCollider.cpp" />
+    <ClCompile Include="Src\Object\Furniture\Furniture.cpp" />
     <ClCompile Include="Src\Object\Common\Mouse.cpp" />
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
     <ClCompile Include="Src\Common\FpsController.cpp" />
@@ -49,10 +50,12 @@
     <ClCompile Include="Src\Scene\TitleScene.cpp" />
     <ClCompile Include="Src\Utility\AsoUtility.cpp" />
     <ClCompile Include="Src\Common\Vector3.cpp" />
+    <ClCompile Include="Src\Object\Furniture\Table.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Common\BoxCollider.h" />
     <ClInclude Include="Src\Object\Name.h" />
-    <ClInclude Include="Src\Object\Furniture.h" />
+    <ClInclude Include="Src\Object\Furniture\Furniture.h" />
     <ClInclude Include="Src\Object\Common\Mouse.h" />
     <ClInclude Include="Src\Utility\ColorUtility.h" />
     <ClInclude Include="Src\Common\FpsController.h" />
@@ -82,6 +85,7 @@
     <ClInclude Include="Src\Scene\TitleScene.h" />
     <ClInclude Include="Src\Utility\AsoUtility.h" />
     <ClInclude Include="Src\Common\Vector3.h" />
+    <ClInclude Include="Src\Object\Furniture\Table.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

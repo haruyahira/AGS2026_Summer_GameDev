@@ -77,4 +77,6 @@ public:
 	// ‘ÎÛ•ûŒü‚ğæ“¾
 	VECTOR GetDir(const VECTOR& vec) const;
 
+	VECTOR GetPos() const { return pos; }
+
 };

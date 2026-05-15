@@ -87,8 +87,8 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "SkyDome/SkyDome.mv1");
 	resourcesMap_.emplace(SRC::SKY_DOME, res);
 
-	// Å‰‚Ì˜f¯
-	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Stage.mv1");
+	// °
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
 	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
 
 	// —‚Æ‚µŒŠ‚Ì˜f¯

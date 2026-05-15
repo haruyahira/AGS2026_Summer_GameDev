@@ -212,36 +212,36 @@ void Camera::ProcessRot(void)
 	float movePow = 5.0f;
 
 	// ƒJƒƒ‰‰ñ“]
-	if (ins.IsNew(KEY_INPUT_RIGHT))
-	{
-		// ‰E‰ñ“]
-		angles_.y += AsoUtility::Deg2RadF(1.0f);
-	}
-	if (ins.IsNew(KEY_INPUT_LEFT))
-	{
-		// ¶‰ñ“]
-		angles_.y += AsoUtility::Deg2RadF(-1.0f);
-	}
+	//if (ins.IsNew(KEY_INPUT_RIGHT))
+	//{
+	//	// ‰E‰ñ“]
+	//	angles_.y += AsoUtility::Deg2RadF(1.0f);
+	//}
+	//if (ins.IsNew(KEY_INPUT_LEFT))
+	//{
+	//	// ¶‰ñ“]
+	//	angles_.y += AsoUtility::Deg2RadF(-1.0f);
+	//}
 
-	// ã‰ñ“]
-	if (ins.IsNew(KEY_INPUT_UP))
-	{
-		angles_.x += AsoUtility::Deg2RadF(1.0f);
-		if (angles_.x > LIMIT_X_UP_RAD)
-		{
-			angles_.x = LIMIT_X_UP_RAD;
-		}
-	}
+	//// ã‰ñ“]
+	//if (ins.IsNew(KEY_INPUT_UP))
+	//{
+	//	angles_.x += AsoUtility::Deg2RadF(1.0f);
+	//	if (angles_.x > LIMIT_X_UP_RAD)
+	//	{
+	//		angles_.x = LIMIT_X_UP_RAD;
+	//	}
+	//}
 
-	// ‰º‰ñ“]
-	if (ins.IsNew(KEY_INPUT_DOWN))
-	{
-		angles_.x += AsoUtility::Deg2RadF(-1.0f);
-		if (angles_.x < -LIMIT_X_DW_RAD)
-		{
-			angles_.x = -LIMIT_X_DW_RAD;
-		}
-	}
+	//// ‰º‰ñ“]
+	//if (ins.IsNew(KEY_INPUT_DOWN))
+	//{
+	//	angles_.x += AsoUtility::Deg2RadF(-1.0f);
+	//	if (angles_.x < -LIMIT_X_DW_RAD)
+	//	{
+	//		angles_.x = -LIMIT_X_DW_RAD;
+	//	}
+	//}
 
 	// ƒ}ƒEƒX‚Ì‰¡ˆÚ“®—Ê‚ðŽæ“¾
 	// --- ƒ}ƒEƒX‘€ì ---
