@@ -7,8 +7,8 @@
 #include "../Manager/ResourceManager.h"
 #include "../Manager/Camera.h"
 #include "Common/AnimationController.h"
-#include "Common/Capsule.h"
-#include "Common/Collider.h"
+#include "Collider/Capsule.h"
+#include "Collider/Collider.h"
 #include "Planet.h"
 #include "Player.h"
 
@@ -46,7 +46,12 @@ Player::Player(void)
 
 Player::~Player(void)
 {
-	delete capsule_;
+	//delete capsule_;
+	// すべてのカプセルを解放
+	for (auto& pair : capsules_) {
+		delete pair.second;
+	}
+	capsules_.clear();
 }
 
 void Player::Init(void)
@@ -55,31 +60,24 @@ void Player::Init(void)
 	// モデルの基本設定
 	transform_.SetModel(resMng_.LoadModelDuplicate(
 		ResourceManager::SRC::PLAYER));
-	MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+	//MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
 	transform_.scl = { 0.1f, 0.1f, 0.1f };
 	transform_.pos = { 0.0f, -30.0f, 0.0f };
 	transform_.quaRot = Quaternion();
 	transform_.quaRotLocal =
 		Quaternion::Euler({ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f });
 	transform_.Update();
-
 	// アニメーションの設定
 	InitAnimation();
-	// 頭のフレーム（メッシュ）を探す
-    headFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone");
-	assert(headFrame_ >= 0);
-    headBoneFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone_end");
-	SpineFrame_ = MV1SearchFrame(transform_.modelId, "Spine");
+	InitCollider();
+	InitFlashLight();
+	// 【追加】モデル全体の自己発光（エミッシブ）を完全にオフ（黒）にする
+	// これにより、環境光と懐中電灯の光以外では一切光らなくなります。
+// モデル全体の「自己発光（エミッシブ）」を完全にゼロ（黒）にする
+	MV1SetEmiColorScale(transform_.modelId, GetColorF(0.0f, 0.0f, 0.0f, 1.0f));
 
-	headPos_ = MV1GetFramePosition(transform_.modelId, headFrame_);
-
-	// カプセルコライダ
-	capsule_ = new Capsule(transform_);
-	capsule_->AttachToBone(transform_.modelId, headBoneFrame_, SpineFrame_);
-	//capsule_->SetLocalPosTop(worldHeadPos_);
-	//capsule_->SetLocalPosDown({ 0.0f, 15.0f, 0.0f });
-	capsule_->SetRadius(15.0f);
-
+	// モデル全体の「アンビエント（環境光への反応）」を標準（1.0倍）にする
+	MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
 	// 丸影画像
 	imgShadow_ = resMng_.Load(ResourceManager::SRC::PLAYER_SHADOW).handleId_;
 
@@ -116,9 +114,14 @@ void Player::Update(void)
 	// モデル制御更新
 	transform_.Update();
 
-	//SetFirstPerson();
-	capsule_->Update();
+	UpdateFlashLight();
 
+	//SetFirstPerson();
+	/*capsule_->Update();*/
+	// すべてのカプセルの座標更新
+	for (auto& pair : capsules_) {
+		pair.second->Update();
+	}
 	
 
 }
@@ -132,7 +135,11 @@ void Player::Draw(void)
 	// 丸影描画
 	DrawShadow();
 
-	capsule_->Draw();
+	//capsule_->Draw();
+	// すべてのカプセルを描画
+	for (auto& pair : capsules_) {
+		pair.second->Draw();
+	}
 	
 }
 
@@ -170,6 +177,90 @@ void Player::InitAnimation(void)
 	animationController_->Add((int)ANIM_TYPE::FLY, path + "Flying.mv1", 60.0f);
 	
 	animationController_->Play((int)ANIM_TYPE::IDLE);
+
+}
+
+void Player::InitCollider(void)
+{
+
+	// 頭のフレーム（メッシュ）を探す
+	headFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone");
+	assert(headFrame_ >= 0);
+	headBoneFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone_end");
+	SpineFrame_ = MV1SearchFrame(transform_.modelId, "Spine");
+
+	headPos_ = MV1GetFramePosition(transform_.modelId, headFrame_);
+
+	leftShoulderFrame_ = MV1SearchFrame(transform_.modelId, "Arm.L");
+	leftHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.L");
+
+	rightShoulderFrame_ = MV1SearchFrame(transform_.modelId, "Arm.R");
+	rightHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.R");
+
+	// カプセルコライダ
+	//capsule_ = new Capsule(transform_);
+	//capsule_->AttachToBone(transform_.modelId, headBoneFrame_, SpineFrame_);
+	////capsule_->SetLocalPosTop(worldHeadPos_);
+	////capsule_->SetLocalPosDown({ 0.0f, 15.0f, 0.0f });
+	//capsule_->SetRadius(15.0f); // プレイヤーの当たり判定の大きさ
+
+	auto* bodyCap = new Capsule(transform_);
+	bodyCap->AttachToBone(transform_.modelId, headBoneFrame_, SpineFrame_);
+	bodyCap->SetRadius(15.0f);
+	capsules_[BONE_PART::BODY] = bodyCap;
+
+
+	// 3. 左腕のカプセル（追加）
+	if (leftShoulderFrame_ != -1 && leftHandFrame_ != -1) {
+		auto* leftArmCap = new Capsule(transform_);
+		leftArmCap->AttachToBone(transform_.modelId, leftHandFrame_, leftShoulderFrame_);
+		leftArmCap->SetRadius(8.0f); // 腕なので少し細く
+		capsules_[BONE_PART::LEFT_ARM] = leftArmCap;
+	}
+
+	// 4. 右腕のカプセル（追加）
+	if (rightShoulderFrame_ != -1 && rightHandFrame_ != -1) {
+		auto* rightArmCap = new Capsule(transform_);
+		rightArmCap->AttachToBone(transform_.modelId, rightHandFrame_, rightShoulderFrame_);
+		rightArmCap->SetRadius(8.0f);
+		capsules_[BONE_PART::RIGHT_ARM] = rightArmCap;
+	}
+
+	pRadius_ = capsules_[BONE_PART::BODY]->GetRadius();
+}
+
+void Player::InitFlashLight(void)
+{
+
+	// 懐中電灯の初期設定（一直線っぽくするために数値を調整）
+	flashlight_.isOn = false;
+	flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
+	flashlight_.outerAngle = 0.25f; // 【変更】光の広がりを狭くする（元 0.4f）
+	flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
+
+	// 1. 定義通りの引数でスポットライトを作成する
+	flashlight_.handle = CreateSpotLightHandle(
+		VGet(0, 0, 0),         // Position
+		VGet(0, 0, 1),         // Direction
+		flashlight_.outerAngle, // OutAngle
+		flashlight_.innerAngle, // InAngle
+		flashlight_.range,      // Range
+		1.0f,    // Atten0
+		0.002f,  // Atten1
+		0.000f   // Atten2
+	);
+
+	// 2. 作成したハンドルに対して、後から色を設定する
+	COLOR_F color;
+	color.r = 1.0f;
+	color.g = 1.0f;
+	color.b = 0.85f;
+	color.a = 1.0f;
+
+	SetLightDifColorHandle(flashlight_.handle, color); // ディフューズ（拡散光）の色を設定
+
+	// 3. ライトの有効化
+	SetLightEnableHandle(flashlight_.handle, flashlight_.isOn);
 
 }
 
@@ -256,6 +347,33 @@ void Player::UpdateCommon(void)
 	// カメラをプレイヤーの頭に合わせる
 	SetFirstPerson();
 	
+}
+
+void Player::UpdateFlashLight(void)
+{
+	auto& ins = InputManager::GetInstance();
+
+	// Fキーが押されたらライトのON/OFFを切り替える
+	if (ins.IsTrgDown(KEY_INPUT_F))
+	{
+		flashlight_.isOn = !flashlight_.isOn;
+		SetLightEnableHandle(flashlight_.handle, flashlight_.isOn);
+	}
+
+	// ライトがオフならこれ以降の座標計算はスキップ
+	if (!flashlight_.isOn) return;
+
+	// 1. ライトの発生位置（右手ボーンの世界座標）
+	VECTOR lightPos = MV1GetFramePosition(transform_.modelId, rightHandFrame_);
+
+	// 2. ライトの方向（手のボーンではなく、カメラの向いている方向にする）
+	VECTOR camPos = GetCameraPosition();       // カメラの位置
+	VECTOR camTarget = GetCameraTarget();      // カメラの注視点
+	VECTOR lightDir = VNorm(VSub(camTarget, camPos)); // カメラの視線ベクトル（プレイヤーの正面）
+
+	// 3. DxLibのライトハンドルに対して位置と方向を同期
+	SetLightPositionHandle(flashlight_.handle, lightPos);
+	SetLightDirectionHandle(flashlight_.handle, lightDir);
 }
 
 void Player::DrawShadow(void)
@@ -603,52 +721,104 @@ void Player::CollisionGravity(void)
 void Player::CollisionCapsule(void)
 {
 
-	// カプセルを移動させる
-	Transform trans = Transform(transform_);
-	trans.pos = movedPos_;
-	trans.Update();
-	Capsule cap = Capsule(*capsule_, trans);
+	//// カプセルを移動させる
+	//Transform trans = Transform(transform_);
+	//trans.pos = movedPos_;
+	//trans.Update();
+	//Capsule cap = Capsule(*capsule_, trans);
 
-	VECTOR capDownPos = VAdd(movedPos_, VGet(0, cap.GetRadius(), 0));
+	//VECTOR capDownPos = VAdd(movedPos_, VGet(0, cap.GetRadius(), 0));
 
-	// カプセルとの衝突判定
-	for (const auto c : colliders_)
-	{
+	//// カプセルとの衝突判定
+	//for (const auto c : colliders_)
+	//{
 
-		auto hits = MV1CollCheck_Capsule(
-			c->modelId_, -1,
-			cap.GetPosTop(), cap.GetPosDown(), cap.GetRadius());
+	//	auto hits = MV1CollCheck_Capsule(
+	//		c->modelId_, -1,
+	//		cap.GetPosTop(), cap.GetPosDown(), cap.GetRadius());
 
-		for (int i = 0; i < hits.HitNum; i++)
-		{
+	//	for (int i = 0; i < hits.HitNum; i++)
+	//	{
 
-			auto hit = hits.Dim[i];
+	//		auto hit = hits.Dim[i];
 
-			for (int tryCnt = 0; tryCnt < 10; tryCnt++)
-			{
+	//		for (int tryCnt = 0; tryCnt < 10; tryCnt++)
+	//		{
 
-				int pHit = HitCheck_Capsule_Triangle(
-					cap.GetPosTop(), capDownPos, cap.GetRadius(),
-					hit.Position[0], hit.Position[1], hit.Position[2]);
+	//			int pHit = HitCheck_Capsule_Triangle(
+	//				cap.GetPosTop(), capDownPos, cap.GetRadius(),
+	//				hit.Position[0], hit.Position[1], hit.Position[2]);
 
-				if (pHit)
-				{
-					movedPos_ = VAdd(movedPos_, VScale(hit.Normal, 1.0f));
-					// カプセルを移動させる
-					trans.pos = movedPos_;
-					trans.Update();
+	//			if (pHit)
+	//			{
+	//				movedPos_ = VAdd(movedPos_, VScale(hit.Normal, 1.0f));
+	//				// カプセルを移動させる
+	//				trans.pos = movedPos_;
+	//				trans.Update();
+	//				continue;
+	//			}
+
+	//			break;
+
+	//		}
+
+	//	}
+
+	//	// 検出した地面ポリゴン情報の後始末
+	//	MV1CollResultPolyDimTerminate(hits);
+
+	//}
+	// すべてのボーンカプセルに対してステージ（壁や障害物）との衝突を計算
+	for (auto& pair : capsules_) {
+		Capsule* cap = pair.second;
+		if (cap == nullptr) continue; // 安全対策
+
+		// 現在の計算中の一時的な移動後座標を適用した仮想カプセルを作成
+		Transform trans = Transform(transform_);
+		trans.pos = movedPos_;
+		trans.Update();
+
+		// 元のカプセルのボーン相対位置を維持したまま、予測移動先にずらす
+		Capsule tempCap = Capsule(*cap, trans);
+
+		for (const auto c : colliders_) {
+			// ステージモデルとのカプセル総当たりチェック
+			auto hits = MV1CollCheck_Capsule(
+				c->modelId_, -1,
+				tempCap.GetPosTop(), tempCap.GetPosDown(), tempCap.GetRadius());
+
+			for (int i = 0; i < hits.HitNum; i++) {
+				auto hit = hits.Dim[i];
+
+				// 腕や頭の判定が「床（真上を向いているポリゴン）」に反応して
+				// プレイヤーが浮き上がるのを防ぐガード句。
+				// 法線(Normal)が真上を向いている（傾きが緩やか＝床）なら、横方向の壁判定からは除外します。
+				if (hit.Normal.y > 0.7f) {
 					continue;
 				}
 
-				break;
+				for (int tryCnt = 0; tryCnt < 10; tryCnt++) {
+					// 修正：capDownPos ではなく tempCap.GetPosDown() を直接使います
+					int pHit = HitCheck_Capsule_Triangle(
+						tempCap.GetPosTop(), tempCap.GetPosDown(), tempCap.GetRadius(),
+						hit.Position[0], hit.Position[1], hit.Position[2]);
 
+					if (pHit) {
+						// 壁から押し出す
+						movedPos_ = VAdd(movedPos_, VScale(hit.Normal, 1.0f));
+						trans.pos = movedPos_;
+						trans.Update();
+
+						// カプセルの位置も同期して更新
+						Capsule tempCap(*cap, trans);
+						continue;
+					}
+					break;
+				}
 			}
-
+			// 検出した地面ポリゴン情報の後始末
+			MV1CollResultPolyDimTerminate(hits);
 		}
-
-		// 検出した地面ポリゴン情報の後始末
-		MV1CollResultPolyDimTerminate(hits);
-
 	}
 
 }
@@ -657,11 +827,8 @@ void Player::CollisionBox()
 {
 	if (furnitures_.empty()) return;
 
-	// プレイヤーの判定用パラメータ
-	float pRadius = 15.0f;
-
-	// ★修正: 身長を実際のカプセルに合わせて少し高くする（天板をすり抜けないように）
-	//float pHeight = IsProne() ? 30.0f : 90.0f;
+	// 身長を実際のカプセルに合わせて少し高くする（天板をすり抜けないように）
+	// float pHeight = IsProne() ? 30.0f : 90.0f;
 	VECTOR currentHeadPos = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
 	float pHeight = currentHeadPos.y - transform_.pos.y;
 
@@ -690,9 +857,9 @@ void Player::CollisionBox()
 			float distSq = (diffX * diffX) + (diffZ * diffZ);
 
 			// 半径以内なら衝突
-			if (distSq < (pRadius * pRadius)) {
+			if (distSq < (pRadius_ * pRadius_)) {
 
-				// ★修正: XYZのどの方向に押し出すべきか（めり込み量が一番少ない方向）を計算する
+				// XYZのどの方向に押し出すべきか（めり込み量が一番少ない方向）を計算する
 
 				// 上下方向のめり込み量
 				float pushUp = boxTop - pBottomY;      // 上に押し上げる量
@@ -700,10 +867,10 @@ void Player::CollisionBox()
 				float minYPush = fminf(pushUp, pushDown);
 
 				// 横方向のめり込み量（内部にいる場合を考慮）
-				float pushLeft = (movedPos_.x - minX) + pRadius;
-				float pushRight = (maxX - movedPos_.x) + pRadius;
-				float pushFront = (movedPos_.z - minZ) + pRadius;
-				float pushBack = (maxZ - movedPos_.z) + pRadius;
+				float pushLeft = (movedPos_.x - minX) + pRadius_;
+				float pushRight = (maxX - movedPos_.x) + pRadius_;
+				float pushFront = (movedPos_.z - minZ) + pRadius_;
+				float pushBack = (maxZ - movedPos_.z) + pRadius_;
 
 				float minXPush = fminf(pushLeft, pushRight);
 				float minZPush = fminf(pushFront, pushBack);
@@ -737,8 +904,8 @@ void Player::CollisionBox()
 					// 従来通りの横方向への押し出し
 					float dist = sqrtf(distSq);
 					if (dist > 0.0001f) {
-						movedPos_.x = closestX + (diffX / dist) * pRadius;
-						movedPos_.z = closestZ + (diffZ / dist) * pRadius;
+						movedPos_.x = closestX + (diffX / dist) * pRadius_;
+						movedPos_.z = closestZ + (diffZ / dist) * pRadius_;
 					}
 					else {
 						// 完全に中心が一致してしまった場合の押し出し

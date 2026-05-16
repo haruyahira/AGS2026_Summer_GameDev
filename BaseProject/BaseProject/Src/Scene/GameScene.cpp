@@ -3,8 +3,8 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
-#include "../Object/Common/Capsule.h"
-#include "../Object/Common/Collider.h"
+#include "../Object/Collider/Capsule.h"
+#include "../Object/Collider/Collider.h"
 #include "../Object/SkyDome.h"
 #include "../Object/Stage.h"
 #include "../Object/Player.h"
@@ -27,16 +27,17 @@ GameScene::~GameScene(void)
 
 void GameScene::Init(void)
 {
+	// 【重要】3Dモデルを読み込む前に、ピクセル単位のライティングを有効にする
+	SetUsePixelLighting(TRUE);
 
 	// 全体を照らす光を極限まで暗くする
-	SetLightDifColor(GetColorF(0.05f, 0.05f, 0.1f, 0.0f)); // 当たっている場所も暗い
-	SetLightAmbColor(GetColorF(0.02f, 0.02f, 0.05f, 0.0f)); // 光が届かない場所はほぼ真っ暗
+	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f));
+	SetLightAmbColor(GetColorF(0.05f, 0.05f, 0.08f, 0.0f));
 
-    // フォグの設定
 	SetFogEnable(TRUE);
-	SetFogColor(0, 0, 10); // フォグの色を限りなく黒に近い紺に
-	SetFogStartEnd(100.0f, 1500.0f); // 1500先は完全な闇
-
+	SetFogColor(5, 5, 15);
+	SetFogStartEnd(0.0f, 1000.0f);
+	SetLightEnable(FALSE);
 	// プレイヤー
 	player_ = new Player();
 	player_->Init();
@@ -49,14 +50,16 @@ void GameScene::Init(void)
 	stage_->ChangeStage(NAME::FIRST_STAGE);
 
 	// スカイドーム
-	skyDome_ = new SkyDome(player_->GetTransform());
-	skyDome_->Init();
+	/*skyDome_ = new SkyDome(player_->GetTransform());
+	skyDome_->Init();*/
+
+	//SetUsePerPixelLighting(TRUE);
 
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
 
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
-	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
+	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
 
 
 
@@ -78,7 +81,7 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::TITLE);
 	}
 
-	skyDome_->Update();
+	
 
 	stage_->Update();
 
@@ -89,16 +92,15 @@ void GameScene::Update(void)
 void GameScene::Draw(void)
 {
 	// 全体を夜の色にする（少し青みを残して暗くする）
-	SetDrawBright(50, 50, 100);
+	//SetDrawBright(50, 50, 100);
 
-	// 背景
-	skyDome_->Draw();
+
 	stage_->Draw();
 	
 	player_->Draw();
 
 	// 描画設定を元に戻す
-	SetDrawBright(255, 255, 255);
+	//SetDrawBright(255, 255, 255);
 
 
 

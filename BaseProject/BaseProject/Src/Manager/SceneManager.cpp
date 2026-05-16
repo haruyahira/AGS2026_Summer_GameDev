@@ -56,7 +56,7 @@ void SceneManager::Init3D(void)
 {
 
 	// 背景色設定
-	SetBackgroundColor(0, 139, 139);
+	SetBackgroundColor(0, 0, 0);
 
 	// Zバッファを有効にする
 	SetUseZBuffer3D(true);
@@ -71,13 +71,14 @@ void SceneManager::Init3D(void)
 	SetUseLighting(true);
 	
 	// ライトの設定
-	ChangeLightTypeDir({ 0.3f, -0.7f, 0.8f });
+	SetLightDifColor(GetColorF(0.0f, 0.0f, 0.0f, 0.0f));
+	SetLightAmbColor(GetColorF(0.0f, 0.0f, 0.0f, 0.0f));
 
-
-	// フォグ設定
+	// 3. フォグ（霧）の初期設定
+	// ゲームシーン側で細かく制御するので、ここでは暗い色で有効化だけしておきます
 	SetFogEnable(true);
-	SetFogColor(5, 5, 5);
-	SetFogStartEnd(10000.0f, 20000.0f);
+	SetFogColor(0, 0, 0);
+	SetFogStartEnd(200.0f, 1500.0f); // 初期値を少し手前にして闇を作りやすくする
 
 }
 

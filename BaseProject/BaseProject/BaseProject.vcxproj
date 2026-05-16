@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Object\Common\BoxCollider.cpp" />
+    <ClCompile Include="Src\Object\Collider\BoxCollider.cpp" />
     <ClCompile Include="Src\Object\Furniture\Furniture.cpp" />
     <ClCompile Include="Src\Object\Common\Mouse.cpp" />
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
@@ -36,8 +36,8 @@
     <ClCompile Include="Src\Manager\ResourceManager.cpp" />
     <ClCompile Include="Src\Manager\SceneManager.cpp" />
     <ClCompile Include="Src\Object\Common\AnimationController.cpp" />
-    <ClCompile Include="Src\Object\Common\Capsule.cpp" />
-    <ClCompile Include="Src\Object\Common\Collider.cpp" />
+    <ClCompile Include="Src\Object\Collider\Capsule.cpp" />
+    <ClCompile Include="Src\Object\Collider\Collider.cpp" />
     <ClCompile Include="Src\Object\Common\SpeechBalloon.cpp" />
     <ClCompile Include="Src\Object\Common\Transform.cpp" />
     <ClCompile Include="Src\Object\Planet.cpp" />
@@ -53,7 +53,7 @@
     <ClCompile Include="Src\Object\Furniture\Table.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\Object\Common\BoxCollider.h" />
+    <ClInclude Include="Src\Object\Collider\BoxCollider.h" />
     <ClInclude Include="Src\Object\Name.h" />
     <ClInclude Include="Src\Object\Furniture\Furniture.h" />
     <ClInclude Include="Src\Object\Common\Mouse.h" />
@@ -71,8 +71,8 @@
     <ClInclude Include="Src\Manager\ResourceManager.h" />
     <ClInclude Include="Src\Manager\SceneManager.h" />
     <ClInclude Include="Src\Object\Common\AnimationController.h" />
-    <ClInclude Include="Src\Object\Common\Capsule.h" />
-    <ClInclude Include="Src\Object\Common\Collider.h" />
+    <ClInclude Include="Src\Object\Collider\Capsule.h" />
+    <ClInclude Include="Src\Object\Collider\Collider.h" />
     <ClInclude Include="Src\Object\Common\SpeechBalloon.h" />
     <ClInclude Include="Src\Object\Common\Transform.h" />
     <ClInclude Include="Src\Object\Planet.h" />

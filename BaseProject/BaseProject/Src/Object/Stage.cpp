@@ -7,7 +7,7 @@
 #include "WarpStar.h"
 #include "Player.h"
 #include "Planet.h"
-#include "Common/Collider.h"
+#include "Collider/Collider.h"
 #include "Common/Transform.h"
 #include "Stage.h"
 #include "Furniture/Table.h"

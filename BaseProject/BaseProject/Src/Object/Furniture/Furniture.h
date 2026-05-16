@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "../Common/Transform.h"
-#include "../Common/BoxCollider.h"
+#include "../Collider/BoxCollider.h"
 #include "../../Manager/ResourceManager.h"
 #include "../Name.h"
 

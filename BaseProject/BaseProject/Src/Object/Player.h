@@ -26,6 +26,16 @@ public:
 	// ジャンプ受付時間
 	static constexpr float TIME_JUMP_IN = 0.3f;
 
+	// 当たり判定部位
+	enum class BONE_PART
+	{
+		BODY,      // 体（Spine ～ Head）
+		LEFT_ARM,  // 左腕（肩 ～ 手首）
+		RIGHT_ARM, // 右腕（肩 ～ 手首）
+		LEFT_LEG,  // 左足（太もも ～ 足首）
+		RIGHT_LEG, // 右足（太もも ～ 足首）
+	};
+
 	// 状態
 	enum class STATE
 	{
@@ -54,6 +64,15 @@ public:
 		FALLING,
 		VICTORY
 	};
+
+	// 懐中電灯（スポットライト）の構造体
+	struct Flashlight {
+		int handle = -1;
+		bool isOn = true;
+		float range = 1000.0f;
+		float outerAngle = 0.4f;
+		float innerAngle = 0.2f;
+	} flashlight_;
 
 	// コンストラクタ
 	Player(void);
@@ -132,6 +151,8 @@ private:
 	Capsule* capsule_;
 	Furniture* furniture;
 	
+	// capsule_ の代わりに map（または vector）で管理
+	std::map<BONE_PART, Capsule*> capsules_;
 
 	// 衝突チェック
 	VECTOR gravHitPosDown_;
@@ -140,13 +161,21 @@ private:
 	// 丸影
 	int imgShadow_;
 	int headFrame_;
+	int leftShoulderFrame_;
+	int leftHandFrame_;
+	int rightShoulderFrame_;
+	int rightHandFrame_;
 	// 頭のボーンフレーム
 	int headBoneFrame_;
 	// 足元のボーンフレーム
 	int SpineFrame_;
+	float pRadius_;
 
 	// アニメーションの初期化
 	void InitAnimation(void);
+	// 当たり判定の初期化
+	void InitCollider(void);
+	void InitFlashLight(void);
 
 	// 状態遷移
 	void ChangeState(STATE state);
@@ -159,6 +188,7 @@ private:
 	void UpdatePlay(void);
 	void UpdateProne(void);
 	void UpdateCommon(void);
+	void UpdateFlashLight(void);
 	
 	// 描画系
 	void DrawShadow(void);
