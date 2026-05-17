@@ -140,10 +140,11 @@ private:
 
 	// ジャンプ判定
 	bool isJump_;
+	bool isStand_;
 
 	// ジャンプの入力受付時間
 	float stepJump_;
-	
+	float standHeight_;
 
 	// 衝突判定に用いられるコライダ
 	std::vector<Collider*> colliders_;
@@ -165,6 +166,7 @@ private:
 	int leftHandFrame_;
 	int rightShoulderFrame_;
 	int rightHandFrame_;
+	int proneFrame_;
 	// 頭のボーンフレーム
 	int headBoneFrame_;
 	// 足元のボーンフレーム

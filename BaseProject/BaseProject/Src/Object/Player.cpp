@@ -31,7 +31,7 @@ Player::Player(void)
 	jumpPow_ = AsoUtility::VECTOR_ZERO;
 	isJump_ = false;
 	stepJump_ = 0.0f;
-
+	standHeight_ = 90.0f;
 	
 
 	// 衝突チェック
@@ -69,12 +69,11 @@ void Player::Init(void)
 	transform_.Update();
 	// アニメーションの設定
 	InitAnimation();
+
 	InitCollider();
 	InitFlashLight();
 	// 【追加】モデル全体の自己発光（エミッシブ）を完全にオフ（黒）にする
 	// これにより、環境光と懐中電灯の光以外では一切光らなくなります。
-// モデル全体の「自己発光（エミッシブ）」を完全にゼロ（黒）にする
-	MV1SetEmiColorScale(transform_.modelId, GetColorF(0.0f, 0.0f, 0.0f, 1.0f));
 
 	// モデル全体の「アンビエント（環境光への反応）」を標準（1.0倍）にする
 	MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
@@ -83,7 +82,7 @@ void Player::Init(void)
 
 	// 初期状態
 	ChangeState(STATE::PLAY);
-	//int head = MV1SearchFrame(transform_.modelId, "Head_Bone");
+	int head = MV1SearchFrame(transform_.modelId, "Head_Bone");
 	//// 頭だけを非表示にする
 	//if (head != -1) {
 	//	MV1SetFrameVisible(transform_.modelId, headFrame_, FALSE);
@@ -187,6 +186,7 @@ void Player::InitCollider(void)
 	headFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone");
 	assert(headFrame_ >= 0);
 	headBoneFrame_ = MV1SearchFrame(transform_.modelId, "Head_Bone_end");
+	proneFrame_ = MV1SearchFrame(transform_.modelId, "Spine.001");
 	SpineFrame_ = MV1SearchFrame(transform_.modelId, "Spine");
 
 	headPos_ = MV1GetFramePosition(transform_.modelId, headFrame_);
@@ -235,7 +235,7 @@ void Player::InitFlashLight(void)
 	// 懐中電灯の初期設定（一直線っぽくするために数値を調整）
 	flashlight_.isOn = false;
 	flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
-	flashlight_.outerAngle = 0.25f; // 【変更】光の広がりを狭くする（元 0.4f）
+	flashlight_.outerAngle = 0.80f; // 【変更】光の広がりを狭くする（元 0.4f）
 	flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
 
 	// 1. 定義通りの引数でスポットライトを作成する
@@ -321,9 +321,22 @@ void Player::UpdateCommon(void)
 	auto& ins = InputManager::GetInstance();
 
 	// 通常・うつ伏せ切り替え (Cキー)
+	// 通常・うつ伏せ切り替え (Cキー)
 	if (ins.IsTrgDown(KEY_INPUT_C))
 	{
-		IsProne() ? ChangeState(STATE::PLAY):ChangeState(STATE::PRONE);
+		// ⭕【修正】起き上がれない時は「何もしない」ように明示的に分ける
+		if (IsProne())
+		{
+			if (isStand_)
+			{
+				ChangeState(STATE::PLAY); // 頭上が安全なときだけ立ち上がる
+			}
+			// 頭上が詰まっている（isStand_ == false）なら、Cキーを押しても無視して寝たままにする
+		}
+		else
+		{
+			ChangeState(STATE::PRONE); // 通常状態から寝るのはいつでも可能
+		}
 	}
 
 	// 移動処理
@@ -650,10 +663,10 @@ void Player::Collision(void)
 	// 現在座標を起点に移動後座標を決める
 	movedPos_ = VAdd(transform_.pos, movePow_);
 
-	// ② 重力と接地判定（先に地面の高さを決める）
+	// 重力と接地判定（先に地面の高さを決める）
 	CollisionGravity();
 
-	// ③ 貫通防止ループ（壁と机の判定をセットで繰り返す）
+	// 貫通防止ループ（壁と机の判定をセットで繰り返す）
 	for (int i = 0; i < 3; i++)
 	{
 		CollisionCapsule(); // ステージとの判定
@@ -721,53 +734,6 @@ void Player::CollisionGravity(void)
 void Player::CollisionCapsule(void)
 {
 
-	//// カプセルを移動させる
-	//Transform trans = Transform(transform_);
-	//trans.pos = movedPos_;
-	//trans.Update();
-	//Capsule cap = Capsule(*capsule_, trans);
-
-	//VECTOR capDownPos = VAdd(movedPos_, VGet(0, cap.GetRadius(), 0));
-
-	//// カプセルとの衝突判定
-	//for (const auto c : colliders_)
-	//{
-
-	//	auto hits = MV1CollCheck_Capsule(
-	//		c->modelId_, -1,
-	//		cap.GetPosTop(), cap.GetPosDown(), cap.GetRadius());
-
-	//	for (int i = 0; i < hits.HitNum; i++)
-	//	{
-
-	//		auto hit = hits.Dim[i];
-
-	//		for (int tryCnt = 0; tryCnt < 10; tryCnt++)
-	//		{
-
-	//			int pHit = HitCheck_Capsule_Triangle(
-	//				cap.GetPosTop(), capDownPos, cap.GetRadius(),
-	//				hit.Position[0], hit.Position[1], hit.Position[2]);
-
-	//			if (pHit)
-	//			{
-	//				movedPos_ = VAdd(movedPos_, VScale(hit.Normal, 1.0f));
-	//				// カプセルを移動させる
-	//				trans.pos = movedPos_;
-	//				trans.Update();
-	//				continue;
-	//			}
-
-	//			break;
-
-	//		}
-
-	//	}
-
-	//	// 検出した地面ポリゴン情報の後始末
-	//	MV1CollResultPolyDimTerminate(hits);
-
-	//}
 	// すべてのボーンカプセルに対してステージ（壁や障害物）との衝突を計算
 	for (auto& pair : capsules_) {
 		Capsule* cap = pair.second;
@@ -810,7 +776,7 @@ void Player::CollisionCapsule(void)
 						trans.Update();
 
 						// カプセルの位置も同期して更新
-						Capsule tempCap(*cap, trans);
+						new (&tempCap) Capsule(*cap, trans);
 						continue;
 					}
 					break;
@@ -827,6 +793,8 @@ void Player::CollisionBox()
 {
 	if (furnitures_.empty()) return;
 
+	isStand_ = true;
+
 	// 身長を実際のカプセルに合わせて少し高くする（天板をすり抜けないように）
 	// float pHeight = IsProne() ? 30.0f : 90.0f;
 	VECTOR currentHeadPos = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
@@ -837,11 +805,13 @@ void Player::CollisionBox()
 
 			float pBottomY = movedPos_.y;          // 足元
 			float pTopY = movedPos_.y + pHeight;// 頭
+			float pStandTopY = movedPos_.y + standHeight_;
 			float boxBottom = box.center.y - box.halfSize.y;
 			float boxTop = box.center.y + box.halfSize.y;
 
+
 			// 1. 高さのチェック（Y軸が重なっているか）
-			if (pBottomY > boxTop || pTopY < boxBottom) continue;
+			if (pBottomY > boxTop || pStandTopY < boxBottom) continue;
 
 			// 2. XZ平面での判定
 			float minX = box.center.x - box.halfSize.x;
@@ -858,6 +828,14 @@ void Player::CollisionBox()
 
 			// 半径以内なら衝突
 			if (distSq < (pRadius_ * pRadius_)) {
+
+				if (pTopY <= boxBottom && pStandTopY > boxBottom) {
+					isStand_ = false; // 立ち上がりフラグを折る
+
+					// うつ伏せ（PRONE）の時は天板の下をスムーズに通り抜けさせたいので、
+					// これ以上横方向の押し出しなどの物理計算をさせずに、次の家具の判定へスキップする
+					if (IsProne()) continue;
+				}
 
 				// XYZのどの方向に押し出すべきか（めり込み量が一番少ない方向）を計算する
 
@@ -883,21 +861,22 @@ void Player::CollisionBox()
 						movedPos_.y += pushUp;
 						jumpPow_ = AsoUtility::VECTOR_ZERO; // ジャンプ力をリセット
 
-						// --- 追加：ジャンプ入力時間のリセットと着地モーション ---
+						// ジャンプ入力時間のリセットと着地モーション ---
 						stepJump_ = 0.0f;
 						if (isJump_)
 						{
 							animationController_->Play(
 								(int)ANIM_TYPE::JUMP, false, 29.0f, 45.0f, false, true);
 						}
-						// ------------------------------------------------------
-
+		
 						isJump_ = false;
 					}
 					else {
 						// 机の裏に頭をぶつける
 						movedPos_.y -= pushDown;
 						if (jumpPow_.y > 0.0f) jumpPow_.y = 0.0f; // 上昇を止める
+						isStand_ = false;
+					
 					}
 				}
 				else {
@@ -984,5 +963,12 @@ void Player::SetFirstPerson(void)
 
 	// カメラの座標を頭の位置に上書き設定する関数を呼ぶ
 	// (Cameraクラスに SetPos 関数などを追加して pos_ = headPos する)
+	// うつ伏せなら、Y座標をちょっと下げる（これだけ！）
+	if (IsProne())
+	{
+		headPos_.y -= 11.0f;
+	}
+
+	// 最後に、決定した位置をカメラに送る（通常・うつ伏せ共通）
 	camera->SetFirstPersonPos(headPos_);
 }
