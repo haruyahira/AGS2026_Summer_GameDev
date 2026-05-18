@@ -283,20 +283,20 @@ void TitleScene::DrawSelect(void)
 
 	// --- デバッグ用：当たり判定の可視化 ---
 	// 3つの判定範囲をループで描画する
-	//for (int i = 0; i < 3; i++) {
-	//	// マウスが乗っている判定範囲は「赤」、それ以外は「緑」で表示
-	//	unsigned int color = (drawIndex_ == i + 1) ? GetColor(255, 0, 0) : GetColor(0, 255, 0);
+	for (int i = 0; i < 3; i++) {
+		// マウスが乗っている判定範囲は「赤」、それ以外は「緑」で表示
+		unsigned int color = (drawIndex_ == i + 1) ? GetColor(255, 0, 0) : GetColor(0, 255, 0);
 
-	//	// DrawBoxの引数: (左上x, 左上y, 右下x, 右下y, 色, 塗りつぶしフラグ)
-	//	DrawBox(
-	//		btnRects_[i].x,
-	//		btnRects_[i].y,
-	//		btnRects_[i].x + btnRects_[i].w,
-	//		btnRects_[i].y + btnRects_[i].h,
-	//		color,
-	//		FALSE // FALSEにすると枠線だけになる
-	//	);
-	//}
+		// DrawBoxの引数: (左上x, 左上y, 右下x, 右下y, 色, 塗りつぶしフラグ)
+		DrawBox(
+			btnRects_[i].x,
+			btnRects_[i].y,
+			btnRects_[i].x + btnRects_[i].w,
+			btnRects_[i].y + btnRects_[i].h,
+			color,
+			FALSE // FALSEにすると枠線だけになる
+		);
+	}
 	
 }
 

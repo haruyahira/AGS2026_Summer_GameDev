@@ -49,7 +49,6 @@ void SceneManager::Init(void)
 
 	// ‰ŠúƒV[ƒ“‚Ìİ’è
 	DoChangeScene(SCENE_ID::GAME);
-
 }
 
 void SceneManager::Init3D(void)
