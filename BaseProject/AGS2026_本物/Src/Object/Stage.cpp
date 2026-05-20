@@ -148,17 +148,22 @@ void Stage::MakeMainStage(void)
 	//------------------------------------------------------------------------------
 
 
-
-	for (int i = 0; i < 10; i++)
+	// 机
+	for (int j = 0; j < 5; j++)
 	{
-		for (int j = 0; j < 2; j++) {
+		if (skipCols_.count(j) > 0) continue;
+		
+		for (int i = 0; i < 10; i++) {
+
 		// 1台目: 5.0f  /  2台目: 155.0f  /  3台目: 305.0f
 		float posZ = 5.0f +(i * 70.0f);
-		float posX = 
-		if (skipNumbers_.count(i) > 0) continue;
+		float posX = 5.0f + (j * 120.0f);
+
+		if (skipRows_.count(i) > 0) continue;
+
 		CreateFurniture({
 			ResourceManager::SRC::F_TABLE,
-			{ 5.0f, -100.0f, posZ }, // X座標だけループで右にずらしていく
+			{ posX, -100.0f, posZ },
 			{ 0.5f,  0.5f,   0.5f },
 			{ 0.0f,  0.0f,   0.0f }
 			});

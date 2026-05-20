@@ -22,7 +22,6 @@ public:
 	{
 		GROUND,
 		SPHERE,
-		TRANS_ROT,
 		TRANS_CAMERA_FIXED,
 		ROAD,
 	};

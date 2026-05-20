@@ -25,8 +25,14 @@ public:
 		TITLE_SELECT_BRIGHT3,
 
 		ENEMYNORMAL,
-
+		// ステージ
 		F_TABLE,
+		WALL,
+
+
+
+
+
 		SPEECH_BALLOON,
 		PLAYER,
 		PLAYER_SHADOW,

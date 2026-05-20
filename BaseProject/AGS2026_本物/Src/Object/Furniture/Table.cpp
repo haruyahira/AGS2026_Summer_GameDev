@@ -60,42 +60,42 @@ void Table::Update(void) {
 
   
 
-    // --- Shiftあり：天板の位置を移動（スライド） ---
-    if (CheckHitKey(KEY_INPUT_P)) {
-        // LSHIFTも一緒に押していたら「移動（スライド）」
-        if (CheckHitKey(KEY_INPUT_LSHIFT)) {
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { plateSlideX += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { plateSlideX -= 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { plateSlideZ += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { plateSlideZ -= 1.0f; changed = true; }
-        }
-        // Pキーのみなら「サイズ・高さ調整」
-        else {
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { plateH += 1.0f; changed = true; } // 高く
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { plateH -= 1.0f; changed = true; } // 低く
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { plateW += 1.0f; changed = true; } // 幅広く(X)
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { plateW -= 1.0f; changed = true; } // 幅狭く(X)
-            // 奥行(D)も変えたいなら適当なキーを割り当ててください
-        }
-    }
-    
+    //// --- Shiftあり：天板の位置を移動（スライド） ---
+    //if (CheckHitKey(KEY_INPUT_P)) {
+    //    // LSHIFTも一緒に押していたら「移動（スライド）」
+    //    if (CheckHitKey(KEY_INPUT_LSHIFT)) {
+    //        if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { plateSlideX += 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_LEFT)) { plateSlideX -= 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_UP)) { plateSlideZ += 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_DOWN)) { plateSlideZ -= 1.0f; changed = true; }
+    //    }
+    //    // Pキーのみなら「サイズ・高さ調整」
+    //    else {
+    //        if (ins.IsTrgDown(KEY_INPUT_UP)) { plateH += 1.0f; changed = true; } // 高く
+    //        if (ins.IsTrgDown(KEY_INPUT_DOWN)) { plateH -= 1.0f; changed = true; } // 低く
+    //        if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { plateW += 1.0f; changed = true; } // 幅広く(X)
+    //        if (ins.IsTrgDown(KEY_INPUT_LEFT)) { plateW -= 1.0f; changed = true; } // 幅狭く(X)
+    //        // 奥行(D)も変えたいなら適当なキーを割り当ててください
+    //    }
+    //}
+    //
 
-    // --- 脚(Leg)の操作：Lキーを押しながら ---
-    if (CheckHitKey(KEY_INPUT_L)) {
-        if (CheckHitKey(KEY_INPUT_LSHIFT)) {
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { legSlideX += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { legSlideX -= 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { legSlideZ += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { legSlideZ -= 1.0f; changed = true; }
-        }
-        else {
-            // IsPress に変えると押しっぱなしで連続変化します
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { legH += 1.0f;  changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { legH -= 1.0f;  changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { legOX += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { legOX -= 1.0f; changed = true; }
-        }
-    }
+    //// --- 脚(Leg)の操作：Lキーを押しながら ---
+    //if (CheckHitKey(KEY_INPUT_L)) {
+    //    if (CheckHitKey(KEY_INPUT_LSHIFT)) {
+    //        if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { legSlideX += 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_LEFT)) { legSlideX -= 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_UP)) { legSlideZ += 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_DOWN)) { legSlideZ -= 1.0f; changed = true; }
+    //    }
+    //    else {
+    //        // IsPress に変えると押しっぱなしで連続変化します
+    //        if (ins.IsTrgDown(KEY_INPUT_UP)) { legH += 1.0f;  changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_DOWN)) { legH -= 1.0f;  changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { legOX += 1.0f; changed = true; }
+    //        if (ins.IsTrgDown(KEY_INPUT_LEFT)) { legOX -= 1.0f; changed = true; }
+    //    }
+    //}
 
     if (changed) Init();
 #endif
