@@ -60,21 +60,15 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png"));
 	//---------------------------------------------------------------------------
-	
-	// ステージ
-	// 壁
-	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
-	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
-	// 床
-	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
-	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
 
 	// 家具
 	// 机
 	resourcesMap_.emplace(SRC::F_TABLE,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/F_Table.mv1"));
 
-	
+	// 床
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
+	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
 
 
 

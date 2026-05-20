@@ -53,7 +53,6 @@
     <ClCompile Include="Src\Utility\AsoUtility.cpp" />
     <ClCompile Include="Src\Common\Vector3.cpp" />
     <ClCompile Include="Src\Object\Furniture\Table.cpp" />
-    <ClCompile Include="Src\Object\Furniture\Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Object\Enemy\EnemyBase.h" />
@@ -91,7 +90,6 @@
     <ClInclude Include="Src\Utility\AsoUtility.h" />
     <ClInclude Include="Src\Common\Vector3.h" />
     <ClInclude Include="Src\Object\Furniture\Table.h" />
-    <ClInclude Include="Src\Object\Furniture\Wall.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
