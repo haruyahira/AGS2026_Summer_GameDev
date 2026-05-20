@@ -154,7 +154,7 @@ void Stage::MakeMainStage(void)
 		for (int j = 0; j < 2; j++) {
 		// 1‘ä–Ú: 5.0f  /  2‘ä–Ú: 155.0f  /  3‘ä–Ú: 305.0f
 		float posZ = 5.0f +(i * 70.0f);
-		float posX = 
+		float posX;
 		if (skipNumbers_.count(i) > 0) continue;
 		CreateFurniture({
 			ResourceManager::SRC::F_TABLE,
