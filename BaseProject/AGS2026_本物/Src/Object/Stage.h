@@ -85,7 +85,7 @@ private:
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
 
-	std::set<int> skipNumbers_ = { 2,3, 6,7 };
+	
 	// 空のPlanet
 	Planet* nullPlanet = nullptr;
 

@@ -148,22 +148,37 @@ void Stage::MakeMainStage(void)
 	//------------------------------------------------------------------------------
 
 
+	std::set<int> skipX = { 1,2};
+	std::set<int> skipZ = { 2,3, 6,7 };
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 4; i++)
 	{
-		for (int j = 0; j < 2; j++) {
-		// 1台目: 5.0f  /  2台目: 155.0f  /  3台目: 305.0f
-		float posZ = 5.0f +(i * 70.0f);
-		float posX;
-		if (skipNumbers_.count(i) > 0) continue;
-		CreateFurniture({
-			ResourceManager::SRC::F_TABLE,
-			{ 5.0f, -100.0f, posZ }, // X座標だけループで右にずらしていく
-			{ 0.5f,  0.5f,   0.5f },
-			{ 0.0f,  0.0f,   0.0f }
-			});
+		// スキップ番号なら生成しない
+		if (skipX.count(i) > 0)continue;
+
+
+		for (int j = 0; j < 10; j++)
+		{
+			// スキップ番号なら生成しない
+			if (skipZ.count(j) > 0)
+				continue;
+			// Z方向に並べる
+			float posZ = 5.0f + (j * 75.0f);
+
+			// X方向に2列並べる
+			// 1列目: 5.0f
+			// 2列目: 155.0f
+			float posX = 5.0f + (i * -120.0f);
+
+			CreateFurniture({
+				ResourceManager::SRC::F_TABLE,
+				{ posX, -100.0f, posZ },
+				{ 0.5f, 0.5f, 0.5f },
+				{ 0.0f, 0.0f, 0.0f }
+				});
+		}
 	}
-	}
+
 }
 
 //void Stage::MakeWarpStar(void)
