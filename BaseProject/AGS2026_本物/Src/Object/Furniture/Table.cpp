@@ -8,7 +8,7 @@ Table::Table(const Transform* trans) : Furniture(NAME::TABLE, trans) {
 // 【天板 (Plate) 用】
 float plateH = 77.0f;  // 天板の上面の高さ
 float plateW = 240.0f;  // 天板の幅
-float plateD = 150.0f;  // 天板の奥行
+float plateD = 150.0f;  // 天板の奥行#include "../../Manager/InputManager.h"
 float plateT = 5.0f;   // 天板の厚み
 float plateSlideX = 8.0f;  // 天板の上面の高さ
 float plateSlideZ = 10.2f;  // 天板の幅

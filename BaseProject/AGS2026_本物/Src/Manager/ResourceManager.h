@@ -27,6 +27,10 @@ public:
 		ENEMYNORMAL,
 
 		F_TABLE,
+		WALL,
+
+
+
 		SPEECH_BALLOON,
 		PLAYER,
 		PLAYER_SHADOW,

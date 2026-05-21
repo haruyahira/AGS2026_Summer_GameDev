@@ -232,20 +232,37 @@ void Player::InitFlashLight(void)
 
 	// 懐中電灯の初期設定（一直線っぽくするために数値を調整）
 	flashlight_.isOn = false;
-	flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
-	flashlight_.outerAngle = 0.80f; // 【変更】光の広がりを狭くする（元 0.4f）
-	flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
+	//flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
+	//flashlight_.outerAngle = 0.80f; // 【変更】光の広がりを狭くする（元 0.4f）
+	//flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
 
-	// 1. 定義通りの引数でスポットライトを作成する
+	//// 1. 定義通りの引数でスポットライトを作成する
+	//flashlight_.handle = CreateSpotLightHandle(
+	//	VGet(0, 0, 0),         // Position
+	//	VGet(0, 0, 1),         // Direction
+	//	flashlight_.outerAngle, // OutAngle
+	//	flashlight_.innerAngle, // InAngle
+	//	flashlight_.range,      // Range
+	//	1.0f,    // Atten0
+	//	0.002f,  // Atten1
+	//	0.000f   // Atten2
+	//);
+
+	// テスト用
+	flashlight_.range = 10000.0f;   // ← 超遠距離
+	flashlight_.outerAngle = DX_PI_F / 2.0f; // ← かなり広い（90度）
+	flashlight_.innerAngle = DX_PI_F / 3.0f; // ← 中心も広く
+
 	flashlight_.handle = CreateSpotLightHandle(
-		VGet(0, 0, 0),         // Position
-		VGet(0, 0, 1),         // Direction
-		flashlight_.outerAngle, // OutAngle
-		flashlight_.innerAngle, // InAngle
-		flashlight_.range,      // Range
-		1.0f,    // Atten0
-		0.002f,  // Atten1
-		0.000f   // Atten2
+		VGet(0, 0, 0),
+		VGet(0, 0, 1),
+		flashlight_.outerAngle,
+		flashlight_.innerAngle,
+		flashlight_.range,
+
+		1.0f,   // Atten0（基本光量）
+		0.0f,   // Atten1（距離減衰なし）
+		0.0f    // Atten2（距離減衰なし）
 	);
 
 	// 2. 作成したハンドルに対して、後から色を設定する

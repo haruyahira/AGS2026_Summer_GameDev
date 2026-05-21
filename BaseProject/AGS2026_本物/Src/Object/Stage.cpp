@@ -11,6 +11,7 @@
 #include "Common/Transform.h"
 #include "Stage.h"
 #include "Furniture/Table.h"
+#include "Furniture/Wall.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -174,10 +175,18 @@ void Stage::MakeMainStage(void)
 				ResourceManager::SRC::F_TABLE,
 				{ posX, -100.0f, posZ },
 				{ 0.5f, 0.5f, 0.5f },
-				{ 0.0f, 0.0f, 0.0f }
+				{ 0.0f, 0.0f, 0.0f } // 回転
 				});
 		}
 	}
+
+	// 壁
+	CreateFurniture({
+	ResourceManager::SRC::WALL,
+	{ 0.0f, -100.0f, 0.0f },
+	{ 1.0f, 1.0f, 1.0f },
+	{ 0.0f, 0.0f, 0.0f }
+		});
 
 }
 
@@ -213,7 +222,6 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	trans.pos.y = data.pos.y;
 	trans.pos.z = data.pos.z;
 
-
 	trans.scl.x = data.scl.x;
 	trans.scl.y = data.scl.y;
 	trans.scl.z = data.scl.z;
@@ -228,7 +236,14 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	// 3. Furnitureインスタンスの生成
 	// 第2引数は上で設定した 'trans' を渡します
 	//Furniture* f = new Furniture(NAME::INTERIOR, &trans);
-	Table* f = new Table(&trans);
+	Furniture* f = nullptr;
+	if (data.modelSrc == ResourceManager::SRC::F_TABLE) {
+		f = new Table(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::WALL) {
+		f = new Wall(&trans);
+	}
+
 	f->Init();
 
 	// 4. Stageクラスのリストに追加

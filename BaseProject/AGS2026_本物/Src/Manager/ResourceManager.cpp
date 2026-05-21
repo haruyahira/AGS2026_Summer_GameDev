@@ -69,6 +69,9 @@ void ResourceManager::Init(void)
 	// è∞
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
 	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
+	// ï«
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
+	resourcesMap_.emplace(SRC::WALL, res);
 
 
 

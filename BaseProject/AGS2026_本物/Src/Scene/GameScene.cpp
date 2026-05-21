@@ -29,13 +29,13 @@ void GameScene::Init(void)
 	SetUsePixelLighting(TRUE);
 
 	// 全体を照らす光を極限まで暗くする
-	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f));
-	SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f));
+	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
+	SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
 
-	SetFogEnable(TRUE);
+	SetFogEnable(TRUE); // フォグを有効にする
 	SetFogColor(5, 5, 15);
 	SetFogStartEnd(0.0f, 1000.0f);
-	SetLightEnable(FALSE);
+	SetLightEnable(FALSE); // デフォルトライトを無効にする
 	// プレイヤー
 	player_ = new Player();
 	player_->Init();

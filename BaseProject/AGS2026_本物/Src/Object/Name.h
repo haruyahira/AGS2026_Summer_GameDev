@@ -8,5 +8,6 @@ enum class NAME
     FALL_PLANET,
     FLAT_PLANET_BASE,
     INTERIOR,           // 家具・インテリア用
-    TABLE
+    TABLE, // 机
+    WALL // 壁
 };
