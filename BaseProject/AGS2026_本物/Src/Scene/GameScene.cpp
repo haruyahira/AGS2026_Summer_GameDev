@@ -6,9 +6,9 @@
 #include "../Object/Collider/Capsule.h"
 #include "../Object/Collider/Collider.h"
 #include "../Object/Enemy/EnemyManager.h"
-#include "../Object/Stage.h"
+#include "../Object/Stage/Stage.h"
 #include "../Object/Player.h"
-#include "../Object/Planet.h"
+#include "../Object/Stage/Planet.h"
 #include "GameScene.h"
 
 GameScene::GameScene(void)
@@ -28,13 +28,13 @@ void GameScene::Init(void)
 	// 3Dモデルを読み込む前に、ピクセル単位のライティングを有効にする
 	SetUsePixelLighting(TRUE);
 
-	// 全体を照らす光を極限まで暗くする
-	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
-	SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
+	//// 全体を照らす光を極限まで暗くする
+	//SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
+	//SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
 
-	SetFogEnable(TRUE); // フォグを有効にする
-	SetFogColor(5, 5, 15);
-	SetFogStartEnd(0.0f, 1000.0f);
+	//SetFogEnable(TRUE); // フォグを有効にする
+	//SetFogColor(5, 5, 15);
+	//SetFogStartEnd(0.0f, 1000.0f);
 	SetLightEnable(FALSE); // デフォルトライトを無効にする
 	// プレイヤー
 	player_ = new Player();

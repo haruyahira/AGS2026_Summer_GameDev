@@ -75,3 +75,4 @@ void Vector2::operator*=(float scale)
 void Vector2::operator/=(float div)
 {
 }
+

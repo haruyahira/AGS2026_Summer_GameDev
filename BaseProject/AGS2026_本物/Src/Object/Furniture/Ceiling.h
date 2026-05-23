@@ -2,10 +2,10 @@
 #include "Furniture.h"
 #include "../Collider/OBBCollider.h"
 
-class Wall : public Furniture {
+class Ceiling : public Furniture {
 public:
     // コンストラクタ
-    Wall(const Transform* trans, float rotY);
+    Ceiling(const Transform* trans, float rotY);
 
     void Init() override;
     void Update() override;

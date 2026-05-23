@@ -24,3 +24,12 @@ Furniture::Furniture(NAME name, const Transform* trans)
             box.DrawDebug(GetColor(0, 255, 0));
         }
     }
+
+    bool Furniture::ResolveCollision(
+        VECTOR& pos,
+        float radius,
+        float bottomY,
+        float topY)
+    {
+        return false;
+    }

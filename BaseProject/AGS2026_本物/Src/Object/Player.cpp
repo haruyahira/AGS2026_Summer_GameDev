@@ -9,7 +9,7 @@
 #include "Common/AnimationController.h"
 #include "Collider/Capsule.h"
 #include "Collider/Collider.h"
-#include "Planet.h"
+#include "Stage/Planet.h"
 #include "Player.h"
 
 Player::Player(void)
@@ -816,6 +816,21 @@ void Player::CollisionBox()
 	float pHeight = currentHeadPos.y - transform_.pos.y;
 
 	for (auto f : furnitures_) {
+
+		float pBottomY = movedPos_.y;
+		float pTopY = movedPos_.y + pHeight;
+		float pStandTopY = movedPos_.y + standHeight_;
+
+		// Wallなど、独自の当たり判定を持つ家具用
+		if (f->ResolveCollision(
+			movedPos_,
+			pRadius_,
+			pBottomY,
+			pStandTopY))
+		{
+			continue;
+		}
+
 		for (const auto& box : f->GetColliders()) {
 
 			float pBottomY = movedPos_.y;          // 足元

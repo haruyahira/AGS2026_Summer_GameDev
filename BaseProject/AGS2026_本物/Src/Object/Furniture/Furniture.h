@@ -24,6 +24,13 @@ public:
 
     // 外部（プレイヤーなど）から当たり判定をチェックするための関数
     const std::vector<BoxCollider>& GetColliders() const { return colliders_; }
+
+    virtual bool ResolveCollision(
+        VECTOR& pos,
+        float radius,
+        float bottomY,
+        float topY);
+
 private:
    
 protected:

@@ -1,9 +1,9 @@
 #include <DxLib.h>
-#include "../Utility/AsoUtility.h"
-#include "../Manager/SceneManager.h"
-#include "Common/Transform.h"
+#include "../../Utility/AsoUtility.h"
+#include "../../Manager/SceneManager.h"
+#include "../Common/Transform.h"
 #include "WarpStar.h"
-#include "Name.h"
+#include "../Name.h"
 #include "Planet.h"
 
 Planet::Planet(const NAME& name, const TYPE& type, const Transform& transform)

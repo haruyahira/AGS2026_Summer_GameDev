@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\Ceiling.cpp" />
+    <ClCompile Include="Src\Object\Collider\OBBCollider.cpp" />
+    <ClCompile Include="Src\Object\Furniture\Showcase.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyBase.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyNormal.cpp" />
@@ -43,10 +46,10 @@
     <ClCompile Include="Src\Object\Collider\Collider.cpp" />
     <ClCompile Include="Src\Object\Common\SpeechBalloon.cpp" />
     <ClCompile Include="Src\Object\Common\Transform.cpp" />
-    <ClCompile Include="Src\Object\Planet.cpp" />
+    <ClCompile Include="Src\Object\Stage\Planet.cpp" />
     <ClCompile Include="Src\Object\Player.cpp" />
-    <ClCompile Include="Src\Object\Stage.cpp" />
-    <ClCompile Include="Src\Object\WarpStar.cpp" />
+    <ClCompile Include="Src\Object\Stage\Stage.cpp" />
+    <ClCompile Include="Src\Object\Stage\WarpStar.cpp" />
     <ClCompile Include="Src\Scene\GameScene.cpp" />
     <ClCompile Include="Src\Scene\SceneBase.cpp" />
     <ClCompile Include="Src\Scene\TitleScene.cpp" />
@@ -56,6 +59,9 @@
     <ClCompile Include="Src\Object\Furniture\Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\Ceiling.h" />
+    <ClInclude Include="Src\Object\Collider\OBBCollider.h" />
+    <ClInclude Include="Src\Object\Furniture\Showcase.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyBase.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyNormal.h" />
@@ -81,10 +87,10 @@
     <ClInclude Include="Src\Object\Collider\Collider.h" />
     <ClInclude Include="Src\Object\Common\SpeechBalloon.h" />
     <ClInclude Include="Src\Object\Common\Transform.h" />
-    <ClInclude Include="Src\Object\Planet.h" />
+    <ClInclude Include="Src\Object\Stage\Planet.h" />
     <ClInclude Include="Src\Object\Player.h" />
-    <ClInclude Include="Src\Object\Stage.h" />
-    <ClInclude Include="Src\Object\WarpStar.h" />
+    <ClInclude Include="Src\Object\Stage\Stage.h" />
+    <ClInclude Include="Src\Object\Stage\WarpStar.h" />
     <ClInclude Include="Src\Scene\GameScene.h" />
     <ClInclude Include="Src\Scene\SceneBase.h" />
     <ClInclude Include="Src\Scene\TitleScene.h" />

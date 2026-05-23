@@ -28,6 +28,8 @@ public:
 
 		F_TABLE,
 		WALL,
+		F_G,
+		F_F,
 
 
 
@@ -35,7 +37,7 @@ public:
 		PLAYER,
 		PLAYER_SHADOW,
 		SKY_DOME,
-		MAIN_PLANET,
+		FLOOR,
 		FALL_PLANET,
 		FLAT_PLANET_01,
 		FLAT_PLANET_02,

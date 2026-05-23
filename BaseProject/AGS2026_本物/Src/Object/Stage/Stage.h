@@ -2,11 +2,11 @@
 #include <map>
 #include <vector>
 #include <set>
-#include "../Manager/ResourceManager.h"
-#include "../Utility/AsoUtility.h"
-#include "../Common/Vector3.h"
-#include "Common/Transform.h"
-#include "Furniture/Furniture.h"
+#include "../../Manager/ResourceManager.h"
+#include "../../Utility/AsoUtility.h"
+#include "../../Common/Vector3.h"
+#include "../Common/Transform.h"
+#include "../Furniture/Furniture.h"
 class ResourceManager;
 class WarpStar;
 class Planet;
@@ -81,6 +81,10 @@ private:
 
 	// 家具
 	std::vector<Furniture*> furnitures_;
+	std::vector<Furniture*> glassFurnitures_;
+	
+
+
 
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;

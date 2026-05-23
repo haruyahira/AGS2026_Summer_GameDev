@@ -9,5 +9,7 @@ enum class NAME
     FLAT_PLANET_BASE,
     INTERIOR,           // 家具・インテリア用
     TABLE, // 机
-    WALL // 壁
+    WALL, // 壁
+    SHOWCASE, // ショーケース
+    CEILING,
 };

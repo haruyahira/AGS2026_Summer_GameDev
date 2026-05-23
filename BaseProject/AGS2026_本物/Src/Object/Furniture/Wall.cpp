@@ -2,15 +2,16 @@
 #include "../../Manager/InputManager.h"
 
 // コンストラクタ
-Wall::Wall(const Transform* trans)
+Wall::Wall(const Transform* trans, float rotY)
     : Furniture(NAME::WALL, trans) {
+    rotY_ = rotY;
 }
 
 // ---------------------------------------------------------
 // 壁パラメータ
 // ---------------------------------------------------------
-float wallH = 200.0f;   // 高さ
-float wallW = 300.0f;   // 横幅
+float wallH = 400.0f;   // 高さ
+float wallW = 440.0f;   // 横幅
 float wallD = 20.0f;    // 厚み
 
 float slideX = 0.0f;
@@ -20,17 +21,42 @@ float slideZ = 0.0f;
 
 // 初期化
 void Wall::Init() {
-    colliders_.clear();
+
 
     VECTOR pos = trans_.GetPos();
 
-    VECTOR center = VAdd(pos, VGet(slideX, slideY + wallH / 2.0f, slideZ));
+    // 壁の実サイズ
+    float w = wallW * trans_.scl.x;
+    float h = wallH * trans_.scl.y;
+    float d = wallD * trans_.scl.z;
 
-    // 壁は1つのBoxでOK
-    colliders_.push_back(BoxCollider(
+    // 壁の中心
+    VECTOR center = VAdd(
+        pos,
+        VGet(
+            slideX,
+            slideY + h / 2.0f,
+            slideZ
+        )
+    );
+
+    // Y回転を使う
+    float c = cosf(rotY_);
+    float s = sinf(rotY_);
+
+    VECTOR axisX = VGet(c, 0.0f, -s);
+    VECTOR axisY = VGet(0.0f, 1.0f, 0.0f);
+    VECTOR axisZ = VGet(s, 0.0f, c);
+
+    obbCollider_ = OBBCollider(
         center,
-        VGet(wallW / 2.0f, wallH / 2.0f, wallD / 2.0f)
-    ));
+        VGet(w / 2.0f, h / 2.0f, d / 2.0f),
+        axisX,
+        axisY,
+        axisZ
+    );
+
+
 }
 
 // 更新
@@ -64,13 +90,28 @@ void Wall::Update(void) {
 
 // 描画
 void Wall::Draw(void) {
-    trans_.Update();
 
-    // モデル描画
-    MV1DrawModel(trans_.modelId);
+    {
+        trans_.Update();
 
-    // 当たり判定表示
-    for (const auto& box : colliders_) {
-        box.DrawDebug(GetColor(255, 0, 0));
+        // モデル描画
+        MV1DrawModel(trans_.modelId);
+
+        // OBB当たり判定表示
+        obbCollider_.DrawDebug(GetColor(255, 0, 0));
     }
+
+}
+
+bool Wall::ResolveCollision(
+    VECTOR& pos,
+    float radius,
+    float bottomY,
+    float topY)
+{
+    return obbCollider_.ResolveCollisionXZ(
+        pos,
+        radius,
+        bottomY,
+        topY);
 }

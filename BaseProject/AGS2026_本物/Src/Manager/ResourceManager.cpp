@@ -68,10 +68,14 @@ void ResourceManager::Init(void)
 
 	// è∞
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
-	resourcesMap_.emplace(SRC::MAIN_PLANET, res);
+	resourcesMap_.emplace(SRC::FLOOR, res);
 	// ï«
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_frame.mv1");
+	resourcesMap_.emplace(SRC::F_F, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_grasu.mv1");
+	resourcesMap_.emplace(SRC::F_G, res);
 
 
 

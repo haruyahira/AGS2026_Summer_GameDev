@@ -1,6 +1,6 @@
 #pragma once
-#include "../Common/Quaternion.h"
-#include "ActorBase.h"
+#include "../../Common/Quaternion.h"
+#include "../ActorBase.h"
 #include "Stage.h"
 
 class Planet : public ActorBase
