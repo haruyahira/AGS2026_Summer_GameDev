@@ -16,6 +16,12 @@ public:
         float bottomY,
         float topY) override;
 
+    bool ResolveCameraCollision(
+        VECTOR& cameraPos,
+        float radius) override;
+
+    bool IsBlockingSight(VECTOR start, VECTOR end) const override;
+
 
 private:
     OBBCollider obbCollider_;

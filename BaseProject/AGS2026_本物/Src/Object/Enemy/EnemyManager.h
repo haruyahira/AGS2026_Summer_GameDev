@@ -3,6 +3,7 @@
 #include <vector>
 
 class EnemyBase;
+class Player;
 
 class EnemyManager
 {
@@ -11,7 +12,7 @@ public:
 	~EnemyManager(void);
 
 	void Init(void);
-	void Update(void);
+	void Update(Player* player);
 	void Draw(void);
 
 private:

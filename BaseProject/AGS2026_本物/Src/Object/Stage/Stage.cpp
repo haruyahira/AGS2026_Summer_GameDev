@@ -221,40 +221,48 @@ void Stage::MakeMainStage(void)
 	// 壁一覧
 	std::vector<FurnitureData> wallDatas =
 	{
-	{
+
+	{     // ①
 		  ResourceManager::SRC::WALL,
 		  { 88.0f, -100.0f, -290.0f },
-		  { 5.0f, 0.5f, 0.5f },
+		  { 5.0f, 1.0f, 0.5f },
 		  { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 	},
 	{
-		// ショーケース前
+		  ResourceManager::SRC::WALL,
+		  { -1700.f, -100.0f, -290.0f },
+		  { 5.0f, 1.0f, 0.5f },
+		  { 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+	},
+	{
+		// ショーケース前L
 		ResourceManager::SRC::WALL,
 		{ -1500.f, -100.0f, -805.0f },
-		{ 1.8f, 0.5f, 0.5f },
+		{ 1.8f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-  },
-  {     // ショーケース前②
+    },
+    {     // ショーケース前R
 		ResourceManager::SRC::WALL,
-		{ -1500.f, -100.0f, 400.0f },
-		{ 2.7f, 0.5f, 0.5f },
+		{ -1500.f, -100.0f, 350.0f },
+		{ 2.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-  },
+    },
 
-  {
-	  // ショーケース近く
+    {
+	  // L
 	  ResourceManager::SRC::WALL,
 	  { -1000.0f, -100.0f, -1200.0f },
-	  { 5.0f, 0.5f, 0.5f },
+	  { 5.0f, 1.0f, 0.5f },
 	  { 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 
-},
-{
-		ResourceManager::SRC::WALL,
+    },
+    {
+	  // R
+	  ResourceManager::SRC::WALL,
 	  { -680.0f, -100.0f, 800.0f },
-	  { 3.7f, 0.5f, 0.5f },
+	  { 4.7f, 1.0f, 0.5f },
 	  { 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
-}
+    },
 	};
 
 	// 壁をまとめて生成
@@ -287,7 +295,7 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-}
+};
 
 //void Stage::MakeWarpStar(void)
 //{

@@ -28,13 +28,13 @@ void GameScene::Init(void)
 	// 3Dモデルを読み込む前に、ピクセル単位のライティングを有効にする
 	SetUsePixelLighting(TRUE);
 
-	//// 全体を照らす光を極限まで暗くする
-	//SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
-	//SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
+	// 全体を照らす光を極限まで暗くする
+	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
+	SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
 
-	//SetFogEnable(TRUE); // フォグを有効にする
-	//SetFogColor(5, 5, 15);
-	//SetFogStartEnd(0.0f, 1000.0f);
+	SetFogEnable(TRUE); // フォグを有効にする
+	SetFogColor(5, 5, 15);
+	SetFogStartEnd(0.0f, 1000.0f);
 	SetLightEnable(FALSE); // デフォルトライトを無効にする
 	// プレイヤー
 	player_ = new Player();
@@ -59,9 +59,9 @@ void GameScene::Init(void)
 
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
-
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
-	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
+	// 初期視点設定
+	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
 
 
 
@@ -89,7 +89,7 @@ void GameScene::Update(void)
 
 	player_->Update();
 
-	enemyMng_->Update();
+	enemyMng_->Update(player_);
 
 }
 

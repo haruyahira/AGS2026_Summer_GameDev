@@ -1,5 +1,6 @@
 #pragma once
 #include "../ActorBase.h"
+class Player;
 
 class EnemyBase : public ActorBase
 {
@@ -8,6 +9,6 @@ public:
 	virtual ~EnemyBase(void);
 
 	virtual void Init(void) = 0;
-	virtual void Update(void) = 0;
+	virtual void Update(Player* player) = 0;
 	virtual void Draw(void) = 0;
 };

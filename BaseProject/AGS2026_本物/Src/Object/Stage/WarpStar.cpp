@@ -1,7 +1,7 @@
 #include <DxLib.h>
-#include "../Manager/ResourceManager.h"
-#include "Common/Transform.h"
-#include "Player.h"
+#include "../../Manager/ResourceManager.h"
+#include "../Common/Transform.h"
+#include "../Player.h"
 #include "WarpStar.h"
 
 WarpStar::WarpStar(

@@ -16,6 +16,10 @@ public:
         float bottomY,
         float topY) override;
 
+    bool ResolveCameraCollision(
+        VECTOR& cameraPos,
+        float radius) override;
+
 
 private:
     OBBCollider obbCollider_;

@@ -112,3 +112,12 @@ bool Ceiling::ResolveCollision(
         bottomY,
         topY);
 }
+
+bool Ceiling::ResolveCameraCollision(
+    VECTOR& cameraPos,
+    float radius)
+{
+    return obbCollider_.ResolveSphere(
+        cameraPos,
+        radius);
+}

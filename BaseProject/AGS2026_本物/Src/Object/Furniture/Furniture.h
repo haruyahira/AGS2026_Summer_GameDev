@@ -31,6 +31,12 @@ public:
         float bottomY,
         float topY);
 
+    virtual bool ResolveCameraCollision(
+        VECTOR& cameraPos,
+        float radius);
+
+    virtual bool IsBlockingSight(VECTOR start, VECTOR end) const;
+
 private:
    
 protected:

@@ -134,11 +134,22 @@ void Player::Draw(void)
 	// 丸影描画
 	DrawShadow();
 
-	//capsule_->Draw();
 	// すべてのカプセルを描画
 	for (auto& pair : capsules_) {
 		pair.second->Draw();
 	}
+
+
+	DrawFormatString(
+		20,
+		20,
+		GetColor(255, 255, 0),
+		"Player Pos X: %.2f  Y: %.2f  Z: %.2f",
+		transform_.pos.x,
+		transform_.pos.y,
+		transform_.pos.z
+	);
+
 	
 }
 
@@ -155,6 +166,11 @@ void Player::ClearCollider(void)
 const Capsule* Player::GetCapsule(void) const
 {
 	return capsule_;
+}
+
+const std::vector<Furniture*>& Player::GetFurnitures() const
+{
+	return furnitures_;
 }
 
 void Player::InitAnimation(void)
@@ -249,7 +265,7 @@ void Player::InitFlashLight(void)
 	//);
 
 	// テスト用
-	flashlight_.range = 10000.0f;   // ← 超遠距離
+	flashlight_.range = 300000.0f;   // ← 超遠距離
 	flashlight_.outerAngle = DX_PI_F / 2.0f; // ← かなり広い（90度）
 	flashlight_.innerAngle = DX_PI_F / 3.0f; // ← 中心も広く
 
@@ -999,6 +1015,21 @@ void Player::SetFirstPerson(void)
 		headPos_.y -= 11.0f;
 	}
 
-	// 最後に、決定した位置をカメラに送る（通常・うつ伏せ共通）
-	camera->SetFirstPersonPos(headPos_);
+
+	// カメラ位置
+	VECTOR cameraPos = headPos_;
+
+	// カメラを小さい球として扱う
+	float cameraRadius = 5.0f;
+
+	// 家具・壁・天井とのカメラ衝突
+	for (auto f : furnitures_)
+	{
+		f->ResolveCameraCollision(
+			cameraPos,
+			cameraRadius);
+	}
+
+	camera->SetFirstPersonPos(cameraPos);
+
 }

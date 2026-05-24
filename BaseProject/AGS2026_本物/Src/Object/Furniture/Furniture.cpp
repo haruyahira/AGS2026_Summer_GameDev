@@ -33,3 +33,43 @@ Furniture::Furniture(NAME name, const Transform* trans)
     {
         return false;
     }
+
+    bool Furniture::ResolveCameraCollision(
+        VECTOR& cameraPos,
+        float radius)
+    {
+        for (const auto& box : colliders_)
+        {
+            VECTOR closest = box.GetClosestPoint(cameraPos);
+            VECTOR diff = VSub(cameraPos, closest);
+
+            float distSq = VDot(diff, diff);
+
+            if (distSq < radius * radius)
+            {
+                if (distSq > 0.0001f)
+                {
+                    float dist = sqrtf(distSq);
+                    VECTOR dir = VScale(diff, 1.0f / dist);
+
+                    cameraPos = VAdd(
+                        closest,
+                        VScale(dir, radius)
+                    );
+                }
+                else
+                {
+                    cameraPos.y += radius;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool Furniture::IsBlockingSight(VECTOR start, VECTOR end) const
+    {
+        return false;
+    }

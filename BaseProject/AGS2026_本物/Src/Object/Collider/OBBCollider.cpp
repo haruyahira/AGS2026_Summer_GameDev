@@ -267,3 +267,127 @@ bool OBBCollider::ResolveCollisionBottom(
 
     return true;
 }
+
+bool OBBCollider::ResolveSphere(
+    VECTOR& pos,
+    float radius) const
+{
+    // OBB中心からカメラ位置への差分
+    VECTOR diff = VSub(pos, center_);
+
+    // ワールド座標 → OBBローカル座標
+    float localX = VDot(diff, axisX_);
+    float localY = VDot(diff, axisY_);
+    float localZ = VDot(diff, axisZ_);
+
+    // OBB上の最近点を求める
+    float closestX = localX;
+    float closestY = localY;
+    float closestZ = localZ;
+
+    if (closestX < -halfSize_.x) closestX = -halfSize_.x;
+    if (closestX > halfSize_.x) closestX = halfSize_.x;
+
+    if (closestY < -halfSize_.y) closestY = -halfSize_.y;
+    if (closestY > halfSize_.y) closestY = halfSize_.y;
+
+    if (closestZ < -halfSize_.z) closestZ = -halfSize_.z;
+    if (closestZ > halfSize_.z) closestZ = halfSize_.z;
+
+    float diffX = localX - closestX;
+    float diffY = localY - closestY;
+    float diffZ = localZ - closestZ;
+
+    float distSq =
+        diffX * diffX +
+        diffY * diffY +
+        diffZ * diffZ;
+
+    // 半径より遠ければ当たっていない
+    if (distSq >= radius * radius)
+    {
+        return false;
+    }
+
+    // 押し出し方向
+    VECTOR pushDir;
+
+    if (distSq > 0.0001f)
+    {
+        float dist = sqrtf(distSq);
+
+        pushDir =
+            VAdd(
+                VAdd(
+                    VScale(axisX_, diffX / dist),
+                    VScale(axisY_, diffY / dist)
+                ),
+                VScale(axisZ_, diffZ / dist)
+            );
+
+        float pushPower = radius - dist;
+
+        pos = VAdd(pos, VScale(pushDir, pushPower));
+    }
+    else
+    {
+        // 完全に中に入っていた場合は、とりあえず上に押し出す
+        pos.y += radius;
+    }
+
+    return true;
+}
+
+bool OBBCollider::IsHitSegment(VECTOR start, VECTOR end) const
+{
+    // ワールド座標をOBBローカル座標へ変換
+    VECTOR startDiff = VSub(start, center_);
+    VECTOR endDiff = VSub(end, center_);
+
+    VECTOR localStart = VGet(
+        VDot(startDiff, axisX_),
+        VDot(startDiff, axisY_),
+        VDot(startDiff, axisZ_)
+    );
+
+    VECTOR localEnd = VGet(
+        VDot(endDiff, axisX_),
+        VDot(endDiff, axisY_),
+        VDot(endDiff, axisZ_)
+    );
+
+    VECTOR dir = VSub(localEnd, localStart);
+
+    float tMin = 0.0f;
+    float tMax = 1.0f;
+
+    auto CheckAxis = [&](float startValue, float dirValue, float minValue, float maxValue) -> bool
+        {
+            if (fabsf(dirValue) < 0.0001f)
+            {
+                // 線分がこの軸方向にほぼ動いていない場合
+                return startValue >= minValue && startValue <= maxValue;
+            }
+
+            float t1 = (minValue - startValue) / dirValue;
+            float t2 = (maxValue - startValue) / dirValue;
+
+            if (t1 > t2)
+            {
+                float temp = t1;
+                t1 = t2;
+                t2 = temp;
+            }
+
+            if (t1 > tMin) tMin = t1;
+            if (t2 < tMax) tMax = t2;
+
+            return tMin <= tMax;
+        };
+
+    if (!CheckAxis(localStart.x, dir.x, -halfSize_.x, halfSize_.x)) return false;
+    if (!CheckAxis(localStart.y, dir.y, -halfSize_.y, halfSize_.y)) return false;
+    if (!CheckAxis(localStart.z, dir.z, -halfSize_.z, halfSize_.z)) return false;
+
+    return true;
+}

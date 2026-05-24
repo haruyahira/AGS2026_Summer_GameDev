@@ -12,7 +12,7 @@ Wall::Wall(const Transform* trans, float rotY)
 // ---------------------------------------------------------
 float wallH = 400.0f;   // çÇÇ≥
 float wallW = 440.0f;   // â°ïù
-float wallD = 20.0f;    // å˙Ç›
+float wallD = 60.0f;    // å˙Ç›
 
 float slideX = 0.0f;
 float slideY = 0.0f;
@@ -114,4 +114,18 @@ bool Wall::ResolveCollision(
         radius,
         bottomY,
         topY);
+}
+
+bool Wall::ResolveCameraCollision(
+    VECTOR& cameraPos,
+    float radius)
+{
+    return obbCollider_.ResolveSphere(
+        cameraPos,
+        radius);
+}
+
+bool Wall::IsBlockingSight(VECTOR start, VECTOR end) const
+{
+    return obbCollider_.IsHitSegment(start, end);
 }

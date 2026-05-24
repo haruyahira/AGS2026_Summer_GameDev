@@ -48,6 +48,14 @@ public:
         float bottomY,
         float topY) const;
 
+
+    bool ResolveSphere(
+        VECTOR& pos,
+        float radius) const;
+
+    bool IsHitSegment(VECTOR start, VECTOR end) const;
+
+
 private:
 
     // ’†SÀ•W

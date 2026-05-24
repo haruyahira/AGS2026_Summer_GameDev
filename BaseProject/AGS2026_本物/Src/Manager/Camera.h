@@ -14,7 +14,7 @@ public:
 	// カメラクリップ：NEAR
 	static constexpr float CAMERA_NEAR = 10.0f;
 
-	// カメラクリップ：NEAR
+	// カメラクリップ：FAR
 	static constexpr float CAMERA_FAR = 30000.0f;
 
 	// カメラの初期座標

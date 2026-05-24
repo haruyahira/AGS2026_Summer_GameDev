@@ -102,10 +102,13 @@ public:
 	void AddFurniture(Furniture* furniture) {
 		furnitures_.push_back(furniture);
 	}
+
+	const std::vector<Furniture*>& GetFurnitures() const;
 private:
 
 	// アニメーション
 	std::unique_ptr<AnimationController> animationController_;
+	
 
 	// 状態管理
 	STATE state_;
