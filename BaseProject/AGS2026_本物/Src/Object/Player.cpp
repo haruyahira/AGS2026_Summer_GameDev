@@ -27,6 +27,7 @@ Player::Player(void)
 	playerRotY_ = Quaternion();
 	goalQuaRot_ = Quaternion();
 	stepRotTime_ = 0.0f;
+	attackAngleRad_ = AsoUtility::Deg2RadF(60.0f);
 
 	jumpPow_ = AsoUtility::VECTOR_ZERO;
 	isJump_ = false;
@@ -150,6 +151,19 @@ void Player::Draw(void)
 		transform_.pos.z
 	);
 
+
+	if (isAttacking_)
+	{
+		DrawSphere3D(
+			GetAttackPos(),
+			45.0f,
+			16,
+			GetColor(255, 255, 0),
+			GetColor(255, 255, 0),
+			FALSE);
+	}
+
+
 	
 }
 
@@ -182,6 +196,8 @@ void Player::InitAnimation(void)
 	animationController_->Add((int)ANIM_TYPE::RUN, path + "Run.mv1", 20.0f);
 	animationController_->Add((int)ANIM_TYPE::FAST_RUN, path + "FastRun.mv1", 20.0f);
 	animationController_->Add((int)ANIM_TYPE::JUMP, path + "Jump.mv1", 60.0f);
+	animationController_->Add((int)ANIM_TYPE::HIT_R, path + "Hit_R.mv1", 30.0f);
+	animationController_->Add((int)ANIM_TYPE::HIT_L, path + "Hit_L.mv1", 30.0f);
 
 	animationController_->Add((int)ANIM_TYPE::PRONE_IDLE, path + "ProneIdle.mv1", 0.0f);
 	animationController_->Add((int)ANIM_TYPE::PRONE_WALK, path + "ProneWalk.mv1", 30.0f);
@@ -375,6 +391,11 @@ void Player::UpdateCommon(void)
 
 	// ジャンプ処理
 	ProcessJump();
+
+
+	//攻撃処理
+	ProcessAttack();
+
 
 	// 移動方向に応じた回転
 	Rotate();
@@ -580,30 +601,35 @@ void Player::ProcessMove(void)
 		
 		// 回転処理
 		//SetGoalRotate(rotRad);
+		if (!isAttacking_) {
+			// アニメショーン変更処理
+			animType_ = IsProne() ?
+				(isRun ? ANIM_TYPE::PRONE_RUN : ANIM_TYPE::PRONE_WALK) // しゃがみ
+				:
+				(isRun ? ANIM_TYPE::FAST_RUN : ANIM_TYPE::RUN); // 立ち
 
-		// アニメショーン変更処理
-		 animType_ = IsProne() ?
-			(isRun ? ANIM_TYPE::PRONE_RUN : ANIM_TYPE::PRONE_WALK) // しゃがみ
-			:
-			(isRun ? ANIM_TYPE::FAST_RUN : ANIM_TYPE::RUN); // 立ち
-		 
-	   
+			animationController_->Play((int)animType_);
+		}
 		
 	}
 	else // 移動入力がない場合
 	{
-		if (!isJump_ && IsEndLanding())
-		{
-			animType_ = IsProne() ?
-				ANIM_TYPE::PRONE_IDLE
-				:
-				ANIM_TYPE::IDLE;
+		if (!isAttacking_) {
+			if (!isJump_ && IsEndLanding())
+			{
+				animType_ = IsProne() ?
+					ANIM_TYPE::PRONE_IDLE
+					:
+					ANIM_TYPE::IDLE;
 
+			}
 		}
 	}
 
-	// アニメーション変更実行
-	animationController_->Play((int)animType_);
+	//// アニメーション変更実行
+	//if (animationController_) {
+	//	animationController_->Play((int)animType_);
+	//}
 
 }
 
@@ -646,6 +672,58 @@ void Player::ProcessJump(void)
 		stepJump_ = TIME_JUMP_IN;
 	}
 
+}
+
+void Player::ProcessAttack(void)
+{
+	auto& ins = InputManager::GetInstance();
+
+	// 攻撃開始
+	if (!isAttacking_ &&
+		ins.IsClickMouseLeft())
+	{
+		isAttacking_ = true;
+
+		attackTimer_ = 40.0f;
+
+		// 右左交互
+		if (isRightAttack_)
+		{
+			animType_ = ANIM_TYPE::HIT_R;
+
+			animationController_->Play(
+				(int)ANIM_TYPE::HIT_R,
+				false);
+		}
+		else
+		{
+			animType_ = ANIM_TYPE::HIT_L;
+
+			animationController_->Play(
+				(int)ANIM_TYPE::HIT_L,
+				false);
+		}
+
+		// 次回反転
+		isRightAttack_ = !isRightAttack_;
+	}
+
+	// 攻撃中
+	if (isAttacking_)
+	{
+		attackTimer_ -= 1.0f;
+
+		if (attackTimer_ <= 0.0f)
+		{
+			isAttacking_ = false;
+
+			// 待機へ戻す
+			animType_ = ANIM_TYPE::IDLE;
+
+			animationController_->Play(
+				(int)ANIM_TYPE::IDLE);
+		}
+	}
 }
 
 void Player::SetGoalRotate(double rotRad)
@@ -1031,5 +1109,43 @@ void Player::SetFirstPerson(void)
 	}
 
 	camera->SetFirstPersonPos(cameraPos);
+
+}
+
+bool Player::IsHiddenUnderFurniture() const
+{
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr) continue;
+
+		if (f->IsUnder(transform_.pos))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+VECTOR Player::GetAttackPos() const
+{
+
+	// 右パンチ中
+	if (animType_ == ANIM_TYPE::HIT_R)
+	{
+		return MV1GetFramePosition(
+			transform_.modelId,
+			rightHandFrame_);
+	}
+
+	// 左パンチ中
+	if (animType_ == ANIM_TYPE::HIT_L)
+	{
+		return MV1GetFramePosition(
+			transform_.modelId,
+			leftHandFrame_);
+	}
+
+	// 攻撃していない時はプレイヤー位置
+	return transform_.pos;
 
 }

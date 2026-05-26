@@ -24,6 +24,7 @@ static float legSlideY = -40.0f; // š‹r‚Ìã‰ºˆÚ“®—p‚É’Ç‰Á
 // ---------------------------------------------------------
 
 void Table::Init() {
+    isHideSpot_ = true;
     colliders_.clear();
     VECTOR pos = trans_.GetPos();
 

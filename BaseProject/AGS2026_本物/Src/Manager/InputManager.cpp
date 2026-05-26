@@ -55,7 +55,7 @@ void InputManager::Init(void)
 	// É}ÉEÉX
 	InputManager::GetInstance().Add(MOUSE_INPUT_LEFT);
 	InputManager::GetInstance().Add(MOUSE_INPUT_RIGHT);
-	InputManager::GetInstance().Add(MOUSE_INPUT_RIGHT);
+	
 
 
 	// 

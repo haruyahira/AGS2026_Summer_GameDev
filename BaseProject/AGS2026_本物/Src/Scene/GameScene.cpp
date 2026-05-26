@@ -60,8 +60,8 @@ void GameScene::Init(void)
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
 	// ‰ŠúŽ‹“_Ý’è
-	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
+	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
 
 
 

@@ -56,6 +56,9 @@ public:
 		RUN,
 		FAST_RUN,
 		JUMP,
+		HIT,
+		HIT_R,
+		HIT_L,
 		PRONE_IDLE,
 		PRONE_WALK,
 		PRONE_RUN,
@@ -104,6 +107,14 @@ public:
 	}
 
 	const std::vector<Furniture*>& GetFurnitures() const;
+	bool IsHiddenUnderFurniture() const;
+
+	bool IsAttacking() const
+	{
+		return isAttacking_;
+	}
+	VECTOR GetAttackPos() const;
+
 private:
 
 	// アニメーション
@@ -175,6 +186,7 @@ private:
 	// 足元のボーンフレーム
 	int SpineFrame_;
 	float pRadius_;
+	bool isRightAttack_ = true;
 
 	// アニメーションの初期化
 	void InitAnimation(void);
@@ -187,6 +199,13 @@ private:
 	void ChangeStateNone(void);
 	void ChangeStatePlay(void);
 	void ChangeStateProne(void);
+
+	bool isAttacking_ = false;
+	float attackTimer_ = 0.0f;
+
+	float attackRange_ = 80.0f;
+	float attackAngleRad_;
+
 
 	// 更新ステップ
 	void UpdateNone(void);
@@ -201,6 +220,7 @@ private:
 	// 操作
 	void ProcessMove(void);
 	void ProcessJump(void);
+	void ProcessAttack(void);
 
 	// 回転
 	void SetGoalRotate(double rotRad);
@@ -223,5 +243,7 @@ private:
 
 	// カメラ
 	void SetFirstPerson(void);
+
+	
 
 };

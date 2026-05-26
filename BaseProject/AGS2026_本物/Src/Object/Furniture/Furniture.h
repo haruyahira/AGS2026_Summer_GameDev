@@ -37,6 +37,10 @@ public:
 
     virtual bool IsBlockingSight(VECTOR start, VECTOR end) const;
 
+    bool IsUnder(VECTOR pos) const;
+
+    bool isHideSpot_ = false;
+
 private:
    
 protected:

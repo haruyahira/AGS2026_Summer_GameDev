@@ -73,3 +73,42 @@ Furniture::Furniture(NAME name, const Transform* trans)
     {
         return false;
     }
+
+
+    bool Furniture::IsUnder(VECTOR pos) const
+    {
+        // 隠れポイントじゃないなら無視
+        if (!isHideSpot_) return false;
+
+        // 一番上のY（天板）を探す
+        float topY = -99999.0f;
+
+        for (const auto& box : colliders_)
+        {
+            float boxTop = box.center.y + box.halfSize.y;
+            if (boxTop > topY)
+            {
+                topY = boxTop;
+            }
+        }
+
+        // プレイヤーが天板より下ならOK
+        if (pos.y > topY) return false;
+
+        // XZ範囲内にいるか
+        for (const auto& box : colliders_)
+        {
+            float minX = box.center.x - box.halfSize.x;
+            float maxX = box.center.x + box.halfSize.x;
+            float minZ = box.center.z - box.halfSize.z;
+            float maxZ = box.center.z + box.halfSize.z;
+
+            if (pos.x >= minX && pos.x <= maxX &&
+                pos.z >= minZ && pos.z <= maxZ)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }

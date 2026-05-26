@@ -1,8 +1,10 @@
 #pragma once
 #include "EnemyBase.h"
 #include <vector>
+#include <memory>
 
 class Player;
+class AnimationController;
 
 class EnemyNormal : public EnemyBase
 {
@@ -19,6 +21,17 @@ public:
     void SetPatrolLinks(const std::vector<std::vector<int>>& links);
 
 private:
+    // アニメーション種別
+    enum class ANIM_TYPE
+    {
+        IDLE,
+        RUN,
+        FAST_RUN,
+    };
+
+	void InitAnimation(void);
+    bool CheckPlayerAttack(Player* player);
+	std::unique_ptr<AnimationController> animationController_;
     void UpdateWander(Player* player);
     void DecideNextTarget();
     bool IsHitPlayer(Player* player);
@@ -57,4 +70,8 @@ private:
     float groundY_;
 
     VECTOR waitBaseDir_;
+    
+	ANIM_TYPE animType_;
+
+    bool isDead_ = false;
 };

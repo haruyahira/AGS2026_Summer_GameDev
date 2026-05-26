@@ -1,9 +1,12 @@
 #include <DxLib.h>
 #include <math.h>
+#include <memory>
 #include "../../Utility/AsoUtility.h"
 #include "../../Manager/ResourceManager.h"
+#include "../Common/AnimationController.h"
 #include "../Furniture/Furniture.h"
 #include "../Player.h"
+#include "../../Application.h"
 #include "EnemyNormal.h"
 
 EnemyNormal::EnemyNormal(void) : EnemyBase()
@@ -11,6 +14,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     speed_ = 1.2f;
     waitTimer_ = 0.0f;
     isWaiting_ = false;
+    animType_ = ANIM_TYPE::IDLE;
 
     radius_ = 23.0f;
 
@@ -53,7 +57,7 @@ void EnemyNormal::Init(void)
         Quaternion::Euler({ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f });
 
     transform_.Update();
-
+    InitAnimation();
     // 徘徊開始地点
     /*startPos_ = transform_.pos;*/
 
@@ -63,6 +67,21 @@ void EnemyNormal::Init(void)
 
 void EnemyNormal::Update(Player* player)
 {
+
+    if (isDead_)
+    {
+        return;
+    }
+
+
+    // プレイヤーの攻撃判定
+    if (CheckPlayerAttack(player))
+    {
+        isDead_ = true;
+        printfDx("Enemy Dead\n");
+        return;
+    }
+
 
     // 視野にプレイヤーがいるかチェック
     if (IsPlayerInView(player))
@@ -83,6 +102,17 @@ void EnemyNormal::Update(Player* player)
     {
         UpdateWander(player);
     }
+
+
+    // ここ追加（超重要）
+    if (animationController_)
+    {
+        animationController_->Update();
+    }
+
+    // アニメーション変更実行
+    animationController_->Play((int)animType_);
+
 
     // 床高さに固定
     transform_.pos.y = groundY_;
@@ -211,6 +241,8 @@ void EnemyNormal::UpdateWander(Player* player)
     // 待機中
     if (isWaiting_)
     {
+        animType_ = ANIM_TYPE::IDLE;
+
         waitTimer_ -= 1.0f;
 
         // 首振り処理
@@ -244,6 +276,8 @@ void EnemyNormal::UpdateWander(Player* player)
         return;
 
     }
+
+    animType_ = ANIM_TYPE::RUN;
 
     VECTOR target = patrolPoints_[targetIndex_];
 
@@ -422,6 +456,14 @@ bool EnemyNormal::IsPlayerInView(Player* player)
     {
         return false;
     }
+
+
+    // 机の下に隠れている
+    if (player->IsHiddenUnderFurniture())
+    {
+        return false;
+    }
+
 
     VECTOR playerPos = player->GetTransform().pos;
 
@@ -635,4 +677,42 @@ bool EnemyNormal::IsBlockedByWall(Player* player)
     }
 
     return false;
+}
+
+void EnemyNormal::InitAnimation(void) {
+    std::string path = Application::PATH_MODEL + "Enemy/";
+    animationController_ = std::make_unique <AnimationController>(transform_.modelId);
+    animationController_->Add((int)ANIM_TYPE::IDLE,"Player/Hit.mv1", 0.0f);
+    animationController_->Add((int)ANIM_TYPE::RUN, path + "Run.mv1", 30.0f);
+}
+
+bool EnemyNormal::CheckPlayerAttack(Player* player)
+{
+    if (player == nullptr)
+    {
+        return false;
+    }
+
+    if (!player->IsAttacking())
+    {
+        return false;
+    }
+
+    // 手のボーン位置を攻撃中心にする
+    VECTOR attackPos = player->GetAttackPos();
+
+    VECTOR toEnemy = VSub(transform_.pos, attackPos);
+    toEnemy.y = 0.0f;
+
+    float dist = VSize(toEnemy);
+
+    // 手から敵までの距離
+    float attackRadius = 45.0f;
+
+    if (dist > attackRadius)
+    {
+        return false;
+    }
+
+    return true;
 }
