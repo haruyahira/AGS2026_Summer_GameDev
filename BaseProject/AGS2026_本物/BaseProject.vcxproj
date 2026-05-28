@@ -19,6 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Scene\ResultScene.cpp" />
+    <ClCompile Include="Src\Object\Item.cpp" />
+    <ClCompile Include="Src\Object\Common\Hp\HpManager.cpp" />
+    <ClCompile Include="Src\Object\Common\Hp\Hp.cpp" />
     <ClCompile Include="Src\Object\Furniture\Ceiling.cpp" />
     <ClCompile Include="Src\Object\Collider\OBBCollider.cpp" />
     <ClCompile Include="Src\Object\Furniture\Showcase.cpp" />
@@ -57,8 +61,13 @@
     <ClCompile Include="Src\Common\Vector3.cpp" />
     <ClCompile Include="Src\Object\Furniture\Table.cpp" />
     <ClCompile Include="Src\Object\Furniture\Wall.cpp" />
+    <ClCompile Include="Src\Object\Furniture\StoneDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Scene\ResultScene.h" />
+    <ClInclude Include="Src\Object\Item.h" />
+    <ClInclude Include="Src\Object\Common\Hp\HpManager.h" />
+    <ClInclude Include="Src\Object\Common\Hp\Hp.h" />
     <ClInclude Include="Src\Object\Furniture\Ceiling.h" />
     <ClInclude Include="Src\Object\Collider\OBBCollider.h" />
     <ClInclude Include="Src\Object\Furniture\Showcase.h" />
@@ -98,6 +107,7 @@
     <ClInclude Include="Src\Common\Vector3.h" />
     <ClInclude Include="Src\Object\Furniture\Table.h" />
     <ClInclude Include="Src\Object\Furniture\Wall.h" />
+    <ClInclude Include="Src\Object\Furniture\StoneDevice.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -76,6 +76,11 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::F_F, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_grasu.mv1");
 	resourcesMap_.emplace(SRC::F_G, res);
+	// ゴール地点、納品所
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/ReturnPoint.mv1");
+	resourcesMap_.emplace(SRC::RETURN_POINT, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Laptop.mv1");
+	resourcesMap_.emplace(SRC::LAPTOP, res);
 
 
 

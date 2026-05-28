@@ -5,13 +5,14 @@
 #include "../Common/AnimationController.h"
 #include "../Furniture/Furniture.h"
 #include "../Player.h"
+#include "../Common/Hp/HpManager.h"
 #include "EnemyBase.h"
 
 EnemyBase::EnemyBase(void) : ActorBase()
 {
     speed_ = 1.0f;
     radius_ = 20.0f;
-    groundY_ = -30.0f;
+    groundY_ = -90.0f;
 
     isDead_ = false;
     isChasing_ = false;
@@ -20,10 +21,34 @@ EnemyBase::EnemyBase(void) : ActorBase()
     viewHalfAngleRad_ = AsoUtility::Deg2RadF(45.0f);
 
     forwardDir_ = VGet(0.0f, 0.0f, 1.0f);
+
+    // 攻撃用
+    isAttacking_ = false;
+    isAttackHit_ = false;
+
+    attackTimer_ = 0.0f;
+    attackDuration_ = 45.0f;
+
+    attackIntervalTimer_ = 0.0f;
+    attackInterval_ = 90.0f;
+
+    attackRange_ = 90.0f;
+    attackRadius_ = 35.0f;
+
+    currentAnimType_ = -1;
+
+    bodyHeight_ = 120.0f;
+    bodyCenterOffsetY_ = 60.0f;
+
+
+    maxHp_ = 1;
+    attackPower_ = 1;
+
 }
 
 EnemyBase::~EnemyBase(void)
 {
+        HpManager::GetInstance().UnregisterHP(this);
 }
 
 void EnemyBase::Update(void)
@@ -38,12 +63,23 @@ void EnemyBase::Update(Player* player)
         return;
     }
 
-    // プレイヤーの攻撃判定
+    // 攻撃インターバル更新
+    if (attackIntervalTimer_ > 0.0f)
+    {
+        attackIntervalTimer_ -= 1.0f;
+    }
+
+    // プレイヤーの攻撃を受けたか
     if (CheckPlayerAttack(player))
     {
-        isDead_ = true;
-        printfDx("Enemy Dead\n");
-        return;
+
+        Damage(1);
+
+        if (isDead_)
+        {
+            return;
+        }
+
     }
 
     // 視野判定
@@ -56,21 +92,34 @@ void EnemyBase::Update(Player* player)
         isChasing_ = false;
     }
 
-    // 状態に応じて行動
-    if (isChasing_)
+    // 攻撃中は攻撃処理を優先
+    if (isAttacking_)
     {
-        UpdateChase(player);
+        UpdateAttack(player);
     }
     else
     {
-        UpdateWander(player);
+        // 視野内、近距離、インターバル終了なら攻撃
+        if (isChasing_ &&
+            IsPlayerInAttackRange(player) &&
+            attackIntervalTimer_ <= 0.0f)
+        {
+            StartAttack(player);
+        }
+        else if (isChasing_)
+        {
+            UpdateChase(player);
+        }
+        else
+        {
+            UpdateWander(player);
+        }
     }
 
     // アニメーション更新
     if (animationController_)
     {
         animationController_->Update();
-        animationController_->Play(GetAnimType());
     }
 
     // 床高さ固定
@@ -91,7 +140,7 @@ void EnemyBase::Draw(void)
 
 #ifdef _DEBUG
 
-    // 当たり判定表示
+    // 本体当たり判定
     DrawSphere3D(
         transform_.pos,
         radius_,
@@ -100,10 +149,84 @@ void EnemyBase::Draw(void)
         GetColor(255, 0, 0),
         FALSE);
 
-    // 視野表示
+    // 視野
     DrawViewRange();
 
+    // 攻撃判定
+    DrawAttackRange();
+
+
+    // HP表示
+    auto hp = HpManager::GetInstance().GetHP(this);
+
+    if (hp != nullptr)
+    {
+        VECTOR hpPos = transform_.pos;
+        hpPos.y += 120.0f;
+
+        VECTOR screenPos = ConvWorldPosToScreenPos(hpPos);
+
+        DrawFormatString(
+            static_cast<int>(screenPos.x) - 45,
+            static_cast<int>(screenPos.y),
+            GetColor(255, 80, 80),
+            "Enemy HP: %d / %d",
+            hp->GetCurrent(),
+            hp->GetMax()
+        );
+
+        // HPバー背景
+        int barX = static_cast<int>(screenPos.x) - 40;
+        int barY = static_cast<int>(screenPos.y) + 18;
+        int barW = 80;
+        int barH = 8;
+
+        DrawBox(
+            barX,
+            barY,
+            barX + barW,
+            barY + barH,
+            GetColor(80, 80, 80),
+            TRUE);
+
+        float hpRate = hp->GetRate();
+
+        DrawBox(
+            barX,
+            barY,
+            barX + static_cast<int>(barW * hpRate),
+            barY + barH,
+            GetColor(255, 0, 0),
+            TRUE);
+
+        // 枠
+        DrawBox(
+            barX,
+            barY,
+            barX + barW,
+            barY + barH,
+            GetColor(255, 255, 255),
+            FALSE);
+    }
+
+
 #endif
+}
+
+void EnemyBase::ChangeAnimation(int animType, bool isLoop)
+{
+    if (animationController_ == nullptr)
+    {
+        return;
+    }
+
+    if (currentAnimType_ == animType)
+    {
+        return;
+    }
+
+    currentAnimType_ = animType;
+    animationController_->Play(animType, isLoop);
 }
 
 bool EnemyBase::CheckPlayerAttack(Player* player)
@@ -120,19 +243,48 @@ bool EnemyBase::CheckPlayerAttack(Player* player)
 
     VECTOR attackPos = player->GetAttackPos();
 
-    VECTOR toEnemy = VSub(transform_.pos, attackPos);
-    toEnemy.y = 0.0f;
-
-    float dist = VSize(toEnemy);
-
     float attackRadius = 45.0f;
 
-    if (dist > attackRadius)
+    // 敵の円柱の下端・上端
+    float bottomY = transform_.pos.y;
+    float topY = transform_.pos.y + bodyHeight_;
+
+    // 攻撃位置のYを円柱の高さ範囲に丸める
+    float closestY = attackPos.y;
+
+    if (closestY < bottomY)
     {
-        return false;
+        closestY = bottomY;
+    }
+    else if (closestY > topY)
+    {
+        closestY = topY;
     }
 
-    return true;
+    // XZ平面で敵中心から攻撃位置への差
+    float diffX = attackPos.x - transform_.pos.x;
+    float diffZ = attackPos.z - transform_.pos.z;
+
+    float distXZ = sqrtf(diffX * diffX + diffZ * diffZ);
+
+    // 円柱側の最近点を求める
+    VECTOR closestPoint = transform_.pos;
+    closestPoint.y = closestY;
+
+    if (distXZ > 0.001f)
+    {
+        float nx = diffX / distXZ;
+        float nz = diffZ / distXZ;
+
+        closestPoint.x += nx * radius_;
+        closestPoint.z += nz * radius_;
+    }
+
+    // 攻撃球中心と敵円柱表面の最近点の距離
+    VECTOR diff = VSub(attackPos, closestPoint);
+    float distSq = VDot(diff, diff);
+
+    return distSq <= attackRadius * attackRadius;
 }
 
 bool EnemyBase::IsHitPlayer(Player* player)
@@ -157,7 +309,7 @@ bool EnemyBase::IsHitPlayer(Player* player)
 
 bool EnemyBase::CollisionFurniture(Player* player, VECTOR beforePos)
 {
-    // 現状 beforePos は呼び出し側で戻すために使う
+    // beforePosは呼び出し側で戻すために使う
     (void)beforePos;
 
     if (player == nullptr)
@@ -241,7 +393,6 @@ bool EnemyBase::IsPlayerInView(Player* player)
 
     float dist = VSize(toPlayer);
 
-    // 視野距離外
     if (dist > viewRange_)
     {
         return false;
@@ -267,13 +418,11 @@ bool EnemyBase::IsPlayerInView(Player* player)
     float dot = VDot(forward, dirToPlayer);
     float limit = cosf(viewHalfAngleRad_);
 
-    // 視野角外
     if (dot < limit)
     {
         return false;
     }
 
-    // 壁などで遮られている
     if (IsBlockedByWall(player))
     {
         return false;
@@ -292,7 +441,6 @@ bool EnemyBase::IsBlockedByWall(Player* player)
     VECTOR start = transform_.pos;
     VECTOR end = player->GetTransform().pos;
 
-    // 視線の高さ
     start.y += 60.0f;
     end.y += 60.0f;
 
@@ -305,7 +453,6 @@ bool EnemyBase::IsBlockedByWall(Player* player)
             continue;
         }
 
-        // 壁などが視線を遮っているか
         if (f->IsBlockingSight(start, end))
         {
             return true;
@@ -313,6 +460,44 @@ bool EnemyBase::IsBlockedByWall(Player* player)
     }
 
     return false;
+}
+
+bool EnemyBase::IsPlayerInAttackRange(Player* player)
+{
+    if (player == nullptr)
+    {
+        return false;
+    }
+
+    VECTOR playerPos = player->GetTransform().pos;
+
+    VECTOR diff = VSub(playerPos, transform_.pos);
+    diff.y = 0.0f;
+
+    float distSq = VDot(diff, diff);
+
+    return distSq <= attackRange_ * attackRange_;
+}
+
+bool EnemyBase::IsEnemyAttackHitPlayer(Player* player)
+{
+    if (player == nullptr)
+    {
+        return false;
+    }
+
+    VECTOR attackPos = GetAttackPos();
+    VECTOR playerPos = player->GetTransform().pos;
+
+    VECTOR diff = VSub(playerPos, attackPos);
+    diff.y = 0.0f;
+
+    float distSq = VDot(diff, diff);
+
+    float playerRadius = 15.0f;
+    float hitRange = attackRadius_ + playerRadius;
+
+    return distSq <= hitRange * hitRange;
 }
 
 void EnemyBase::DrawViewRange(void)
@@ -380,4 +565,52 @@ void EnemyBase::DrawViewRange(void)
     }
 
 #endif
+}
+
+void EnemyBase::DrawAttackRange(void)
+{
+#ifdef _DEBUG
+
+    if (isAttacking_)
+    {
+        DrawSphere3D(
+            GetAttackPos(),
+            attackRadius_,
+            16,
+            GetColor(255, 150, 0),
+            GetColor(255, 150, 0),
+            FALSE);
+    }
+
+#endif
+}
+
+void EnemyBase::InitHP(int maxHp, float invincibleFrame)
+{
+    maxHp_ = maxHp;
+
+    HpManager::GetInstance().RegisterHP(
+        this,
+        maxHp_,
+        invincibleFrame);
+}
+
+void EnemyBase::Damage(int damage)
+{
+    bool isDamaged =
+        HpManager::GetInstance().Damage(this, damage);
+
+    if (!isDamaged)
+    {
+        return;
+    }
+
+    printfDx("Enemy Damage : %d\n", damage);
+
+    if (HpManager::GetInstance().IsDead(this))
+    {
+        isDead_ = true;
+
+        printfDx("Enemy Dead\n");
+    }
 }

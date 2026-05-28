@@ -30,6 +30,8 @@ public:
 		WALL,
 		F_G,
 		F_F,
+		RETURN_POINT,
+		LAPTOP,
 
 
 

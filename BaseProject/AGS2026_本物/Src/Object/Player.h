@@ -115,12 +115,25 @@ public:
 	}
 	VECTOR GetAttackPos() const;
 
+
+	bool Damage(int damage);
+	bool IsDead(void) const;
+
+	int GetHP(void) const;
+	int GetMaxHP(void) const;
+	VECTOR GetPos(void) const;
+	VECTOR GetForward(void) const;
+
+
 private:
+
+	void PlayAnimation(ANIM_TYPE animType, bool isLoop = true);
+
+	int currentAnimType_;
 
 	// アニメーション
 	std::unique_ptr<AnimationController> animationController_;
 	
-
 	// 状態管理
 	STATE state_;
 
@@ -244,6 +257,8 @@ private:
 	// カメラ
 	void SetFirstPerson(void);
 
-	
+	int maxHp_;
+	bool isDead_;
+
 
 };

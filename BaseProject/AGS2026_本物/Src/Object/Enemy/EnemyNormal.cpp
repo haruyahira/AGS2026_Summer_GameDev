@@ -24,9 +24,8 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     targetIndex_ = 0;
 
     // プレイヤーと同じ高さ付近に合わせる
-    groundY_ = -30.0f;
+    groundY_ = -90.0f;
 
-    // 追跡状態
     isChasing_ = false;
 
     // 視野距離
@@ -35,10 +34,29 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     // 視野角：左右45度、合計90度
     viewHalfAngleRad_ = AsoUtility::Deg2RadF(45.0f);
 
-    // 初期正面方向
     forwardDir_ = VGet(0.0f, 0.0f, 1.0f);
-
     waitBaseDir_ = VGet(0.0f, 0.0f, 1.0f);
+
+    // 攻撃設定
+    attackRange_ = 95.0f;
+    attackRadius_ = 40.0f;
+    attackDuration_ = 45.0f;
+    attackInterval_ = 90.0f;
+    attackIntervalTimer_ = 0.0f;
+
+    isAttacking_ = false;
+    isAttackHit_ = false;
+
+    rightHandFrame_ = -1;
+    leftHandFrame_ = -1;
+
+    isRightAttack_ = true;
+
+    bodyHeight_ = 130.0f;
+    bodyCenterOffsetY_ = 65.0f;
+
+    maxHp_ = 100;
+    attackPower_ = 1;
 }
 
 EnemyNormal::~EnemyNormal(void)
@@ -62,6 +80,11 @@ void EnemyNormal::Init(void)
     transform_.Update();
 
     InitAnimation();
+    InitAttackFrame();
+
+    InitHP(maxHp_, 20.0f);
+
+    ChangeAnimation(static_cast<int>(ANIM_TYPE::IDLE));
 
     // 最初の目的地を決める
     DecideNextTarget();
@@ -69,8 +92,9 @@ void EnemyNormal::Init(void)
 
 void EnemyNormal::Draw(void)
 {
-    // モデル、当たり判定、視野はBaseで描画
+    // モデル、当たり判定、視野、攻撃判定はBaseで描画
     EnemyBase::Draw();
+
 
 #ifdef _DEBUG
 
@@ -79,7 +103,6 @@ void EnemyNormal::Draw(void)
     {
         unsigned int color = GetColor(0, 100, 255);
 
-        // 現在の目的地だけ黄色
         if (i == targetIndex_)
         {
             color = GetColor(255, 255, 0);
@@ -100,6 +123,11 @@ void EnemyNormal::Draw(void)
     // 巡回ポイント同士を線でつなぐ
     for (int i = 0; i < static_cast<int>(patrolLinks_.size()); i++)
     {
+        if (i < 0 || i >= static_cast<int>(patrolPoints_.size()))
+        {
+            continue;
+        }
+
         for (int next : patrolLinks_[i])
         {
             if (next < 0 || next >= static_cast<int>(patrolPoints_.size()))
@@ -160,6 +188,7 @@ void EnemyNormal::UpdateWander(Player* player)
     if (patrolPoints_.empty())
     {
         animType_ = ANIM_TYPE::IDLE;
+        ChangeAnimation(static_cast<int>(animType_));
         return;
     }
 
@@ -167,6 +196,7 @@ void EnemyNormal::UpdateWander(Player* player)
     if (isWaiting_)
     {
         animType_ = ANIM_TYPE::IDLE;
+        ChangeAnimation(static_cast<int>(animType_));
 
         waitTimer_ -= 1.0f;
 
@@ -185,7 +215,6 @@ void EnemyNormal::UpdateWander(Player* player)
             0.0f,
             cosf(lookAngle));
 
-        // 見た目の向きも首振り方向へ向ける
         transform_.quaRot =
             Quaternion::AngleAxis(
                 lookAngle,
@@ -201,6 +230,7 @@ void EnemyNormal::UpdateWander(Player* player)
     }
 
     animType_ = ANIM_TYPE::RUN;
+    ChangeAnimation(static_cast<int>(animType_));
 
     if (targetIndex_ < 0 ||
         targetIndex_ >= static_cast<int>(patrolPoints_.size()))
@@ -219,19 +249,13 @@ void EnemyNormal::UpdateWander(Player* player)
     if (dist < 10.0f)
     {
         isWaiting_ = true;
-
-        // 待機時間
         waitTimer_ = 300.0f;
-
-        // 首振りの基準方向を保存
         waitBaseDir_ = forwardDir_;
-
         return;
     }
 
     VECTOR dir = VNorm(toTarget);
 
-    // 正面方向を更新
     forwardDir_ = dir;
 
     VECTOR beforePos = transform_.pos;
@@ -250,7 +274,6 @@ void EnemyNormal::UpdateWander(Player* player)
         return;
     }
 
-    // 進行方向を向く
     float angleY = atan2f(dir.x, dir.z);
 
     transform_.quaRot =
@@ -262,10 +285,12 @@ void EnemyNormal::UpdateChase(Player* player)
     if (player == nullptr)
     {
         animType_ = ANIM_TYPE::IDLE;
+        ChangeAnimation(static_cast<int>(animType_));
         return;
     }
 
     animType_ = ANIM_TYPE::RUN;
+    ChangeAnimation(static_cast<int>(animType_));
 
     VECTOR playerPos = player->GetTransform().pos;
 
@@ -291,21 +316,114 @@ void EnemyNormal::UpdateChase(Player* player)
 
     transform_.pos.y = groundY_;
 
-    // 壁や机に当たったら戻す
     if (CollisionFurniture(player, beforePos))
     {
         transform_.pos = beforePos;
         return;
     }
 
-    // 正面方向を更新
     forwardDir_ = dir;
 
-    // 向きを進行方向へ
     float angleY = atan2f(dir.x, dir.z);
 
     transform_.quaRot =
         Quaternion::AngleAxis(angleY, AsoUtility::AXIS_Y);
+}
+
+void EnemyNormal::StartAttack(Player* player)
+{
+    if (player == nullptr)
+    {
+        return;
+    }
+
+    isAttacking_ = true;
+    isAttackHit_ = false;
+
+    attackTimer_ = attackDuration_;
+
+    animType_ = ANIM_TYPE::ATTACK;
+
+    // プレイヤーの方向を向く
+    VECTOR toPlayer = VSub(player->GetTransform().pos, transform_.pos);
+    toPlayer.y = 0.0f;
+
+    if (VSize(toPlayer) > 0.001f)
+    {
+        VECTOR dir = VNorm(toPlayer);
+        forwardDir_ = dir;
+
+        float angleY = atan2f(dir.x, dir.z);
+
+        transform_.quaRot =
+            Quaternion::AngleAxis(angleY, AsoUtility::AXIS_Y);
+    }
+
+    // 攻撃アニメーションはループしない
+    ChangeAnimation(static_cast<int>(ANIM_TYPE::ATTACK), false);
+}
+
+void EnemyNormal::UpdateAttack(Player* player)
+{
+    animType_ = ANIM_TYPE::ATTACK;
+
+    attackTimer_ -= 1.0f;
+
+    // 攻撃判定タイミング
+    // 45F中、中盤だけ当たる
+    if (attackTimer_ <= 30.0f &&
+        attackTimer_ >= 15.0f &&
+        !isAttackHit_)
+    {
+        if (IsEnemyAttackHitPlayer(player))
+        {
+            isAttackHit_ = true;
+
+            printfDx("Enemy Attack Hit Player\n");
+
+            player->Damage(attackPower_);
+
+        }
+    }
+
+    // 攻撃終了
+    if (attackTimer_ <= 0.0f)
+    {
+        isAttacking_ = false;
+        isAttackHit_ = false;
+
+        attackIntervalTimer_ = attackInterval_;
+
+        animType_ = ANIM_TYPE::IDLE;
+        ChangeAnimation(static_cast<int>(animType_));
+
+        // 次回攻撃の手を反対にする
+        isRightAttack_ = !isRightAttack_;
+    }
+}
+
+VECTOR EnemyNormal::GetAttackPos(void) const
+{
+    if (isRightAttack_)
+    {
+        if (rightHandFrame_ != -1)
+        {
+            return MV1GetFramePosition(
+                transform_.modelId,
+                rightHandFrame_);
+        }
+    }
+    else
+    {
+        if (leftHandFrame_ != -1)
+        {
+            return MV1GetFramePosition(
+                transform_.modelId,
+                leftHandFrame_);
+        }
+    }
+
+    return transform_.pos;
 }
 
 void EnemyNormal::DecideNextTarget(void)
@@ -315,7 +433,7 @@ void EnemyNormal::DecideNextTarget(void)
         return;
     }
 
-    // リンク情報が無いならランダムに目的地を選ぶ
+    // リンク情報が無いならランダム
     if (patrolLinks_.empty())
     {
         int next = targetIndex_;
@@ -329,7 +447,6 @@ void EnemyNormal::DecideNextTarget(void)
         return;
     }
 
-    // targetIndex_ がリンク配列の範囲外なら補正
     if (targetIndex_ < 0 ||
         targetIndex_ >= static_cast<int>(patrolLinks_.size()))
     {
@@ -337,7 +454,6 @@ void EnemyNormal::DecideNextTarget(void)
         return;
     }
 
-    // 現在ポイントから行けるポイント一覧
     const auto& nextList = patrolLinks_[targetIndex_];
 
     if (nextList.empty())
@@ -346,10 +462,8 @@ void EnemyNormal::DecideNextTarget(void)
     }
 
     int randIndex = GetRand(static_cast<int>(nextList.size()) - 1);
-
     int nextTarget = nextList[randIndex];
 
-    // 不正なインデックスなら無視
     if (nextTarget < 0 ||
         nextTarget >= static_cast<int>(patrolPoints_.size()))
     {
@@ -375,6 +489,37 @@ void EnemyNormal::InitAnimation(void)
         static_cast<int>(ANIM_TYPE::RUN),
         path + "Run.mv1",
         30.0f);
+
+    // 敵用Attack.mv1があるならこれ
+    animationController_->Add(
+        static_cast<int>(ANIM_TYPE::ATTACK),
+        path + "Attack.mv1",
+        30.0f);
+
+    // Attack.mv1がまだ無い場合は、上をコメントアウトして一時的にこれでも可
+    /*
+    animationController_->Add(
+        static_cast<int>(ANIM_TYPE::ATTACK),
+        "Player/Hit_R.mv1",
+        30.0f);
+    */
+}
+
+void EnemyNormal::InitAttackFrame(void)
+{
+    rightHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.R");
+    leftHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.L");
+
+    // モデルによってボーン名が違う場合の保険
+    if (rightHandFrame_ == -1)
+    {
+        rightHandFrame_ = MV1SearchFrame(transform_.modelId, "RightHand");
+    }
+
+    if (leftHandFrame_ == -1)
+    {
+        leftHandFrame_ = MV1SearchFrame(transform_.modelId, "LeftHand");
+    }
 }
 
 int EnemyNormal::GetAnimType(void) const

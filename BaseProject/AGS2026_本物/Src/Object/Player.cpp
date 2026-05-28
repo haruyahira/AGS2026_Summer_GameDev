@@ -7,6 +7,7 @@
 #include "../Manager/ResourceManager.h"
 #include "../Manager/Camera.h"
 #include "Common/AnimationController.h"
+#include "Common/Hp/HpManager.h"
 #include "Collider/Capsule.h"
 #include "Collider/Collider.h"
 #include "Stage/Planet.h"
@@ -14,10 +15,11 @@
 
 Player::Player(void)
 {
-
 	animationController_ = nullptr;
 	state_ = STATE::NONE;
 	animType_ = ANIM_TYPE::IDLE;
+
+	currentAnimType_ = -1;
 
 	speed_ = 0.0f;
 	moveDir_ = AsoUtility::VECTOR_ZERO;
@@ -33,9 +35,7 @@ Player::Player(void)
 	isJump_ = false;
 	stepJump_ = 0.0f;
 	standHeight_ = 90.0f;
-	
 
-	// 衝突チェック
 	gravHitPosDown_ = AsoUtility::VECTOR_ZERO;
 	gravHitPosUp_ = AsoUtility::VECTOR_ZERO;
 
@@ -43,10 +43,14 @@ Player::Player(void)
 
 	capsule_ = nullptr;
 
+	maxHp_ = 5;
+	isDead_ = false;
+
 }
 
 Player::~Player(void)
 {
+	HpManager::GetInstance().UnregisterHP(this);
 	//delete capsule_;
 	// すべてのカプセルを解放
 	for (auto& pair : capsules_) {
@@ -83,6 +87,7 @@ void Player::Init(void)
 
 	// 初期状態
 	ChangeState(STATE::PLAY);
+	HpManager::GetInstance().RegisterHP(this, maxHp_, 60.0f);
 	int head = MV1SearchFrame(transform_.modelId, "Head_Bone");
 	//// 頭だけを非表示にする
 	//if (head != -1) {
@@ -93,6 +98,11 @@ void Player::Init(void)
 
 void Player::Update(void)
 {
+
+	if (isDead_)
+	{
+		return;
+	}
 
 	// 更新ステップ
 	switch (state_)
@@ -164,6 +174,15 @@ void Player::Draw(void)
 	}
 
 
+	DrawFormatString(
+		20,
+		45,
+		GetColor(255, 100, 100),
+		"HP: %d / %d",
+		GetHP(),
+		GetMaxHP()
+	);
+
 	
 }
 
@@ -189,12 +208,14 @@ const std::vector<Furniture*>& Player::GetFurnitures() const
 
 void Player::InitAnimation(void)
 {
-
 	std::string path = Application::PATH_MODEL + "Player/";
-	animationController_ = std::make_unique <AnimationController>(transform_.modelId);
+
+	animationController_ =
+		std::make_unique<AnimationController>(transform_.modelId);
+
 	animationController_->Add((int)ANIM_TYPE::IDLE, path + "Player.mv1", 10.0f);
 	animationController_->Add((int)ANIM_TYPE::RUN, path + "Run.mv1", 20.0f);
-	animationController_->Add((int)ANIM_TYPE::FAST_RUN, path + "FastRun.mv1", 20.0f);
+	animationController_->Add((int)ANIM_TYPE::FAST_RUN, path + "Run.mv1", 40.0f);
 	animationController_->Add((int)ANIM_TYPE::JUMP, path + "Jump.mv1", 60.0f);
 	animationController_->Add((int)ANIM_TYPE::HIT_R, path + "Hit_R.mv1", 30.0f);
 	animationController_->Add((int)ANIM_TYPE::HIT_L, path + "Hit_L.mv1", 30.0f);
@@ -204,11 +225,10 @@ void Player::InitAnimation(void)
 	animationController_->Add((int)ANIM_TYPE::PRONE_RUN, path + "ProneRun.mv1", 60.0f);
 
 	animationController_->Add((int)ANIM_TYPE::FLY, path + "Flying.mv1", 60.0f);
-	
-	animationController_->Play((int)ANIM_TYPE::IDLE);
 
+	currentAnimType_ = -1;
+	PlayAnimation(ANIM_TYPE::IDLE);
 }
-
 void Player::InitCollider(void)
 {
 
@@ -339,11 +359,25 @@ void Player::ChangeStateNone(void)
 
 void Player::ChangeStatePlay(void)
 {
+	if (isAttacking_)
+	{
+		return;
+	}
+
+	PlayAnimation(ANIM_TYPE::IDLE);
 }
 
 void Player::ChangeStateProne(void)
 {
+	if (isAttacking_)
+	{
+		return;
+	}
+
+	PlayAnimation(ANIM_TYPE::PRONE_IDLE);
+
 }
+
 
 void Player::UpdateNone(void)
 {
@@ -353,6 +387,9 @@ void Player::UpdatePlay(void)
 {
 	// 共通の更新処理
 	UpdateCommon();
+
+	//攻撃処理
+	ProcessAttack();
 }
 
 void Player::UpdateProne(void)
@@ -369,9 +406,9 @@ void Player::UpdateCommon(void)
 
 	// 通常・うつ伏せ切り替え (Cキー)
 	// 通常・うつ伏せ切り替え (Cキー)
-	if (ins.IsTrgDown(KEY_INPUT_C))
+	if (ins.IsTrgDown(KEY_INPUT_C)&&!isAttacking_)
 	{
-		// ⭕【修正】起き上がれない時は「何もしない」ように明示的に分ける
+		// ⭕ 起き上がれない時は「何もしない」ように明示的に分ける
 		if (IsProne())
 		{
 			if (isStand_)
@@ -393,8 +430,7 @@ void Player::UpdateCommon(void)
 	ProcessJump();
 
 
-	//攻撃処理
-	ProcessAttack();
+
 
 
 	// 移動方向に応じた回転
@@ -537,141 +573,144 @@ void Player::DrawShadow(void)
 
 void Player::ProcessMove(void)
 {
-
 	auto& ins = InputManager::GetInstance();
 
 	// 移動量をゼロ
 	movePow_ = AsoUtility::VECTOR_ZERO;
 
-	// X軸回転を除いた、重力方向に垂直なカメラ角度(XZ平面)を取得
-	Quaternion cameraRot = SceneManager::GetInstance().GetCamera()->GetQuaRotOutX();
-
-	// 回転したい角度
-	double rotRad = 0;
+	// カメラのX軸回転を除いた向きを取得
+	Quaternion cameraRot =
+		SceneManager::GetInstance().GetCamera()->GetQuaRotOutX();
 
 	VECTOR dir = AsoUtility::VECTOR_ZERO;
 
-
-	// カメラ方向に前進したい
 	if (ins.IsPress(KEY_INPUT_W))
 	{
-		rotRad = AsoUtility::Deg2RadD(0.0);
 		dir = cameraRot.GetForward();
 	}
 
-	// カメラ方向から後退したい
 	if (ins.IsPress(KEY_INPUT_S))
 	{
-		rotRad = AsoUtility::Deg2RadD(180.0);
 		dir = cameraRot.GetBack();
 	}
 
-	// カメラ方向から右側へ移動したい
 	if (ins.IsPress(KEY_INPUT_D))
 	{
-		rotRad = AsoUtility::Deg2RadD(90.0);
 		dir = cameraRot.GetRight();
 	}
 
-	// カメラ方向から左側へ移動したい
 	if (ins.IsPress(KEY_INPUT_A))
 	{
-		rotRad = AsoUtility::Deg2RadD(270.0);
 		dir = cameraRot.GetLeft();
 	}
 
+	bool isMove = !AsoUtility::EqualsVZero(dir);
+	bool isRun = ins.IsPress(KEY_INPUT_LSHIFT);
 
+	// 地上、またはジャンプ処理的に移動可能な状態
+	bool canMove = (isJump_ || IsEndLanding());
 
-	if (!AsoUtility::EqualsVZero(dir) && (isJump_ || IsEndLanding())) {
+	if (isMove && canMove)
+	{
+		float currentSpeed = 0.0f;
 
-		
-		// 状態を判定
-		bool isRun = ins.IsPress(KEY_INPUT_LSHIFT);
+		if (IsProne())
+		{
+			currentSpeed = isRun ? 7.5f : 2.5f;
+		}
+		else
+		{
+			currentSpeed = isRun ? SPEED_RUN : SPEED_MOVE;
+		}
 
-		// 速度：しゃがみなら1.2f、立ちならShift判定あり
-		float currentSpeed = IsProne() ?
-			(isRun ? 7.5f : 2.5f)       // しゃがみ（高速 / 通常）
-			:    
-			(isRun ? SPEED_RUN : SPEED_MOVE);      // 立ち（ダッシュ / 歩き）
-
-		// 移動処理
 		moveDir_ = dir;
 		movePow_ = VScale(dir, currentSpeed);
 
-		
-		// 回転処理
-		//SetGoalRotate(rotRad);
-		if (!isAttacking_) {
-			// アニメショーン変更処理
-			animType_ = IsProne() ?
-				(isRun ? ANIM_TYPE::PRONE_RUN : ANIM_TYPE::PRONE_WALK) // しゃがみ
-				:
-				(isRun ? ANIM_TYPE::FAST_RUN : ANIM_TYPE::RUN); // 立ち
-
-			animationController_->Play((int)animType_);
-		}
-		
-	}
-	else // 移動入力がない場合
-	{
-		if (!isAttacking_) {
-			if (!isJump_ && IsEndLanding())
+		// 攻撃中は攻撃アニメーションを優先
+		if (!isAttacking_)
+		{
+			if (IsProne())
 			{
-				animType_ = IsProne() ?
-					ANIM_TYPE::PRONE_IDLE
-					:
-					ANIM_TYPE::IDLE;
-
+				if (isRun)
+				{
+					PlayAnimation(ANIM_TYPE::PRONE_RUN);
+				}
+				else
+				{
+					PlayAnimation(ANIM_TYPE::PRONE_WALK);
+				}
+			}
+			else
+			{
+				if (isRun)
+				{
+					PlayAnimation(ANIM_TYPE::FAST_RUN);
+				}
+				else
+				{
+					PlayAnimation(ANIM_TYPE::RUN);
+				}
 			}
 		}
 	}
-
-	//// アニメーション変更実行
-	//if (animationController_) {
-	//	animationController_->Play((int)animType_);
-	//}
-
+	else
+	{
+		// 移動していない時は待機へ戻す
+		if (!isAttacking_)
+		{
+			if (!isJump_ && IsEndLanding())
+			{
+				if (IsProne())
+				{
+					PlayAnimation(ANIM_TYPE::PRONE_IDLE);
+				}
+				else
+				{
+					PlayAnimation(ANIM_TYPE::IDLE);
+				}
+			}
+		}
+	}
 }
+
 
 void Player::ProcessJump(void)
 {
-
 	bool isHit = CheckHitKey(KEY_INPUT_SPACE);
 
-	// ジャンプ
 	if (isHit && (isJump_ || IsEndLanding()))
 	{
-
 		if (!isJump_)
 		{
-			// 制御無しジャンプ
-			//mAnimationController->Play((int)ANIM_TYPE::JUMP);
-			// ループしないジャンプ
-			//mAnimationController->Play((int)ANIM_TYPE::JUMP, false);
-			// 切り取りアニメーション
-			//mAnimationController->Play((int)ANIM_TYPE::JUMP, false, 13.0f, 24.0f);
-			// 無理やりアニメーション
-			animationController_->Play((int)ANIM_TYPE::JUMP, true, 13.0f, 25.0f);
-			animationController_->SetEndLoop(23.0f, 25.0f, 5.0f);
+			animType_ = ANIM_TYPE::JUMP;
+			currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
+
+			animationController_->Play(
+				static_cast<int>(ANIM_TYPE::JUMP),
+				true,
+				13.0f,
+				25.0f);
+
+			animationController_->SetEndLoop(
+				23.0f,
+				25.0f,
+				5.0f);
 		}
 
 		isJump_ = true;
 
-		// ジャンプの入力受付時間をヘラス
 		stepJump_ += scnMng_.GetDeltaTime();
+
 		if (stepJump_ < TIME_JUMP_IN)
 		{
 			jumpPow_ = VScale(AsoUtility::DIR_U, POW_JUMP);
 		}
-
-
 	}
-	// ボタンを離したらジャンプ力に加算しない
+
 	if (!isHit)
 	{
 		stepJump_ = TIME_JUMP_IN;
 	}
-
 }
 
 void Player::ProcessAttack(void)
@@ -684,27 +723,27 @@ void Player::ProcessAttack(void)
 	{
 		isAttacking_ = true;
 
-		attackTimer_ = 40.0f;
+		attackTimer_ = 90.0f;
 
-		// 右左交互
 		if (isRightAttack_)
 		{
 			animType_ = ANIM_TYPE::HIT_R;
+			currentAnimType_ = static_cast<int>(ANIM_TYPE::HIT_R);
 
 			animationController_->Play(
-				(int)ANIM_TYPE::HIT_R,
+				static_cast<int>(ANIM_TYPE::HIT_R),
 				false);
 		}
 		else
 		{
 			animType_ = ANIM_TYPE::HIT_L;
+			currentAnimType_ = static_cast<int>(ANIM_TYPE::HIT_L);
 
 			animationController_->Play(
-				(int)ANIM_TYPE::HIT_L,
+				static_cast<int>(ANIM_TYPE::HIT_L),
 				false);
 		}
 
-		// 次回反転
 		isRightAttack_ = !isRightAttack_;
 	}
 
@@ -717,15 +756,21 @@ void Player::ProcessAttack(void)
 		{
 			isAttacking_ = false;
 
-			// 待機へ戻す
-			animType_ = ANIM_TYPE::IDLE;
-
-			animationController_->Play(
-				(int)ANIM_TYPE::IDLE);
+			// 状態に応じて戻す
+			if (IsProne())
+			{
+				// 攻撃から戻るため、一度 current をリセットして確実に再生
+				currentAnimType_ = -1;
+				PlayAnimation(ANIM_TYPE::PRONE_IDLE);
+			}
+			else
+			{
+				currentAnimType_ = -1;
+				PlayAnimation(ANIM_TYPE::IDLE);
+			}
 		}
 	}
 }
-
 void Player::SetGoalRotate(double rotRad)
 {
 
@@ -789,7 +834,6 @@ void Player::Collision(void)
 
 void Player::CollisionGravity(void)
 {
-
 	// ジャンプ量を加算
 	movedPos_ = VAdd(movedPos_, jumpPow_);
 
@@ -825,12 +869,21 @@ void Player::CollisionGravity(void)
 			jumpPow_ = AsoUtility::VECTOR_ZERO;
 			stepJump_ = 0.0f;
 
+
 			if (isJump_)
 			{
-				// 着地モーション
+				animType_ = ANIM_TYPE::JUMP;
+				currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
+
 				animationController_->Play(
-					(int)ANIM_TYPE::JUMP, false, 29.0f, 45.0f, false, true);
+					static_cast<int>(ANIM_TYPE::JUMP),
+					false,
+					29.0f,
+					45.0f,
+					false,
+					true);
 			}
+
 
 			isJump_ = false;
 
@@ -1148,4 +1201,104 @@ VECTOR Player::GetAttackPos() const
 	// 攻撃していない時はプレイヤー位置
 	return transform_.pos;
 
+}
+
+void Player::PlayAnimation(ANIM_TYPE animType, bool isLoop)
+{
+	if (animationController_ == nullptr)
+	{
+		return;
+	}
+
+	int nextAnimType = static_cast<int>(animType);
+
+	// 同じアニメーションなら再生し直さない
+	if (currentAnimType_ == nextAnimType)
+	{
+		return;
+	}
+
+	this->animType_ = animType;
+	currentAnimType_ = nextAnimType;
+
+	animationController_->Play(nextAnimType, isLoop);
+}
+
+bool Player::Damage(int damage)
+{
+
+	bool isDamaged =
+		HpManager::GetInstance().Damage(this, damage);
+
+	if (!isDamaged)
+	{
+		return false;
+	}
+
+	printfDx("Player Damage : %d\n", damage);
+
+	if (HpManager::GetInstance().IsDead(this))
+	{
+		isDead_ = true;
+		ChangeState(STATE::NONE);
+
+		printfDx("Player Dead\n");
+	}
+
+	return true;
+
+}
+
+
+bool Player::IsDead(void) const
+{
+	return isDead_;
+}
+
+int Player::GetHP(void) const
+{
+	const Hp* hp = HpManager::GetInstance().GetHP(this);
+
+	if (hp == nullptr)
+	{
+		return 0;
+	}
+
+	return hp->GetCurrent();
+}
+
+int Player::GetMaxHP(void) const
+{
+	const Hp* hp = HpManager::GetInstance().GetHP(this);
+
+	if (hp == nullptr)
+	{
+		return 0;
+	}
+
+	return hp->GetMax();
+}
+
+
+VECTOR Player::GetPos(void) const
+{
+	return transform_.pos;
+}
+
+VECTOR Player::GetForward(void) const
+{
+	auto camera = SceneManager::GetInstance().GetCamera();
+
+	VECTOR camPos = GetCameraPosition();
+	VECTOR camTarget = GetCameraTarget();
+
+	VECTOR forward = VSub(camTarget, camPos);
+	forward.y = 0.0f;
+
+	if (VSize(forward) < 0.001f)
+	{
+		return VGet(0.0f, 0.0f, 1.0f);
+	}
+
+	return VNorm(forward);
 }

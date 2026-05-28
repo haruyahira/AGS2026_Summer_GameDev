@@ -5,6 +5,7 @@
 #include "../Manager/InputManager.h"
 #include "../Object/Collider/Capsule.h"
 #include "../Object/Collider/Collider.h"
+#include "../Object/Common/Hp/HpManager.h"
 #include "../Object/Enemy/EnemyManager.h"
 #include "../Object/Stage/Stage.h"
 #include "../Object/Player.h"
@@ -60,8 +61,8 @@ void GameScene::Init(void)
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
 	// ‰ŠúŽ‹“_Ý’è
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
-	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
+	//SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW);
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
 
 
 
@@ -83,7 +84,7 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::TITLE);
 	}
 
-	
+	HpManager::GetInstance().Update();
 
 	stage_->Update();
 

@@ -6,6 +6,7 @@
 #include "../../Utility/AsoUtility.h"
 #include "../../Manager/SceneManager.h"
 #include "../../Manager/ResourceManager.h"
+#include "../../Manager/InputManager.h"
 #include "WarpStar.h"
 #include "../Player.h"
 #include "Planet.h"
@@ -16,6 +17,7 @@
 #include "../Furniture/Wall.h"
 #include "../Furniture/Showcase.h"
 #include "../Furniture/Ceiling.h"
+#include "../Furniture/StoneDevice.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -23,6 +25,20 @@ Stage::Stage(Player* player)
 	player_ = player;
 	activeName_ = NAME::FIRST_STAGE;
 	step_ = 0.0f;
+	stoneDevice_ = nullptr;
+
+	lookingItemIndex_ = -1;
+	isItemMax_ = false;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+
+		itemCount_[i] = 0;
+		registeredItemCount_[i] = 0;
+		stolenItemCount_[i] = 0;
+
+	}
+
 }
 
 Stage::~Stage(void)
@@ -54,12 +70,30 @@ Stage::~Stage(void)
 	glassFurnitures_.clear();
 
 
+	if (stoneDevice_ != nullptr)
+	{
+		delete stoneDevice_;
+		stoneDevice_ = nullptr;
+	}
+
+
+	for (auto item : items_)
+	{
+		delete item;
+	}
+	items_.clear();
+
+
 }
 
 void Stage::Init(void)
 {
 	MakeMainStage();
 	//MakeWarpStar();
+
+	stoneDevice_ = new StoneDevice(player_);
+	stoneDevice_->Init();
+
 
 	step_ = -1.0f;
 }
@@ -89,6 +123,24 @@ void Stage::Update(void)
 		f->Update();
 	}
 
+
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Update();
+	}
+
+
+
+	for (auto item : items_)
+	{
+		item->Update();
+	}
+
+	UpdateItemPickup();
+
+	UpdateStoneDeviceRegister();
+
+
 }
 
 void Stage::Draw(void)
@@ -111,6 +163,18 @@ void Stage::Draw(void)
 		f->Draw();
 	}
 
+	for (auto item : items_)
+	{
+		item->Draw();
+	}
+
+
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Draw();
+	}
+
+
 
 
 	// ガラス家具は最後に描画
@@ -131,6 +195,7 @@ void Stage::Draw(void)
 	SetUseBackCulling(TRUE);
 	SetWriteZBuffer3D(TRUE);
 
+	DrawItemUI();
 
 }
 
@@ -295,6 +360,15 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
+
+	// アイテム配置
+	CreateItem(
+		Item::TYPE::LAPTOP,
+		ResourceManager::SRC::LAPTOP,
+		VGet(-900.0f, -70.0f, 100.0f),
+		VGet(0.5f, 0.5f, 0.5f)
+	);
+
 };
 
 //void Stage::MakeWarpStar(void)
@@ -439,4 +513,378 @@ void Stage::CreateFurniture(const FurnitureData& data)
 		furnitures_.push_back(f);
 	}
 
+}
+
+
+void Stage::CreateItem(
+	Item::TYPE type,
+	ResourceManager::SRC modelSrc,
+	VECTOR pos,
+	VECTOR scl)
+{
+	Item* item = new Item();
+	item->Init(type, modelSrc, pos, scl);
+	items_.push_back(item);
+}
+
+int Stage::FindLookingItem(void)
+{
+	if (player_ == nullptr)
+	{
+		return -1;
+	}
+
+	VECTOR playerPos = player_->GetPos();
+	VECTOR playerForward = player_->GetForward();
+
+	for (int i = 0; i < (int)items_.size(); i++)
+	{
+		if (items_[i] == nullptr)
+		{
+			continue;
+		}
+
+		if (!items_[i]->IsActive())
+		{
+			continue;
+		}
+
+		if (items_[i]->IsInPlayerView(playerPos, playerForward))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void Stage::UpdateItemPickup(void)
+{
+	lookingItemIndex_ = FindLookingItem();
+	isItemMax_ = false;
+
+	if (lookingItemIndex_ == -1)
+	{
+		return;
+	}
+
+	auto& ins = InputManager::GetInstance();
+
+	Item* item = items_[lookingItemIndex_];
+
+	Item::TYPE type = item->GetType();
+	int typeIndex = (int)type;
+
+	// 全アイテム合計で最大3個まで
+	if (GetTotalItemCount() >= MAX_ITEM_COUNT)
+	{
+		isItemMax_ = true;
+		return;
+	}
+
+	if (ins.IsTrgDown(KEY_INPUT_F))
+	{
+
+		itemCount_[typeIndex]++;
+
+		// 今回のプレイ中に盗んだアイテムとして記録
+		stolenItemCount_[typeIndex]++;
+
+		item->Pickup();
+
+	}
+}
+
+
+bool Stage::HasAnyItem(void) const
+{
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		if (itemCount_[i] > 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Stage::RegisterItemsToStoneDevice(void)
+{
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		registeredItemCount_[i] += itemCount_[i];
+		itemCount_[i] = 0;
+	}
+}
+
+void Stage::UpdateStoneDeviceRegister(void)
+{
+	if (stoneDevice_ == nullptr)
+	{
+		return;
+	}
+
+	if (!stoneDevice_->IsActive())
+	{
+		return;
+	}
+
+	if (!stoneDevice_->IsNearPlayer())
+	{
+		return;
+	}
+
+	auto& ins = InputManager::GetInstance();
+
+	// Eキー：リザルト画面へ
+	if (ins.IsTrgDown(KEY_INPUT_E))
+	{
+		int stolenMoney = CalcStolenMoney();
+
+		SceneManager::GetInstance().SetResultData(stolenMoney);
+
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
+		return;
+	}
+
+	// アイテムを見ている時はF登録だけ止める
+	if (lookingItemIndex_ != -1)
+	{
+		return;
+	}
+
+	if (ins.IsTrgDown(KEY_INPUT_F))
+	{
+		if (HasAnyItem())
+		{
+			RegisterItemsToStoneDevice();
+		}
+	}
+}void Stage::DrawItemUI(void) const
+{
+	if (lookingItemIndex_ != -1)
+	{
+		Item* item = items_[lookingItemIndex_];
+
+		if (item != nullptr)
+		{
+			if (isItemMax_)
+			{
+				DrawFormatString(
+					20,
+					130,
+					GetColor(255, 80, 80),
+					"これ以上アイテムを持てません",
+					item->GetName()
+				);
+			}
+			else
+			{
+				DrawFormatString(
+					20,
+					130,
+					GetColor(255, 255, 255),
+					"F 拾う：%s",
+					item->GetName()
+				);
+			}
+		}
+	}
+
+	int x = 20;
+	int y = 160;
+
+	DrawFormatString(
+		x,
+		y,
+		GetColor(255, 255, 255),
+		"所持アイテム 合計：%d / %d",
+		GetTotalItemCount(),
+		MAX_ITEM_COUNT
+	);
+
+	y += 25;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		const char* name = "不明";
+
+		switch ((Item::TYPE)i)
+		{
+		case Item::TYPE::LAPTOP:
+			name = "ノートPC";
+			break;
+
+		case Item::TYPE::BATTERY:
+			name = "バッテリー";
+			break;
+
+		case Item::TYPE::KEY:
+			name = "鍵";
+			break;
+
+		case Item::TYPE::MEDICINE:
+			name = "薬";
+			break;
+
+		default:
+			name = "不明";
+			break;
+		}
+
+		DrawFormatString(
+			x,
+			y,
+			GetColor(255, 255, 255),
+			"%s：%d",
+			name,
+			itemCount_[i]
+		);
+
+		y += 20;
+	}
+
+	y += 10;
+
+	DrawString(
+		x,
+		y,
+		"登録済みアイテム",
+		GetColor(100, 255, 255)
+	);
+
+	y += 25;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		const char* name = "不明";
+
+		switch ((Item::TYPE)i)
+		{
+		case Item::TYPE::LAPTOP:
+			name = "ノートPC";
+			break;
+
+		case Item::TYPE::BATTERY:
+			name = "バッテリー";
+			break;
+
+		case Item::TYPE::KEY:
+			name = "鍵";
+			break;
+
+		case Item::TYPE::MEDICINE:
+			name = "薬";
+			break;
+
+		default:
+			name = "不明";
+			break;
+		}
+
+		DrawFormatString(
+			x,
+			y,
+			GetColor(100, 255, 255),
+			"%s：%d",
+			name,
+			registeredItemCount_[i]
+		);
+
+		y += 20;
+	}
+
+	if (stoneDevice_ != nullptr)
+	{
+		if (stoneDevice_->IsActive() && stoneDevice_->IsNearPlayer())
+		{
+			if (HasAnyItem())
+			{
+				DrawString(
+					20,
+					80,
+					"Fキーでアイテム登録 / Eキーで脱出",
+					GetColor(255, 255, 255)
+				);
+			}
+			else
+			{
+				DrawString(
+					20,
+					80,
+					"登録できるアイテムがありません /  Eキーで脱出",
+					GetColor(180, 180, 180)
+				);
+			}
+		}
+	}
+}
+
+int Stage::GetTotalItemCount(void) const
+{
+	int total = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		total += itemCount_[i];
+	}
+
+	return total;
+}
+
+int Stage::GetItemPrice(Item::TYPE type) const
+{
+	switch (type)
+	{
+	case Item::TYPE::LAPTOP:
+		return 80000;
+
+	case Item::TYPE::BATTERY:
+		return 5000;
+
+	case Item::TYPE::KEY:
+		return 10000;
+
+	case Item::TYPE::MEDICINE:
+		return 3000;
+
+	default:
+		return 0;
+	}
+}
+
+int Stage::CalcStolenMoney(void) const
+{
+	int total = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+
+		total += stolenItemCount_[i] * GetItemPrice(type);
+	}
+
+	return total;
+}
+
+int Stage::CalcTotalMoney(void) const
+{
+	int total = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+
+		int count = itemCount_[i] + registeredItemCount_[i];
+
+		total += count * GetItemPrice(type);
+	}
+
+	return total;
+}
+
+int Stage::CalcRemainDay(void) const
+{
+	return SceneManager::GetInstance().GetGameRemainDay();
 }

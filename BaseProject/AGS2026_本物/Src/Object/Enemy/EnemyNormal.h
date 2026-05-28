@@ -21,16 +21,24 @@ private:
     {
         IDLE,
         RUN,
+        ATTACK,
         FAST_RUN,
     };
 
     void InitAnimation(void) override;
+
     void UpdateWander(Player* player) override;
     void UpdateChase(Player* player) override;
+
+    void StartAttack(Player* player) override;
+    void UpdateAttack(Player* player) override;
+    VECTOR GetAttackPos(void) const override;
 
     int GetAnimType(void) const override;
 
     void DecideNextTarget(void);
+
+    void InitAttackFrame(void);
 
 private:
     std::vector<VECTOR> patrolPoints_;
@@ -44,4 +52,9 @@ private:
     VECTOR waitBaseDir_;
 
     ANIM_TYPE animType_;
+
+    int rightHandFrame_;
+    int leftHandFrame_;
+
+    bool isRightAttack_;
 };

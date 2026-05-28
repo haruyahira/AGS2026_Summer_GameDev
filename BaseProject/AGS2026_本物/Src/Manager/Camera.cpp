@@ -24,9 +24,7 @@ Camera::~Camera(void)
 
 void Camera::Init(void)
 {
-
 	ChangeMode(MODE::FIXED_POINT);
-
 }
 
 void Camera::Update(void)

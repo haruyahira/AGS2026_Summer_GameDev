@@ -4,6 +4,7 @@
 #include "../Common/Fader.h"
 #include "../Scene/TitleScene.h"
 #include "../Scene/GameScene.h"
+#include "../Scene/ResultScene.h"
 #include "../Application.h"
 #include "Camera.h"
 #include "ResourceManager.h"
@@ -28,6 +29,12 @@ SceneManager& SceneManager::GetInstance(void)
 
 void SceneManager::Init(void)
 {
+
+	gameRemainDay_ = START_REMAIN_DAY;
+	resultRemainDay_ = START_REMAIN_DAY;
+	resultStolenMoney_ = 0;
+	resultTotalMoney_ = 0;
+
 
 	sceneId_ = SCENE_ID::TITLE;
 	waitSceneId_ = SCENE_ID::NONE;
@@ -110,7 +117,7 @@ void SceneManager::Update(void)
 		SetMouseDispFlag(FALSE);
 		InputManager::GetInstance().SetFixMouse(true);
 	}
-	else if	 (sceneId_ == SCENE_ID::TITLE)
+	else if	 (sceneId_ == SCENE_ID::TITLE || sceneId_ == SCENE_ID::RESULT)
 	{
 		// メニュー画面ならマウスを表示して自由に動かせる
 		SetMouseDispFlag(TRUE);
@@ -258,6 +265,10 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 	case SCENE_ID::GAME:
 		scene_ = new GameScene();
 		break;
+	case SCENE_ID::RESULT:
+		scene_ = new ResultScene();
+		break;
+
 	}
 
 	scene_->Init();
@@ -298,3 +309,54 @@ void SceneManager::Fade(void)
 }
 
 
+void SceneManager::SetResultData(int stolenMoney)
+{
+	// 今回盗んだ金額
+	resultStolenMoney_ = stolenMoney;
+
+	// 累計金額に加算
+	resultTotalMoney_ += stolenMoney;
+
+	// 1日終了したので残り日数を1減らす
+	gameRemainDay_--;
+
+	if (gameRemainDay_ < 0)
+	{
+		gameRemainDay_ = 0;
+	}
+
+	// リザルト表示用
+	resultRemainDay_ = gameRemainDay_;
+}
+int SceneManager::GetGameRemainDay(void) const
+{
+	return gameRemainDay_;
+}
+
+int SceneManager::GetResultRemainDay(void) const
+{
+	return resultRemainDay_;
+}
+
+int SceneManager::GetResultStolenMoney(void) const
+{
+	return resultStolenMoney_;
+}
+
+int SceneManager::GetResultTotalMoney(void) const
+{
+	return resultTotalMoney_;
+}
+
+bool SceneManager::CanGoNextDay(void) const
+{
+	return gameRemainDay_ > 0;
+}
+
+void SceneManager::ResetGameResultData(void)
+{
+	gameRemainDay_ = START_REMAIN_DAY;
+	resultRemainDay_ = START_REMAIN_DAY;
+	resultStolenMoney_ = 0;
+	resultTotalMoney_ = 0;
+}

@@ -7,6 +7,8 @@
 #include "../../Common/Vector3.h"
 #include "../Common/Transform.h"
 #include "../Furniture/Furniture.h"
+#include "../Furniture/StoneDevice.h"
+#include "../Item.h"
 class ResourceManager;
 class WarpStar;
 class Planet;
@@ -70,6 +72,7 @@ private:
 	ResourceManager& resMng_;
 
 	Player* player_;
+	StoneDevice* stoneDevice_;
 
 	// ステージアクティブになっている惑星の情報
 	NAME activeName_;
@@ -78,14 +81,10 @@ private:
 	// 惑星
 	std::map<NAME, Planet*> stages_;
 
-
 	// 家具
 	std::vector<Furniture*> furnitures_;
 	std::vector<Furniture*> glassFurnitures_;
 	
-
-
-
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
 
@@ -102,6 +101,40 @@ private:
 	void MakeWarpStar(void);
 
 	void CreateFirstStage(void);
-	
+
+
+	std::vector<Item*> items_;
+
+	int itemCount_[(int)Item::TYPE::MAX];
+	int registeredItemCount_[(int)Item::TYPE::MAX];
+
+	static constexpr int MAX_ITEM_COUNT = 3;
+
+	int lookingItemIndex_;
+	bool isItemMax_;
+
+	void CreateItem(
+		Item::TYPE type,
+		ResourceManager::SRC modelSrc,
+		VECTOR pos,
+		VECTOR scl);
+
+	int FindLookingItem(void);
+	void UpdateItemPickup(void);
+
+	bool HasAnyItem(void) const;
+	void RegisterItemsToStoneDevice(void);
+	void UpdateStoneDeviceRegister(void);
+
+	void DrawItemUI(void) const;
+
+	int GetTotalItemCount(void) const;
+
+		int GetItemPrice(Item::TYPE type) const;
+		int CalcStolenMoney(void) const;
+		int CalcTotalMoney(void) const;
+		int CalcRemainDay(void) const;
+
+		int stolenItemCount_[(int)Item::TYPE::MAX];
 
 };

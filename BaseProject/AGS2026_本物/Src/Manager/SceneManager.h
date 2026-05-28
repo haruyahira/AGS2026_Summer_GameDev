@@ -15,9 +15,10 @@ public:
 	{
 		NONE,
 		TITLE,
-		GAME
+		GAME,
+		RESULT
 	};
-	
+
 	// インスタンスの生成
 	static void CreateInstance(void);
 
@@ -44,6 +45,24 @@ public:
 	// カメラの取得
 	Camera* GetCamera(void) const;
 
+
+	void ResetGameResultData(void);
+
+	void SetResultData(int stolenMoney);
+
+	int GetGameRemainDay(void) const;
+
+	int GetResultRemainDay(void) const;
+
+	int GetResultStolenMoney(void) const;
+
+	int GetResultTotalMoney(void) const;
+
+	bool CanGoNextDay(void) const;
+
+
+
+
 private:
 
 	// 静的インスタンス
@@ -69,7 +88,7 @@ private:
 	// デルタタイム
 	std::chrono::system_clock::time_point preTime_;
 	float deltaTime_;
-	
+
 	// デフォルトコンストラクタをprivateにして、
 	// 外部から生成できない様にする
 	SceneManager(void);
@@ -86,5 +105,13 @@ private:
 
 	// フェード
 	void Fade(void);
+
+
+	static constexpr int START_REMAIN_DAY = 3;
+
+	int gameRemainDay_;       // 現在の残り日数
+	int resultRemainDay_;     // リザルト表示用
+	int resultStolenMoney_;   // 今回盗んだ金額
+	int resultTotalMoney_;    // 累計金額
 
 };

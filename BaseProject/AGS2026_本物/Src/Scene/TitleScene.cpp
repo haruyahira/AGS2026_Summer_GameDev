@@ -187,6 +187,7 @@ void TitleScene::UpdateSelect(void)
 	{
 		// 1番目（スタート）
 		if (drawIndex_ == 1) {
+			SceneManager::GetInstance().ResetGameResultData();
 			SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
 		}
 		// 2番目（ランキング）
