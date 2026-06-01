@@ -18,6 +18,9 @@ void EnemyManager::Init(void)
 	// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
 	EnemyNormal* testEnemy = new EnemyNormal();
 	testEnemy->Init();
+	EnemyNormal* enemy2 = new EnemyNormal();
+	enemy2->Init();
+
 
 
 	std::vector<VECTOR> points =
@@ -51,8 +54,30 @@ void EnemyManager::Init(void)
 
 	testEnemy->SetPatrolPoints(points);
 	testEnemy->SetPatrolLinks(links);
-
+	testEnemy->SetPos(points[5]);
 	enemies_.push_back(testEnemy);
+	
+
+
+	enemy2->SetPatrolPoints(points);
+	enemy2->SetPatrolLinks(links);
+	enemy2->SetPos(points[4]);
+	enemies_.push_back(enemy2);
+
+
+	for (int i = 0; i < 5; i++)
+	{
+		EnemyNormal* enemy = new EnemyNormal();
+
+		enemy->Init();
+
+		enemy->SetPatrolPoints(points);
+		enemy->SetPatrolLinks(links);
+
+		enemies_.push_back(enemy);
+	}
+
+
 }
 
 void EnemyManager::Update(Player* player)

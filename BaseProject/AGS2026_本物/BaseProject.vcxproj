@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Scene\GameClearScene.cpp" />
+    <ClCompile Include="Src\Scene\GameOverScene.cpp" />
     <ClCompile Include="Src\Scene\ResultScene.cpp" />
     <ClCompile Include="Src\Object\Item.cpp" />
     <ClCompile Include="Src\Object\Common\Hp\HpManager.cpp" />
@@ -64,6 +66,8 @@
     <ClCompile Include="Src\Object\Furniture\StoneDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Scene\GameClearScene.h" />
+    <ClInclude Include="Src\Scene\GameOverScene.h" />
     <ClInclude Include="Src\Scene\ResultScene.h" />
     <ClInclude Include="Src\Object\Item.h" />
     <ClInclude Include="Src\Object\Common\Hp\HpManager.h" />

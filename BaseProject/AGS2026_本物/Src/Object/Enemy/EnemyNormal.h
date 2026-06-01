@@ -15,7 +15,7 @@ public:
 
     void SetPatrolPoints(const std::vector<VECTOR>& points);
     void SetPatrolLinks(const std::vector<std::vector<int>>& links);
-
+    void SetPos(const VECTOR& pos);
 private:
     enum class ANIM_TYPE
     {
@@ -39,6 +39,7 @@ private:
     void DecideNextTarget(void);
 
     void InitAttackFrame(void);
+
 
 private:
     std::vector<VECTOR> patrolPoints_;

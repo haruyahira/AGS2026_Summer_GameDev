@@ -92,6 +92,15 @@ void GameScene::Update(void)
 
 	enemyMng_->Update(player_);
 
+	// ゲームオーバー条件プレイヤーのHPが０または目標金額達成出来なかったとき
+
+	if (player_->IsDead())
+	{
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
+		return;
+	}
+
+
 }
 
 void GameScene::Draw(void)

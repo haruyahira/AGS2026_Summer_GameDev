@@ -96,8 +96,11 @@ void Ceiling::Draw(void)
     // ƒ‚ƒfƒ‹•`‰æ
     MV1DrawModel(trans_.modelId);
 
+
+#ifdef _DEBUG
     // OBB“–‚½‚è”»’è•\Ž¦
     obbCollider_.DrawDebug(GetColor(255, 0, 0));
+#endif
 }
 
 bool Ceiling::ResolveCollision(

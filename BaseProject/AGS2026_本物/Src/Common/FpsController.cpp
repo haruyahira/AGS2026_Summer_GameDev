@@ -1,4 +1,5 @@
 #include "../Application.h"
+#include "../Utility/ColorUtility.h"
 #include "FpsController.h"
 
 FpsController::FpsController(int fixedFps)
@@ -85,21 +86,22 @@ void FpsController::Wait()
 
 void FpsController::Draw()
 {
+    int textWidth =
+        GetDrawFormatStringWidth(
+            TEXT_FORMAT.c_str(),
+            fps_);
 
-    // 描画する文字列の幅を取得(デフォルトフォントの場合)
-    int textWidth = GetDrawFormatStringWidth(TEXT_FORMAT.c_str(), fps_);
+    int x =
+        Application::SCREEN_SIZE_X
+        - textWidth
+        - MARGIN;
 
-    //// 右上位置を計算
-    //int x = Application::SCREEN_SIZE_X - textWidth - MARGIN;
-    //int y = MARGIN;
+    int y = MARGIN;
 
-    // 右寄せ描画
-     // モニターの解像度を取得
-    int x = 0;
-    int y = 0;
-    GetDefaultState(&x, &y, NULL);
-    x = x - textWidth - MARGIN;
-    y = MARGIN;
-    DrawFormatString(x, y, COLOR, TEXT_FORMAT.c_str(), fps_);
-
+    DrawFormatString(
+        x,
+        y,
+        Color::WHITE,
+        TEXT_FORMAT.c_str(),
+        fps_);
 }

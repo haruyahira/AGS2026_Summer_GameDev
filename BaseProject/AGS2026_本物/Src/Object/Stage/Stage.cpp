@@ -3,6 +3,7 @@
 #include <DxLib.h>
 #include <set>
 #include <assert.h>
+
 #include "../../Utility/AsoUtility.h"
 #include "../../Manager/SceneManager.h"
 #include "../../Manager/ResourceManager.h"
@@ -24,6 +25,7 @@ Stage::Stage(Player* player)
 {
 	player_ = player;
 	activeName_ = NAME::FIRST_STAGE;
+	activePlanet_ = nullptr;
 	step_ = 0.0f;
 	stoneDevice_ = nullptr;
 
@@ -32,25 +34,14 @@ Stage::Stage(Player* player)
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
-
 		itemCount_[i] = 0;
 		registeredItemCount_[i] = 0;
 		stolenItemCount_[i] = 0;
-
 	}
-
 }
 
 Stage::~Stage(void)
 {
-
-	//// ワープスター
-	//for (auto star : warpStars_)
-	//{
-	//	delete star;
-	//}
-	//warpStars_.clear();
-
 	// 惑星
 	for (auto pair : stages_)
 	{
@@ -58,17 +49,18 @@ Stage::~Stage(void)
 	}
 	stages_.clear();
 
-	// 家具の削除
-	for (auto f : furnitures_) {
+	// 家具
+	for (auto f : furnitures_)
+	{
 		delete f;
 	}
 	furnitures_.clear();
 
-	for (auto f : glassFurnitures_) {
+	for (auto f : glassFurnitures_)
+	{
 		delete f;
 	}
 	glassFurnitures_.clear();
-
 
 	if (stoneDevice_ != nullptr)
 	{
@@ -76,60 +68,50 @@ Stage::~Stage(void)
 		stoneDevice_ = nullptr;
 	}
 
-
 	for (auto item : items_)
 	{
 		delete item;
 	}
 	items_.clear();
-
-
 }
 
 void Stage::Init(void)
 {
+	// 毎回違う配置になるように乱数初期化
+	SRand(GetNowCount());
+
 	MakeMainStage();
 	//MakeWarpStar();
 
 	stoneDevice_ = new StoneDevice(player_);
 	stoneDevice_->Init();
 
-
 	step_ = -1.0f;
 }
 
 void Stage::Update(void)
 {
-
-	//// ワープスター
-	//for (const auto& s : warpStars_)
-	//{
-	//	s->Update();
-	//}
-
 	// 惑星
 	for (const auto& s : stages_)
 	{
 		s.second->Update();
 	}
 
-	// 家具の更新
-	for (auto f : furnitures_) {
+	// 家具
+	for (auto f : furnitures_)
+	{
 		f->Update();
 	}
 
-
-	for (auto f : glassFurnitures_) {
+	for (auto f : glassFurnitures_)
+	{
 		f->Update();
 	}
-
 
 	if (stoneDevice_ != nullptr)
 	{
 		stoneDevice_->Update();
 	}
-
-
 
 	for (auto item : items_)
 	{
@@ -137,45 +119,33 @@ void Stage::Update(void)
 	}
 
 	UpdateItemPickup();
-
 	UpdateStoneDeviceRegister();
-
-
 }
 
 void Stage::Draw(void)
 {
-
-	//// ワープスター
-	//for (const auto& s : warpStars_)
-	//{
-	//	s->Draw();
-	//}
-
 	// 惑星
 	for (const auto& s : stages_)
 	{
 		s.second->Draw();
 	}
 
-	//家具の描画
-	for (auto f : furnitures_) {
+	// 家具
+	for (auto f : furnitures_)
+	{
 		f->Draw();
 	}
 
+	// アイテム
 	for (auto item : items_)
 	{
 		item->Draw();
 	}
 
-
 	if (stoneDevice_ != nullptr)
 	{
 		stoneDevice_->Draw();
 	}
-
-
-
 
 	// ガラス家具は最後に描画
 	SetUseZBuffer3D(TRUE);
@@ -185,7 +155,8 @@ void Stage::Draw(void)
 	MV1SetSemiTransDrawMode(DX_SEMITRANSDRAWMODE_ALWAYS);
 	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
 
-	for (auto f : glassFurnitures_) {
+	for (auto f : glassFurnitures_)
+	{
 		f->Draw();
 	}
 
@@ -196,23 +167,18 @@ void Stage::Draw(void)
 	SetWriteZBuffer3D(TRUE);
 
 	DrawItemUI();
-
 }
 
 void Stage::ChangeStage(NAME type)
 {
-
 	activeName_ = type;
 
-	// 対象のステージを取得する
 	activePlanet_ = GetPlanet(activeName_);
 
-	// ステージの当たり判定をプレイヤーに設定
 	player_->ClearCollider();
 	player_->AddCollider(activePlanet_->GetTransform().collider);
 
 	step_ = TIME_STAGE_CHANGE;
-
 }
 
 Planet* Stage::GetPlanet(NAME type)
@@ -227,110 +193,100 @@ Planet* Stage::GetPlanet(NAME type)
 
 void Stage::MakeMainStage(void)
 {
+	// アイテム候補地点を初期化
+	itemSpawnPoints_.clear();
 
 	// 最初のステージ
 	//------------------------------------------------------------------------------
 	Transform planetTrans;
-	planetTrans.SetModel(
-		resMng_.LoadModelDuplicate(ResourceManager::SRC::FLOOR));
+	planetTrans.SetModel(resMng_.LoadModelDuplicate(ResourceManager::SRC::FLOOR));
 	planetTrans.scl = { 10.0f, 10.0f, 10.0f };
 	planetTrans.quaRot = Quaternion();
 	planetTrans.pos = { 0.0f, -100.0f, 0.0f };
 
-	// 当たり判定(コライダ)作成
 	planetTrans.MakeCollider(Collider::TYPE::STAGE);
-
 	planetTrans.Update();
 
 	NAME name = NAME::FIRST_STAGE;
-	Planet* stage =
-		new Planet(
-			name, Planet::TYPE::GROUND, planetTrans);
+	Planet* stage = new Planet(name, Planet::TYPE::GROUND, planetTrans);
 	stage->Init();
-	// 生成したステージをリストに登録
 	stages_.emplace(name, stage);
 	//------------------------------------------------------------------------------
 
-
-	std::set<int> skipX = { 1,2 };
-	std::set<int> skipZ = { 2,3, 6,7 };
+	std::set<int> skipX = { 1, 2 };
+	std::set<int> skipZ = { 2, 3, 6, 7 };
 
 	for (int i = 0; i < 4; i++)
 	{
-		// スキップ番号なら生成しない
-		if (skipX.count(i) > 0)continue;
-
+		if (skipX.count(i) > 0)
+		{
+			continue;
+		}
 
 		for (int j = 0; j < 10; j++)
 		{
-			// スキップ番号なら生成しない
 			if (skipZ.count(j) > 0)
+			{
 				continue;
-			// Z方向に並べる
-			float posZ = 5.0f + (j * 75.0f);
+			}
 
-			// X方向に2列並べる
-			// 1列目: 5.0f
-			// 2列目: 155.0f
+			float posZ = 5.0f + (j * 75.0f);
 			float posX = 5.0f + (i * -120.0f);
 
 			CreateFurniture({
 				ResourceManager::SRC::F_TABLE,
 				{ posX, -100.0f, posZ },
 				{ 0.5f, 0.5f, 0.5f },
-				{ 0.0f, 0.0f, 0.0f } // 回転
+				{ 0.0f, 0.0f, 0.0f }
 				});
+
+			// 机の上をノートPCの出現候補にする
+			// 高さが合わない場合は -55.0f を調整してください
+			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
 		}
 	}
 
 	// 壁一覧
 	std::vector<FurnitureData> wallDatas =
 	{
-
-	{     // ①
-		  ResourceManager::SRC::WALL,
-		  { 88.0f, -100.0f, -290.0f },
-		  { 5.0f, 1.0f, 0.5f },
-		  { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-	},
-	{
-		  ResourceManager::SRC::WALL,
-		  { -1700.f, -100.0f, -290.0f },
-		  { 5.0f, 1.0f, 0.5f },
-		  { 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-	},
-	{
-		// ショーケース前L
-		ResourceManager::SRC::WALL,
-		{ -1500.f, -100.0f, -805.0f },
-		{ 1.8f, 1.0f, 0.5f },
-		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-    },
-    {     // ショーケース前R
-		ResourceManager::SRC::WALL,
-		{ -1500.f, -100.0f, 350.0f },
-		{ 2.7f, 1.0f, 0.5f },
-		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-    },
-
-    {
-	  // L
-	  ResourceManager::SRC::WALL,
-	  { -1000.0f, -100.0f, -1200.0f },
-	  { 5.0f, 1.0f, 0.5f },
-	  { 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-
-    },
-    {
-	  // R
-	  ResourceManager::SRC::WALL,
-	  { -680.0f, -100.0f, 800.0f },
-	  { 4.7f, 1.0f, 0.5f },
-	  { 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
-    },
+		{
+			ResourceManager::SRC::WALL,
+			{ 88.0f, -100.0f, -290.0f },
+			{ 5.0f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		},
+		{
+			ResourceManager::SRC::WALL,
+			{ -1700.0f, -100.0f, -290.0f },
+			{ 5.0f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		{
+			ResourceManager::SRC::WALL,
+			{ -1500.0f, -100.0f, -805.0f },
+			{ 1.8f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		{
+			ResourceManager::SRC::WALL,
+			{ -1500.0f, -100.0f, 350.0f },
+			{ 2.7f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		{
+			ResourceManager::SRC::WALL,
+			{ -1000.0f, -100.0f, -1200.0f },
+			{ 5.0f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+		},
+		{
+			ResourceManager::SRC::WALL,
+			{ -680.0f, -100.0f, 800.0f },
+			{ 4.7f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+		},
 	};
 
-	// 壁をまとめて生成
 	for (const auto& wallData : wallDatas)
 	{
 		CreateFurniture(wallData);
@@ -338,10 +294,10 @@ void Stage::MakeMainStage(void)
 
 	// 天井
 	CreateFurniture({
-	ResourceManager::SRC::FLOOR,
-	{ 10.0, 250.0f, 10.0f },
-	{ 10.0f, 0.5f, 10.0f },
-	{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f}
+		ResourceManager::SRC::FLOOR,
+		{ 10.0f, 250.0f, 10.0f },
+		{ 10.0f, 0.5f, 10.0f },
+		{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f }
 		});
 
 	// ケーキショーケース本体
@@ -360,90 +316,9 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-
-	// アイテム配置
-	CreateItem(
-		Item::TYPE::LAPTOP,
-		ResourceManager::SRC::LAPTOP,
-		VGet(-900.0f, -70.0f, 100.0f),
-		VGet(0.5f, 0.5f, 0.5f)
-	);
-
-};
-
-//void Stage::MakeWarpStar(void)
-//{
-//
-//	Transform trans;
-//	WarpStar* star;
-//
-//	// 落とし穴惑星へのワープスター
-//	//------------------------------------------------------------------------------
-//	trans.pos = { -910.0f, 200.0f, 894.0f };
-//	trans.scl = { 0.6f, 0.6f, 0.6f };
-//	trans.quaRot = Quaternion::Euler(
-//		AsoUtility::Deg2RadF(-25.0f),
-//		AsoUtility::Deg2RadF(-50.0f),
-//		AsoUtility::Deg2RadF(0.0f)
-//	);
-//
-//	star = new WarpStar(player_, trans);
-//	star->Init();
-//	warpStars_.push_back(star);
-//	//------------------------------------------------------------------------------
-//
-//}
-
-//void Stage::CreateFurniture(const FurnitureData& data)
-//{
-//	Transform trans;
-//	// 1. 引数 data からモデル、座標、スケールを設定
-//	trans.SetModel(resMng_.LoadModelDuplicate(data.modelSrc));
-//	trans.pos.x = data.pos.x;
-//	trans.pos.y = data.pos.y;
-//	trans.pos.z = data.pos.z;
-//
-//	trans.scl.x = data.scl.x;
-//	trans.scl.y = data.scl.y;
-//	trans.scl.z = data.scl.z;
-//
-//	// 回転の設定（data.rot を使用）
-//	trans.quaRot = Quaternion::Euler(data.rot.x, data.rot.y, data.rot.z);
-//
-//	// 2. コライダの設定（コメントアウトを外せば有効になります）
-//	//trans.MakeCollider(Collider::TYPE::MESH);
-//	trans.Update();
-//
-//	// 3. Furnitureインスタンスの生成
-//	// 第2引数は上で設定した 'trans' を渡します
-//	//Furniture* f = new Furniture(NAME::INTERIOR, &trans);
-//	Furniture* f = nullptr;
-//	if (data.modelSrc == ResourceManager::SRC::F_TABLE) {
-//		f = new Table(&trans);
-//	}
-//	else if (data.modelSrc == ResourceManager::SRC::WALL) {
-//		f = new Wall(&trans);
-//	}
-//
-//
-//	else if (data.modelSrc == ResourceManager::SRC::F_F) {
-//		f = new Showcase(&trans);
-//	}
-//	else if (data.modelSrc == ResourceManager::SRC::F_G) {
-//		f = new Showcase(&trans);
-//	}
-//
-//
-//
-//	f->Init();
-//
-//	// 4. Stageクラスのリストに追加
-//	// objects_ もしくは furnitures_ など、ヘッダーで定義した名前に合わせます
-//	player_->AddFurniture(f);
-//
-//	// 4. Stageクラスのリストに追加
-//	furnitures_.push_back(f);
-//}
+	// ノートPCを候補地点から10個ランダム生成
+	CreateRandomLaptopItemsFromSpawnPoints(3);
+}
 
 void Stage::CreateFurniture(const FurnitureData& data)
 {
@@ -468,53 +343,58 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	Furniture* f = nullptr;
 
-	if (data.modelSrc == ResourceManager::SRC::F_TABLE) {
+	if (data.modelSrc == ResourceManager::SRC::F_TABLE)
+	{
 		f = new Table(&trans);
 	}
-	else if (data.modelSrc == ResourceManager::SRC::WALL) {
+	else if (data.modelSrc == ResourceManager::SRC::WALL)
+	{
 		f = new Wall(&trans, data.rot.y);
 		assert(f != nullptr);
 	}
-	else if (data.modelSrc == ResourceManager::SRC::F_F) {
+	else if (data.modelSrc == ResourceManager::SRC::F_F)
+	{
 		f = new Showcase(&trans);
 	}
-	else if (data.modelSrc == ResourceManager::SRC::F_G) {
+	else if (data.modelSrc == ResourceManager::SRC::F_G)
+	{
 		f = new Showcase(&trans);
 	}
-	else if (data.modelSrc == ResourceManager::SRC::FLOOR) {
+	else if (data.modelSrc == ResourceManager::SRC::FLOOR)
+	{
 		f = new Ceiling(&trans, data.rot.y);
 	}
 
-	// ここ超重要
-
-	if (f == nullptr) {
+	if (f == nullptr)
+	{
 		return;
 	}
 
 	f->Init();
 
 	// ガラスモデルだけDXLib側でも半透明化
-	if (data.modelSrc == ResourceManager::SRC::F_G) {
-		// ↓ trans のモデルハンドル名に合わせて変更してください
+	if (data.modelSrc == ResourceManager::SRC::F_G)
+	{
 		MV1SetOpacityRate(trans.modelId, 0.65f);
 		MV1SetSemiTransDrawMode(DX_SEMITRANSDRAWMODE_ALWAYS);
 	}
 
 	// ガラスは当たり判定に入れない
-	if (data.modelSrc != ResourceManager::SRC::F_G) {
+	if (data.modelSrc != ResourceManager::SRC::F_G)
+	{
 		player_->AddFurniture(f);
 	}
 
 	// 描画リストを分ける
-	if (data.modelSrc == ResourceManager::SRC::F_G) {
+	if (data.modelSrc == ResourceManager::SRC::F_G)
+	{
 		glassFurnitures_.push_back(f);
 	}
-	else {
+	else
+	{
 		furnitures_.push_back(f);
 	}
-
 }
-
 
 void Stage::CreateItem(
 	Item::TYPE type,
@@ -525,6 +405,35 @@ void Stage::CreateItem(
 	Item* item = new Item();
 	item->Init(type, modelSrc, pos, scl);
 	items_.push_back(item);
+}
+
+void Stage::CreateRandomLaptopItemsFromSpawnPoints(int count)
+{
+	if (itemSpawnPoints_.empty())
+	{
+		return;
+	}
+
+	if (count > (int)itemSpawnPoints_.size())
+	{
+		count = (int)itemSpawnPoints_.size();
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		int randIndex = i + GetRand((int)itemSpawnPoints_.size() - 1 - i);
+
+		VECTOR temp = itemSpawnPoints_[i];
+		itemSpawnPoints_[i] = itemSpawnPoints_[randIndex];
+		itemSpawnPoints_[randIndex] = temp;
+
+		CreateItem(
+			Item::TYPE::LAPTOP,
+			ResourceManager::SRC::LAPTOP,
+			itemSpawnPoints_[i],
+			VGet(0.07f, 0.07f, 0.07f)
+		);
+	}
 }
 
 int Stage::FindLookingItem(void)
@@ -575,7 +484,6 @@ void Stage::UpdateItemPickup(void)
 	Item::TYPE type = item->GetType();
 	int typeIndex = (int)type;
 
-	// 全アイテム合計で最大3個まで
 	if (GetTotalItemCount() >= MAX_ITEM_COUNT)
 	{
 		isItemMax_ = true;
@@ -584,17 +492,14 @@ void Stage::UpdateItemPickup(void)
 
 	if (ins.IsTrgDown(KEY_INPUT_F))
 	{
-
 		itemCount_[typeIndex]++;
 
 		// 今回のプレイ中に盗んだアイテムとして記録
 		stolenItemCount_[typeIndex]++;
 
 		item->Pickup();
-
 	}
 }
-
 
 bool Stage::HasAnyItem(void) const
 {
@@ -643,7 +548,6 @@ void Stage::UpdateStoneDeviceRegister(void)
 		int stolenMoney = CalcStolenMoney();
 
 		SceneManager::GetInstance().SetResultData(stolenMoney);
-
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
 		return;
 	}
@@ -661,7 +565,9 @@ void Stage::UpdateStoneDeviceRegister(void)
 			RegisterItemsToStoneDevice();
 		}
 	}
-}void Stage::DrawItemUI(void) const
+}
+
+void Stage::DrawItemUI(void) const
 {
 	if (lookingItemIndex_ != -1)
 	{
@@ -671,12 +577,11 @@ void Stage::UpdateStoneDeviceRegister(void)
 		{
 			if (isItemMax_)
 			{
-				DrawFormatString(
+				DrawString(
 					20,
 					130,
-					GetColor(255, 80, 80),
 					"これ以上アイテムを持てません",
-					item->GetName()
+					GetColor(255, 80, 80)
 				);
 			}
 			else
@@ -715,19 +620,15 @@ void Stage::UpdateStoneDeviceRegister(void)
 		case Item::TYPE::LAPTOP:
 			name = "ノートPC";
 			break;
-
 		case Item::TYPE::BATTERY:
 			name = "バッテリー";
 			break;
-
 		case Item::TYPE::KEY:
 			name = "鍵";
 			break;
-
 		case Item::TYPE::MEDICINE:
 			name = "薬";
 			break;
-
 		default:
 			name = "不明";
 			break;
@@ -765,19 +666,15 @@ void Stage::UpdateStoneDeviceRegister(void)
 		case Item::TYPE::LAPTOP:
 			name = "ノートPC";
 			break;
-
 		case Item::TYPE::BATTERY:
 			name = "バッテリー";
 			break;
-
 		case Item::TYPE::KEY:
 			name = "鍵";
 			break;
-
 		case Item::TYPE::MEDICINE:
 			name = "薬";
 			break;
-
 		default:
 			name = "不明";
 			break;
@@ -813,7 +710,7 @@ void Stage::UpdateStoneDeviceRegister(void)
 				DrawString(
 					20,
 					80,
-					"登録できるアイテムがありません /  Eキーで脱出",
+					"登録できるアイテムがありません / Eキーで脱出",
 					GetColor(180, 180, 180)
 				);
 			}
@@ -838,7 +735,9 @@ int Stage::GetItemPrice(Item::TYPE type) const
 	switch (type)
 	{
 	case Item::TYPE::LAPTOP:
-		return 80000;
+		// intの上限を超えない値にしています
+		// 300億円などを扱いたい場合は、金額系をlong longにしてください
+		return 30000;
 
 	case Item::TYPE::BATTERY:
 		return 5000;
@@ -861,7 +760,6 @@ int Stage::CalcStolenMoney(void) const
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
 		Item::TYPE type = (Item::TYPE)i;
-
 		total += stolenItemCount_[i] * GetItemPrice(type);
 	}
 
@@ -875,9 +773,7 @@ int Stage::CalcTotalMoney(void) const
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
 		Item::TYPE type = (Item::TYPE)i;
-
 		int count = itemCount_[i] + registeredItemCount_[i];
-
 		total += count * GetItemPrice(type);
 	}
 

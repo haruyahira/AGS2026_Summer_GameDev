@@ -16,7 +16,9 @@ public:
 		NONE,
 		TITLE,
 		GAME,
-		RESULT
+		RESULT,
+		GAMEOVER,
+		GAMECLEAR,
 	};
 
 	// インスタンスの生成
@@ -60,6 +62,14 @@ public:
 
 	bool CanGoNextDay(void) const;
 
+
+	int GetTargetMoney(void) const;
+	int GetNeedMoney(void) const;
+
+	void SetPlayerDeadOnce(bool isDead);
+	bool IsPlayerDeadOnce(void) const;
+
+	bool IsGameClear(void) const;
 
 
 
@@ -113,5 +123,8 @@ private:
 	int resultRemainDay_;     // リザルト表示用
 	int resultStolenMoney_;   // 今回盗んだ金額
 	int resultTotalMoney_;    // 累計金額
+
+	int targetMoney_ = 100000;     // 目標金額
+	bool isPlayerDeadOnce_ = false; // 一回でも死んだか
 
 };

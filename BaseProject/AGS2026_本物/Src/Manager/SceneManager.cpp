@@ -5,6 +5,8 @@
 #include "../Scene/TitleScene.h"
 #include "../Scene/GameScene.h"
 #include "../Scene/ResultScene.h"
+#include "../Scene/GameOverScene.h"
+#include "../Scene/GameClearScene.h"
 #include "../Application.h"
 #include "Camera.h"
 #include "ResourceManager.h"
@@ -55,7 +57,7 @@ void SceneManager::Init(void)
 	Init3D();
 
 	// 初期シーンの設定
-	DoChangeScene(SCENE_ID::GAME);
+	DoChangeScene(SCENE_ID::TITLE);
 }
 
 void SceneManager::Init3D(void)
@@ -117,7 +119,7 @@ void SceneManager::Update(void)
 		SetMouseDispFlag(FALSE);
 		InputManager::GetInstance().SetFixMouse(true);
 	}
-	else if	 (sceneId_ == SCENE_ID::TITLE || sceneId_ == SCENE_ID::RESULT)
+	else
 	{
 		// メニュー画面ならマウスを表示して自由に動かせる
 		SetMouseDispFlag(TRUE);
@@ -268,6 +270,13 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 	case SCENE_ID::RESULT:
 		scene_ = new ResultScene();
 		break;
+	case SCENE_ID::GAMEOVER:
+		scene_ = new GameOverScene();
+		break;
+	case SCENE_ID::GAMECLEAR:
+		scene_ = new GameClearScene();
+		break;
+		
 
 	}
 
@@ -359,4 +368,51 @@ void SceneManager::ResetGameResultData(void)
 	resultRemainDay_ = START_REMAIN_DAY;
 	resultStolenMoney_ = 0;
 	resultTotalMoney_ = 0;
+
+	// 追加：一度死んだ情報もリセット
+	isPlayerDeadOnce_ = false;
+
+}
+int SceneManager::GetTargetMoney(void) const
+{
+	return targetMoney_;
+}
+
+int SceneManager::GetNeedMoney(void) const
+{
+	int needMoney = targetMoney_ - resultTotalMoney_;
+
+	if (needMoney < 0)
+	{
+		needMoney = 0;
+	}
+
+	return needMoney;
+}
+
+void SceneManager::SetPlayerDeadOnce(bool isDead)
+{
+	isPlayerDeadOnce_ = isDead;
+}
+
+bool SceneManager::IsPlayerDeadOnce(void) const
+{
+	return isPlayerDeadOnce_;
+}
+
+bool SceneManager::IsGameClear(void) const
+{
+	// 一度でも死んでいたらクリア不可
+	if (isPlayerDeadOnce_)
+	{
+		return false;
+	}
+
+	// 目標金額未達成ならクリア不可
+	if (resultTotalMoney_ < targetMoney_)
+	{
+		return false;
+	}
+
+	return true;
 }

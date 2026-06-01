@@ -1,6 +1,13 @@
 #include <DxLib.h>
 #include "Application.h"
 
+
+// NVIDIA GPUÇégÇ§
+extern "C"
+{
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+}
+
 // WinMainä÷êî
 //---------------------------------
 int WINAPI WinMain(

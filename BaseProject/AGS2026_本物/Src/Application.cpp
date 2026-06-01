@@ -52,7 +52,7 @@ void Application::Init(void)
 
 	SetWindowSizeExtendRate(1.0);
 
-	ChangeWindowMode(true); // 最初はフルスクリーン
+	ChangeWindowMode(false); // 最初はフルスクリーン
 
 	// FPS
 	//fpsController_ = new FpsController(getFps_);

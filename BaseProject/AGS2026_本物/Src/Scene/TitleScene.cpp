@@ -27,6 +27,11 @@ TitleScene::TitleScene(void)
 
 TitleScene::~TitleScene(void)
 {
+	if (bgm_ != -1)
+	{
+		StopSoundMem(bgm_);
+		DeleteSoundMem(bgm_);
+	}
 }
 
 void TitleScene::Init(void)
@@ -63,7 +68,7 @@ void TitleScene::Init(void)
 
 	bgm_ = LoadSoundMem("Data/Bgm/TitleBgm.wav");
 
-	ChangeVolumeSoundMem(0, bgm_);
+	ChangeVolumeSoundMem(180, bgm_);
 
 	// 3. ループ再生を開始
 	if (bgm_ != -1) {
@@ -183,7 +188,7 @@ void TitleScene::UpdateSelect(void)
 	InputManager& ins = InputManager::GetInstance();
 
 	// マウスの左ボタンが押された瞬間をチェック
-	if (ins.IsClickMouseLeft())
+	if (ins.IsTrgMouseLeft())
 	{
 		// 1番目（スタート）
 		if (drawIndex_ == 1) {
@@ -282,6 +287,7 @@ void TitleScene::DrawSelect(void)
 
 
 
+#ifdef _DEBUG
 	// --- デバッグ用：当たり判定の可視化 ---
 	// 3つの判定範囲をループで描画する
 	for (int i = 0; i < 3; i++) {
@@ -298,6 +304,7 @@ void TitleScene::DrawSelect(void)
 			FALSE // FALSEにすると枠線だけになる
 		);
 	}
+#endif
 	
 }
 

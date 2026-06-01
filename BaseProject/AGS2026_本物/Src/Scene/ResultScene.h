@@ -16,4 +16,6 @@ private:
     int remainDay_;
     int stolenMoney_;
     int totalMoney_;
+    int targetMoney_;
+    int needMoney_;
 };

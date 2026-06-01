@@ -55,7 +55,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     bodyHeight_ = 130.0f;
     bodyCenterOffsetY_ = 65.0f;
 
-    maxHp_ = 100;
+    maxHp_ = 30;
     attackPower_ = 1;
 }
 
@@ -82,7 +82,7 @@ void EnemyNormal::Init(void)
     InitAnimation();
     InitAttackFrame();
 
-    InitHP(maxHp_, 20.0f);
+    InitHP(maxHp_, 10.0f);
 
     ChangeAnimation(static_cast<int>(ANIM_TYPE::IDLE));
 
@@ -379,7 +379,10 @@ void EnemyNormal::UpdateAttack(Player* player)
         {
             isAttackHit_ = true;
 
+
+#ifdef _DEBUG
             printfDx("Enemy Attack Hit Player\n");
+#endif
 
             player->Damage(attackPower_);
 
@@ -525,4 +528,9 @@ void EnemyNormal::InitAttackFrame(void)
 int EnemyNormal::GetAnimType(void) const
 {
     return static_cast<int>(animType_);
+}
+void EnemyNormal::SetPos(const VECTOR& pos)
+{
+    transform_.pos = pos;
+    transform_.Update();
 }

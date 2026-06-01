@@ -57,6 +57,13 @@ Player::~Player(void)
 		delete pair.second;
 	}
 	capsules_.clear();
+
+	if (flashlight_.handle != -1)
+	{
+		DeleteLightHandle(flashlight_.handle);
+		flashlight_.handle = -1;
+	}
+
 }
 
 void Player::Init(void)
@@ -67,7 +74,7 @@ void Player::Init(void)
 		ResourceManager::SRC::PLAYER));
 	//MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
 	transform_.scl = { 0.1f, 0.1f, 0.1f };
-	transform_.pos = { 0.0f, -30.0f, 0.0f };
+	transform_.pos = { 0.0f, -30.0f, -50.0f };
 	transform_.quaRot = Quaternion();
 	transform_.quaRotLocal =
 		Quaternion::Euler({ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f });
@@ -144,6 +151,7 @@ void Player::Draw(void)
 
 	// 丸影描画
 	DrawShadow();
+#ifdef _DEBUG
 
 	// すべてのカプセルを描画
 	for (auto& pair : capsules_) {
@@ -159,7 +167,8 @@ void Player::Draw(void)
 		transform_.pos.x,
 		transform_.pos.y,
 		transform_.pos.z
-	);
+	);]
+
 
 
 	if (isAttacking_)
@@ -172,6 +181,7 @@ void Player::Draw(void)
 			GetColor(255, 255, 0),
 			FALSE);
 	}
+#endif
 
 
 	DrawFormatString(
@@ -284,38 +294,38 @@ void Player::InitFlashLight(void)
 
 	// 懐中電灯の初期設定（一直線っぽくするために数値を調整）
 	flashlight_.isOn = false;
-	//flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
-	//flashlight_.outerAngle = 0.80f; // 【変更】光の広がりを狭くする（元 0.4f）
-	//flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
+	flashlight_.range = 1500.0f;    // 【変更】少し遠くまで光を届かせる（元 1000.0f）
+	flashlight_.outerAngle = 0.80f; // 【変更】光の広がりを狭くする（元 0.4f）
+	flashlight_.innerAngle = 0.1f;  // 【変更】中心の強い光を狭くする（元 0.2f）
 
-	//// 1. 定義通りの引数でスポットライトを作成する
-	//flashlight_.handle = CreateSpotLightHandle(
-	//	VGet(0, 0, 0),         // Position
-	//	VGet(0, 0, 1),         // Direction
-	//	flashlight_.outerAngle, // OutAngle
-	//	flashlight_.innerAngle, // InAngle
-	//	flashlight_.range,      // Range
-	//	1.0f,    // Atten0
-	//	0.002f,  // Atten1
-	//	0.000f   // Atten2
-	//);
+	// 1. 定義通りの引数でスポットライトを作成する
+	flashlight_.handle = CreateSpotLightHandle(
+		VGet(0, 0, 0),         // Position
+		VGet(0, 0, 1),         // Direction
+		flashlight_.outerAngle, // OutAngle
+		flashlight_.innerAngle, // InAngle
+		flashlight_.range,      // Range
+		1.0f,    // Atten0
+		0.002f,  // Atten1
+		0.000f   // Atten2
+	);
 
 	// テスト用
-	flashlight_.range = 300000.0f;   // ← 超遠距離
-	flashlight_.outerAngle = DX_PI_F / 2.0f; // ← かなり広い（90度）
-	flashlight_.innerAngle = DX_PI_F / 3.0f; // ← 中心も広く
+	//flashlight_.range = 300000.0f;   // ← 超遠距離
+	//flashlight_.outerAngle = DX_PI_F / 2.0f; // ← かなり広い（90度）
+	//flashlight_.innerAngle = DX_PI_F / 3.0f; // ← 中心も広く
 
-	flashlight_.handle = CreateSpotLightHandle(
-		VGet(0, 0, 0),
-		VGet(0, 0, 1),
-		flashlight_.outerAngle,
-		flashlight_.innerAngle,
-		flashlight_.range,
+	//flashlight_.handle = CreateSpotLightHandle(
+	//	VGet(0, 0, 0),
+	//	VGet(0, 0, 1),
+	//	flashlight_.outerAngle,
+	//	flashlight_.innerAngle,
+	//	flashlight_.range,
 
-		1.0f,   // Atten0（基本光量）
-		0.0f,   // Atten1（距離減衰なし）
-		0.0f    // Atten2（距離減衰なし）
-	);
+	//	1.0f,   // Atten0（基本光量）
+	//	0.0f,   // Atten1（距離減衰なし）
+	//	0.0f    // Atten2（距離減衰なし）
+	//);
 
 	// 2. 作成したハンドルに対して、後から色を設定する
 	COLOR_F color;
@@ -455,7 +465,7 @@ void Player::UpdateFlashLight(void)
 	auto& ins = InputManager::GetInstance();
 
 	// Fキーが押されたらライトのON/OFFを切り替える
-	if (ins.IsTrgDown(KEY_INPUT_F))
+	if (ins.IsTrgMouseRight())
 	{
 		flashlight_.isOn = !flashlight_.isOn;
 		SetLightEnableHandle(flashlight_.handle, flashlight_.isOn);
@@ -479,7 +489,6 @@ void Player::UpdateFlashLight(void)
 
 void Player::DrawShadow(void)
 {
-
 	float PLAYER_SHADOW_HEIGHT = 300.0f;
 	float PLAYER_SHADOW_SIZE = 30.0f;
 
@@ -490,88 +499,58 @@ void Player::DrawShadow(void)
 	VECTOR SlideVec;
 	int ModelHandle;
 
-	// ライティングを無効にする
-	SetUseLighting(FALSE);
-
-	// Ｚバッファを有効にする
+	// 影描画用設定
+	//SetUseLighting(FALSE);
 	SetUseZBuffer3D(TRUE);
 
-	// テクスチャアドレスモードを CLAMP にする( テクスチャの端より先は端のドットが延々続く )
 	SetTextureAddressMode(DX_TEXADDRESS_CLAMP);
 
-	// 影を落とすモデルの数だけ繰り返し
 	for (const auto c : colliders_)
 	{
+		if (c == nullptr)
+		{
+			continue;
+		}
 
-		// チェックするモデルは、jが0の時はステージモデル、1以上の場合はコリジョンモデル
 		ModelHandle = c->modelId_;
 
-		// プレイヤーの直下に存在する地面のポリゴンを取得
 		HitResDim = MV1CollCheck_Capsule(
-			ModelHandle, -1,
-			transform_.pos, VAdd(transform_.pos, { 0.0f, -PLAYER_SHADOW_HEIGHT, 0.0f }), PLAYER_SHADOW_SIZE);
+			ModelHandle,
+			-1,
+			transform_.pos,
+			VAdd(transform_.pos, { 0.0f, -PLAYER_SHADOW_HEIGHT, 0.0f }),
+			PLAYER_SHADOW_SIZE);
 
-		// 頂点データで変化が無い部分をセット
 		Vertex[0].dif = GetColorU8(255, 255, 255, 255);
 		Vertex[0].spc = GetColorU8(0, 0, 0, 0);
-		Vertex[0].su = 0.0f;
-		Vertex[0].sv = 0.0f;
+
 		Vertex[1] = Vertex[0];
 		Vertex[2] = Vertex[0];
 
-		// 球の直下に存在するポリゴンの数だけ繰り返し
 		HitRes = HitResDim.Dim;
+
 		for (i = 0; i < HitResDim.HitNum; i++, HitRes++)
 		{
-			// ポリゴンの座標は地面ポリゴンの座標
 			Vertex[0].pos = HitRes->Position[0];
 			Vertex[1].pos = HitRes->Position[1];
 			Vertex[2].pos = HitRes->Position[2];
 
-			// ちょっと持ち上げて重ならないようにする
 			SlideVec = VScale(HitRes->Normal, 0.5f);
+
 			Vertex[0].pos = VAdd(Vertex[0].pos, SlideVec);
 			Vertex[1].pos = VAdd(Vertex[1].pos, SlideVec);
 			Vertex[2].pos = VAdd(Vertex[2].pos, SlideVec);
 
-			// ポリゴンの不透明度を設定する
-			Vertex[0].dif.a = 0;
-			Vertex[1].dif.a = 0;
-			Vertex[2].dif.a = 0;
-			if (HitRes->Position[0].y > transform_.pos.y - PLAYER_SHADOW_HEIGHT)
-				Vertex[0].dif.a = static_cast<int>(roundf(128.0f * (1.0f - fabs(HitRes->Position[0].y - transform_.pos.y) / PLAYER_SHADOW_HEIGHT)));
-
-			if (HitRes->Position[1].y > transform_.pos.y - PLAYER_SHADOW_HEIGHT)
-				Vertex[1].dif.a = static_cast<int>(roundf(128.0f * (1.0f - fabs(HitRes->Position[1].y - transform_.pos.y) / PLAYER_SHADOW_HEIGHT)));
-
-			if (HitRes->Position[2].y > transform_.pos.y - PLAYER_SHADOW_HEIGHT)
-				Vertex[2].dif.a = static_cast<int>(roundf(128.0f * (1.0f - fabs(HitRes->Position[2].y - transform_.pos.y) / PLAYER_SHADOW_HEIGHT)));
-
-			// ＵＶ値は地面ポリゴンとプレイヤーの相対座標から割り出す
-			Vertex[0].u = (HitRes->Position[0].x - transform_.pos.x) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-			Vertex[0].v = (HitRes->Position[0].z - transform_.pos.z) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-			Vertex[1].u = (HitRes->Position[1].x - transform_.pos.x) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-			Vertex[1].v = (HitRes->Position[1].z - transform_.pos.z) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-			Vertex[2].u = (HitRes->Position[2].x - transform_.pos.x) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-			Vertex[2].v = (HitRes->Position[2].z - transform_.pos.z) / (PLAYER_SHADOW_SIZE * 2.0f) + 0.5f;
-
-			// 影ポリゴンを描画
 			DrawPolygon3D(Vertex, 1, imgShadow_, TRUE);
 		}
 
-		// 検出した地面ポリゴン情報の後始末
 		MV1CollResultPolyDimTerminate(HitResDim);
 	}
 
-	// ライティングを有効にする
+	// 必ず戻す
 	SetUseLighting(TRUE);
-
-	// Ｚバッファを無効にする
-	SetUseZBuffer3D(FALSE);
-
-}
-
-void Player::ProcessMove(void)
+	SetUseZBuffer3D(TRUE);
+}void Player::ProcessMove(void)
 {
 	auto& ins = InputManager::GetInstance();
 
@@ -616,7 +595,7 @@ void Player::ProcessMove(void)
 
 		if (IsProne())
 		{
-			currentSpeed = isRun ? 7.5f : 2.5f;
+			currentSpeed = isRun ? 1.8f : 2.3f;
 		}
 		else
 		{
@@ -676,29 +655,42 @@ void Player::ProcessMove(void)
 
 void Player::ProcessJump(void)
 {
-	bool isHit = CheckHitKey(KEY_INPUT_SPACE);
+	InputManager& ins = InputManager::GetInstance();
 
-	if (isHit && (isJump_ || IsEndLanding()))
+	// 押した瞬間だけ true
+	bool isJumpTrigger = ins.IsTrgDown(KEY_INPUT_SPACE);
+
+	// 押している間 true
+	bool isJumpPress = ins.IsNew(KEY_INPUT_SPACE);
+
+
+
+	// ジャンプ開始
+	   // Spaceを押した瞬間、かつジャンプ中ではない、かつ着地している時だけ
+	if (isJumpTrigger && !isJump_ && IsEndLanding())
 	{
-		if (!isJump_)
-		{
-			animType_ = ANIM_TYPE::JUMP;
-			currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
+		animType_ = ANIM_TYPE::JUMP;
+		currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
 
-			animationController_->Play(
-				static_cast<int>(ANIM_TYPE::JUMP),
-				true,
-				13.0f,
-				25.0f);
+		animationController_->Play(
+			static_cast<int>(ANIM_TYPE::JUMP),
+			true,
+			13.0f,
+			25.0f);
 
-			animationController_->SetEndLoop(
-				23.0f,
-				25.0f,
-				5.0f);
-		}
+		animationController_->SetEndLoop(
+			23.0f,
+			25.0f,
+			5.0f);
 
 		isJump_ = true;
+		stepJump_ = 0.0f;
+	}
 
+	// ジャンプ中の上昇処理
+	// 押しっぱなしなら一定時間だけ上昇力を与える
+	if (isJump_ && isJumpPress)
+	{
 		stepJump_ += scnMng_.GetDeltaTime();
 
 		if (stepJump_ < TIME_JUMP_IN)
@@ -707,10 +699,12 @@ void Player::ProcessJump(void)
 		}
 	}
 
-	if (!isHit)
+	// Spaceを離したら、それ以上ジャンプを伸ばさない
+	if (!isJumpPress)
 	{
 		stepJump_ = TIME_JUMP_IN;
 	}
+
 }
 
 void Player::ProcessAttack(void)
@@ -719,7 +713,7 @@ void Player::ProcessAttack(void)
 
 	// 攻撃開始
 	if (!isAttacking_ &&
-		ins.IsClickMouseLeft())
+		ins.IsTrgMouseLeft())
 	{
 		isAttacking_ = true;
 
@@ -1226,7 +1220,6 @@ void Player::PlayAnimation(ANIM_TYPE animType, bool isLoop)
 
 bool Player::Damage(int damage)
 {
-
 	bool isDamaged =
 		HpManager::GetInstance().Damage(this, damage);
 
@@ -1235,21 +1228,25 @@ bool Player::Damage(int damage)
 		return false;
 	}
 
+#ifdef _DEBUG
 	printfDx("Player Damage : %d\n", damage);
+#endif
 
 	if (HpManager::GetInstance().IsDead(this))
 	{
 		isDead_ = true;
 		ChangeState(STATE::NONE);
 
-		printfDx("Player Dead\n");
+		// 追加：一回でも死んだことを記録する
+		SceneManager::GetInstance().SetPlayerDeadOnce(true);
+
+#ifdef _DEBUG
+		printfDx("Player Dead\n");]
+#endif
 	}
 
 	return true;
-
 }
-
-
 bool Player::IsDead(void) const
 {
 	return isDead_;

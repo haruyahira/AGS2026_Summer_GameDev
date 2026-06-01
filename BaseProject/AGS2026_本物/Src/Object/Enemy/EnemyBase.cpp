@@ -128,7 +128,10 @@ void EnemyBase::Update(Player* player)
     // ƒvƒŒƒCƒ„[‚Æ‚ÌÚG”»’è
     if (IsHitPlayer(player))
     {
+
+#ifdef _DEBUG
         printfDx("Enemy Hit Player\n");
+#endif
     }
 
     transform_.Update();
@@ -605,12 +608,17 @@ void EnemyBase::Damage(int damage)
         return;
     }
 
+#ifdef _DEBUG
     printfDx("Enemy Damage : %d\n", damage);
+#endif
 
     if (HpManager::GetInstance().IsDead(this))
     {
         isDead_ = true;
 
+
+#ifdef _DEBUG
         printfDx("Enemy Dead\n");
+#endif
     }
 }

@@ -26,7 +26,7 @@ void StoneDevice::Init(void)
 
     // 装置の位置
     // 好きな場所に調整してください
-    transform_.pos = { -900.0f, -80.0f, 200.0f };
+    transform_.pos = { -1618.0f, -80.0f,  712.0f }, // 5
 
     // 装置の大きさ
     transform_.scl = { 1.0f, 1.0f, 1.0f };

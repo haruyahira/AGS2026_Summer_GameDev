@@ -1,7 +1,10 @@
 #pragma once
+
 #include <map>
 #include <vector>
 #include <set>
+#include <DxLib.h>
+
 #include "../../Manager/ResourceManager.h"
 #include "../../Utility/AsoUtility.h"
 #include "../../Common/Vector3.h"
@@ -9,6 +12,7 @@
 #include "../Furniture/Furniture.h"
 #include "../Furniture/StoneDevice.h"
 #include "../Item.h"
+
 class ResourceManager;
 class WarpStar;
 class Planet;
@@ -16,42 +20,21 @@ class Player;
 
 class Stage
 {
-
 public:
 
 	// ステージの切り替え間隔
 	static constexpr float TIME_STAGE_CHANGE = 1.0f;
 
-	//// ステージ名
-	//enum class NAME
-	//{
-	//	FIRST_STAGE,
-	//	FALL_PLANET,
-	//	FLAT_PLANET_BASE,
-	//	FLAT_PLANET_ROT01,
-	//	FLAT_PLANET_ROT02,
-	//	FLAT_PLANET_ROT03,
-	//	FLAT_PLANET_ROT04,
-	//	FLAT_PLANET_FIXED01,
-	//	FLAT_PLANET_FIXED02,
-	//	PLANET10,
-	//	LAST_STAGE,
-	//	SPECIAL_STAGE,
-	//	INTERIOR
-	//};
-
 	// 家具の設計図
-	struct FurnitureData {
-		ResourceManager::SRC modelSrc; // どのモデルか
-		Vector3 pos;                   // どこに
-		Vector3 scl;                   // どの大きさで
-		Vector3 rot;                   // どの向きで
+	struct FurnitureData
+	{
+		ResourceManager::SRC modelSrc;
+		Vector3 pos;
+		Vector3 scl;
+		Vector3 rot;
 	};
 
-	// コンストラクタ
 	Stage(Player* player);
-
-	// デストラクタ
 	~Stage(void);
 
 	void Init(void);
@@ -84,11 +67,10 @@ private:
 	// 家具
 	std::vector<Furniture*> furnitures_;
 	std::vector<Furniture*> glassFurnitures_;
-	
+
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
 
-	
 	// 空のPlanet
 	Planet* nullPlanet = nullptr;
 
@@ -102,22 +84,30 @@ private:
 
 	void CreateFirstStage(void);
 
-
+	// アイテム
 	std::vector<Item*> items_;
 
 	int itemCount_[(int)Item::TYPE::MAX];
 	int registeredItemCount_[(int)Item::TYPE::MAX];
+	int stolenItemCount_[(int)Item::TYPE::MAX];
 
+	// 所持上限：3個のノートPCを拾えるようにする
 	static constexpr int MAX_ITEM_COUNT = 3;
 
 	int lookingItemIndex_;
 	bool isItemMax_;
+
+	// アイテム出現候補地点
+	std::vector<VECTOR> itemSpawnPoints_;
 
 	void CreateItem(
 		Item::TYPE type,
 		ResourceManager::SRC modelSrc,
 		VECTOR pos,
 		VECTOR scl);
+
+	// 候補地点からノートPCをランダム生成
+	void CreateRandomLaptopItemsFromSpawnPoints(int count);
 
 	int FindLookingItem(void);
 	void UpdateItemPickup(void);
@@ -130,11 +120,8 @@ private:
 
 	int GetTotalItemCount(void) const;
 
-		int GetItemPrice(Item::TYPE type) const;
-		int CalcStolenMoney(void) const;
-		int CalcTotalMoney(void) const;
-		int CalcRemainDay(void) const;
-
-		int stolenItemCount_[(int)Item::TYPE::MAX];
-
+	int GetItemPrice(Item::TYPE type) const;
+	int CalcStolenMoney(void) const;
+	int CalcTotalMoney(void) const;
+	int CalcRemainDay(void) const;
 };

@@ -39,6 +39,8 @@ void InputManager::Init(void)
 	InputManager::GetInstance().Add(KEY_INPUT_A);
 	InputManager::GetInstance().Add(KEY_INPUT_S);
 	InputManager::GetInstance().Add(KEY_INPUT_D);
+	InputManager::GetInstance().Add(KEY_INPUT_R);
+	InputManager::GetInstance().Add(KEY_INPUT_T);
 
 	InputManager::GetInstance().Add(KEY_INPUT_C);
 	InputManager::GetInstance().Add(KEY_INPUT_F);
@@ -99,17 +101,17 @@ void InputManager::Update(void)
 		p.second.keyTrgUp = !p.second.keyNew && p.second.keyOld;
 	}
 
-	// マウス検知
-	mouseInput_ = GetMouseInput();
-	GetMousePoint(&mousePos_.x, &mousePos_.y);
+	//// マウス検知
+	//mouseInput_ = GetMouseInput();
+	//GetMousePoint(&mousePos_.x, &mousePos_.y);
 
-	for (auto& p : mouseInfos_)
-	{
-		p.second.keyOld = p.second.keyNew;
-		p.second.keyNew = mouseInput_ == p.second.key;
-		p.second.keyTrgDown = p.second.keyNew && !p.second.keyOld;
-		p.second.keyTrgUp = !p.second.keyNew && p.second.keyOld;
-	}
+	//for (auto& p : mouseInfos_)
+	//{
+	//	p.second.keyOld = p.second.keyNew;
+	//	p.second.keyNew = mouseInput_ == p.second.key;
+	//	p.second.keyTrgDown = p.second.keyNew && !p.second.keyOld;
+	//	p.second.keyTrgUp = !p.second.keyNew && p.second.keyOld;
+	//}
 
 	// パッド情報
 	SetJPadInState(JOYPAD_NO::KEY_PAD1);
