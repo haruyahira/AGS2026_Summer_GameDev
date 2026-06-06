@@ -52,10 +52,17 @@ void Application::Init(void)
 
 	SetWindowSizeExtendRate(1.0);
 
-	ChangeWindowMode(false); // 最初はフルスクリーン
+
+#ifdef _DEBUG
+	ChangeWindowMode(true);  // Debug時はウィンドウモード
+#else
+	ChangeWindowMode(false); // Release時はフルスクリーン
+#endif
+
+
+
 
 	// FPS
-	//fpsController_ = new FpsController(getFps_);
 	fpsController_ = std::make_unique<FpsController>(getFps_);
 
 	// DxLibの初期化

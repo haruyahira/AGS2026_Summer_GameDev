@@ -11,7 +11,9 @@
 #include "../Common/Transform.h"
 #include "../Furniture/Furniture.h"
 #include "../Furniture/StoneDevice.h"
+#include "../Furniture/CeilingLight.h"
 #include "../Item.h"
+#include "../../Shader/LightManager.h"
 
 class ResourceManager;
 class WarpStar;
@@ -48,9 +50,19 @@ public:
 	Planet* GetPlanet(NAME type);
 
 	void CreateFurniture(const FurnitureData& data);
+	void CreateCeilingLight(
+		ResourceManager::SRC modelSrc,
+		VECTOR pos,
+		VECTOR scl,
+		VECTOR rot
+	);
 
 private:
 
+	int vsHandle_ = -1;
+
+	int psHandle_ = -1;
+	LightManager lightMng_;
 	// シングルトン参照
 	ResourceManager& resMng_;
 
@@ -67,7 +79,7 @@ private:
 	// 家具
 	std::vector<Furniture*> furnitures_;
 	std::vector<Furniture*> glassFurnitures_;
-
+	std::vector<CeilingLight*> ceilingLights_;
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
 

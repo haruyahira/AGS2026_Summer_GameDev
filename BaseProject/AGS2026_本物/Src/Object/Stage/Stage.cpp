@@ -19,6 +19,7 @@
 #include "../Furniture/Showcase.h"
 #include "../Furniture/Ceiling.h"
 #include "../Furniture/StoneDevice.h"
+#include "../../Shader/LightManager.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -73,18 +74,54 @@ Stage::~Stage(void)
 		delete item;
 	}
 	items_.clear();
+
+	for (auto l : ceilingLights_)
+	{
+		delete l;
+	}
+
+	ceilingLights_.clear();
+
+	lightMng_.Release();
+
+	if (vsHandle_ != -1)
+	{
+		DeleteShader(vsHandle_);
+		vsHandle_ = -1;
+	}
+
+	if (psHandle_ != -1)
+	{
+		DeleteShader(psHandle_);
+		psHandle_ = -1;
+	}
+
 }
 
 void Stage::Init(void)
 {
-	// 毎回違う配置になるように乱数初期化
 	SRand(GetNowCount());
 
+	// HLSLライト用
+	lightMng_.Init();
+
 	MakeMainStage();
-	//MakeWarpStar();
 
 	stoneDevice_ = new StoneDevice(player_);
 	stoneDevice_->Init();
+
+	vsHandle_ =
+		LoadVertexShader("Data/Shader/VertexShader.cso");
+
+	psHandle_ =
+		LoadPixelShader("Data/Shader/PixelShader.cso");
+
+	printfDx("VS = %d\n", vsHandle_);
+	printfDx("PS = %d\n", psHandle_);
+
+	MV1SetUseOrigShader(TRUE);
+
+	//SetUseLighting(FALSE);
 
 	step_ = -1.0f;
 }
@@ -117,26 +154,54 @@ void Stage::Update(void)
 	{
 		item->Update();
 	}
+	for (auto l : ceilingLights_)
+	{
+		l->Update();
+	}
 
 	UpdateItemPickup();
 	UpdateStoneDeviceRegister();
+	if (player_ != nullptr)
+	{
+		if (player_->IsFlashLightOn())
+		{
+			lightMng_.SetFlashLight(
+				player_->GetFlashLightPos(),
+				VGet(0.95f, 0.90f, 0.70f),
+				player_->GetFlashLightDir(),
+				1200.0f,
+				DX_PI_F / 16.0f,
+				DX_PI_F / 5.0f
+			);
+		}
+		else
+		{
+			lightMng_.DisableFlashLight();
+		}
+	}
 }
-
 void Stage::Draw(void)
 {
-	// 惑星
+	// =========================
+	// 不透明モデル HLSL描画
+	// =========================
+	MV1SetUseOrigShader(TRUE);
+
+	SetUseVertexShader(vsHandle_);
+	SetUsePixelShader(psHandle_);
+
+	lightMng_.SendToShader();
+
 	for (const auto& s : stages_)
 	{
 		s.second->Draw();
 	}
 
-	// 家具
 	for (auto f : furnitures_)
 	{
 		f->Draw();
 	}
 
-	// アイテム
 	for (auto item : items_)
 	{
 		item->Draw();
@@ -147,28 +212,76 @@ void Stage::Draw(void)
 		stoneDevice_->Draw();
 	}
 
-	// ガラス家具は最後に描画
+	// =========================
+	// HLSL解除
+	// =========================
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+	MV1SetUseOrigShader(FALSE);
+
+	// =========================
+	// 天井ライト本体
+	// =========================
+	SetDrawBright(255, 235, 190);
+
+	for (auto l : ceilingLights_)
+	{
+		l->Draw();
+	}
+
+	SetDrawBright(255, 255, 255);
+
+	// =========================
+	// ガラス家具 半透明描画
+	// =========================
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(FALSE);
 	SetUseBackCulling(FALSE);
 
-	MV1SetSemiTransDrawMode(DX_SEMITRANSDRAWMODE_ALWAYS);
-	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_ALWAYS
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		255
+	);
+
+	// 夜ステージなので少し暗めにしたい場合
+	SetDrawBright(140, 160, 180);
 
 	for (auto f : glassFurnitures_)
 	{
 		f->Draw();
 	}
 
-	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-	MV1SetSemiTransDrawMode(DX_SEMITRANSDRAWMODE_NOT_SEMITRANS_ONLY);
+	SetDrawBright(255, 255, 255);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_NOT_SEMITRANS_ONLY
+	);
 
 	SetUseBackCulling(TRUE);
 	SetWriteZBuffer3D(TRUE);
 
+	// =========================
+	// 天井ライト発光
+	// =========================
+	for (auto l : ceilingLights_)
+	{
+		l->DrawGlow();
+	}
+
+	// =========================
+	// UI
+	// =========================
 	DrawItemUI();
 }
-
 void Stage::ChangeStage(NAME type)
 {
 	activeName_ = type;
@@ -249,41 +362,208 @@ void Stage::MakeMainStage(void)
 	// 壁一覧
 	std::vector<FurnitureData> wallDatas =
 	{
+		// 正面壁
 		{
 			ResourceManager::SRC::WALL,
 			{ 88.0f, -100.0f, -290.0f },
 			{ 5.0f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		},
-		{
-			ResourceManager::SRC::WALL,
-			{ -1700.0f, -100.0f, -290.0f },
-			{ 5.0f, 1.0f, 0.5f },
-			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-		},
+		// ②正面左壁
 		{
 			ResourceManager::SRC::WALL,
 			{ -1500.0f, -100.0f, -805.0f },
 			{ 1.8f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
+	
+		// ②正面右壁
+		// -x 奥に進
+		// -z 左に進
 		{
 			ResourceManager::SRC::WALL,
-			{ -1500.0f, -100.0f, 350.0f },
-			{ 2.7f, 1.0f, 0.5f },
+			{ -1500.0f, -100.0f, 330.0f },
+			{ 2.2f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
+
+		// ③正面右壁
+		{
+			ResourceManager::SRC::WALL,
+			{ -1700.0f, -100.0f, 330.0f },
+			{ 2.2f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// ③正面左壁（食器受け取り場所の右の壁）
+	{
+		ResourceManager::SRC::WALL,
+		{ -1700.0f, -100.0f, -610.0f },
+		{ 0.9f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+	},
+		// ③正面左壁（食器受け取り場所）
+	{
+		ResourceManager::SRC::WALL,
+		{ -1700.0f, -330.0f, -1020.0f },
+		{ 0.97f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+	},
+		// ④正面右壁（厨房の冷蔵庫の右の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, 330.0f },
+			{ 2.2f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+	
+		// 正面壁（着替え室の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, 1200.0f },
+			{ 0.9f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// 正面壁（休憩室の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -2100.0f, -100.0f, 1200.0f },
+			{ 0.9f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// 正面壁（パソコン室の左壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -1400.0f, -100.0f, 1350.0f },
+			{ 0.25f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// 正面壁（パソコン室の右壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -1400.0f, -100.0f, 950.0f },
+			{ 0.65f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// 正面壁（パソコン室の後ろ壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -270.0f, -100.0f, 1200.0f },
+			{ 1.9f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// ④正面左壁（厨房の冷蔵庫の左の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, -633.0f },
+			{ 0.9f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// ④正面左壁（厨房扉の左の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, -1120.0f },
+			{ 0.45f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+		// ⑤一番後ろ右の壁
+	{
+		ResourceManager::SRC::WALL,
+		{ -4300.0f, -100.0f, 370.0f },
+		{ 5.5f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+	},
+		// ⑤正面左壁（厨房扉の左の壁）
+	{
+		ResourceManager::SRC::WALL,
+		{ -4300.0f, -100.0f, -1120.0f },
+		{ 0.45f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+	},
+
+
+		// 左の壁
 		{
 			ResourceManager::SRC::WALL,
 			{ -1000.0f, -100.0f, -1200.0f },
-			{ 5.0f, 1.0f, 0.5f },
+			{ 15.0f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
+		// 右の壁
 		{
 			ResourceManager::SRC::WALL,
 			{ -680.0f, -100.0f, 800.0f },
-			{ 4.7f, 1.0f, 0.5f },
+			{ 3.7f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+		},
+		// ②右の壁
+      	{
+		ResourceManager::SRC::WALL,
+		{ -2565.0f, -100.0f, 800.0f },
+		{ 4.0f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+
+
+
+		// 右右の壁（秘密の部屋の左壁）
+      	{
+		ResourceManager::SRC::WALL,
+		{ -400.0f, -100.0f, 1000.0f },
+		{ 0.8f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+		// 右右の壁（秘密の部屋の右壁）
+      	{
+		ResourceManager::SRC::WALL,
+		{ -1140.0f, -100.0f, 1000.0f },
+		{ 1.7f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+		// ②右右の壁
+      	{
+		ResourceManager::SRC::WALL,
+		{ -2060.0f, -100.0f, 1000.0f },
+		{ 1.7f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+		// ③右右の壁
+      	{
+		ResourceManager::SRC::WALL,
+		{ -3030.0f, -100.0f, 1000.0f },
+		{ 1.88f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+
+
+		// 一番右の壁
+    	{
+	    ResourceManager::SRC::WALL,
+	    { -1500.0f, -100.0f, 1400.0f },
+	    { 15.0f, 1.0f, 0.5f },
+	    { 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+	    },
+
+		// 冷蔵庫、冷凍庫関連の壁
+		//右
+		{
+			ResourceManager::SRC::WALL,
+			{ -3670.0f, -100.0f, -140.0f },
+			{ 1.15f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+		},
+		// 左
+		{
+			ResourceManager::SRC::WALL,
+			{ -3670.0f, -100.0f, -450.0f },
+			{ 1.15f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+		},
+		// 後ろ
+		{
+			ResourceManager::SRC::WALL,
+			{ -3910.0f, -100.0f, -300.0f },
+			{ 0.71f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		},
 	};
 
@@ -318,6 +598,27 @@ void Stage::MakeMainStage(void)
 
 	// ノートPCを候補地点から10個ランダム生成
 	CreateRandomLaptopItemsFromSpawnPoints(3);
+
+
+	// 天井ライト
+	CreateCeilingLight(
+		ResourceManager::SRC::CEILING_LIGHT,
+		VGet(-1000, 250, 0),
+		VGet(0.1f, 0.08f, 0.1f),
+		VGet(0, 0, 0)
+	);
+	CreateCeilingLight(
+		ResourceManager::SRC::CEILING_LIGHT,
+		VGet(-500, 250, 0),
+		VGet(0.1f, 0.08f, 0.1f),
+		VGet(0, 0, 0)
+	);
+	CreateCeilingLight(
+		ResourceManager::SRC::CEILING_LIGHT,
+		VGet(0, 250, 0),
+		VGet(0.1f, 0.08f, 0.1f),
+		VGet(0, 0, 0)
+	);
 }
 
 void Stage::CreateFurniture(const FurnitureData& data)
@@ -783,4 +1084,46 @@ int Stage::CalcTotalMoney(void) const
 int Stage::CalcRemainDay(void) const
 {
 	return SceneManager::GetInstance().GetGameRemainDay();
+}
+
+void Stage::CreateCeilingLight(
+	ResourceManager::SRC modelSrc,
+	VECTOR pos,
+	VECTOR scl,
+	VECTOR rot)
+{
+	Transform trans;
+
+	trans.SetModel(
+		resMng_.LoadModelDuplicate(modelSrc)
+	);
+
+	trans.pos = pos;
+	trans.scl = scl;
+
+	trans.quaRot =
+		Quaternion::Euler(
+			rot.x,
+			rot.y,
+			rot.z
+		);
+
+	trans.Update();
+
+	CeilingLight* light =
+		new CeilingLight(&trans);
+
+	light->Init();
+
+	ceilingLights_.push_back(light);
+
+	lightMng_.AddLight(
+		pos,
+		VGet(0.45f, 0.36f, 0.24f),      // 電球色
+		VGet(0.0f, -1.0f, 0.0f),        // 真下へ照らす
+		950.0f,                         // 距離
+		DX_PI_F / 8.0f,                 // 内側角度
+		DX_PI_F / 3.5f                  // 外側角度
+	);
+
 }

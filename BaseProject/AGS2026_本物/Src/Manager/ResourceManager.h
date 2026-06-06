@@ -28,6 +28,7 @@ public:
 
 		F_TABLE,
 		WALL,
+		CEILING_LIGHT,
 		F_G,
 		F_F,
 		RETURN_POINT,

@@ -15,7 +15,7 @@ public:
 
 	// スピード
 	static constexpr float SPEED_MOVE = 2.0f;
-	static constexpr float SPEED_RUN = 2.5f;
+	static constexpr float SPEED_RUN = 4.5f;
 
 	// 回転完了までの時間
 	static constexpr float TIME_ROT = 1.0f;
@@ -123,7 +123,11 @@ public:
 	int GetMaxHP(void) const;
 	VECTOR GetPos(void) const;
 	VECTOR GetForward(void) const;
+	bool IsFlashLightOn() const;
 
+	VECTOR GetFlashLightPos() const;
+
+	VECTOR GetFlashLightDir() const;
 
 private:
 
