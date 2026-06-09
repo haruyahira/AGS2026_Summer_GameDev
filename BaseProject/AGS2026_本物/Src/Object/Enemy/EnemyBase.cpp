@@ -130,7 +130,7 @@ void EnemyBase::Update(Player* player)
     {
 
 #ifdef _DEBUG
-        printfDx("Enemy Hit Player\n");
+        //printfDx("Enemy Hit Player\n");
 #endif
     }
 
@@ -609,7 +609,7 @@ void EnemyBase::Damage(int damage)
     }
 
 #ifdef _DEBUG
-    printfDx("Enemy Damage : %d\n", damage);
+    //printfDx("Enemy Damage : %d\n", damage);
 #endif
 
     if (HpManager::GetInstance().IsDead(this))
@@ -618,7 +618,7 @@ void EnemyBase::Damage(int damage)
 
 
 #ifdef _DEBUG
-        printfDx("Enemy Dead\n");
+       // printfDx("Enemy Dead\n");
 #endif
     }
 }

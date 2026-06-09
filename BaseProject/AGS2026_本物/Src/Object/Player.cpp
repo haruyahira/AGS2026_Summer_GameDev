@@ -1230,7 +1230,7 @@ bool Player::Damage(int damage)
 	}
 
 #ifdef _DEBUG
-	printfDx("Player Damage : %d\n", damage);
+	//printfDx("Player Damage : %d\n", damage);
 #endif
 
 	if (HpManager::GetInstance().IsDead(this))

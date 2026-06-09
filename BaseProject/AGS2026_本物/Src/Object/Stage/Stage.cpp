@@ -116,8 +116,8 @@ void Stage::Init(void)
 	psHandle_ =
 		LoadPixelShader("Data/Shader/PixelShader.cso");
 
-	printfDx("VS = %d\n", vsHandle_);
-	printfDx("PS = %d\n", psHandle_);
+	/*printfDx("VS = %d\n", vsHandle_);
+	printfDx("PS = %d\n", psHandle_);*/
 
 	MV1SetUseOrigShader(TRUE);
 
@@ -576,7 +576,7 @@ void Stage::MakeMainStage(void)
 	CreateFurniture({
 		ResourceManager::SRC::FLOOR,
 		{ 10.0f, 250.0f, 10.0f },
-		{ 10.0f, 0.5f, 10.0f },
+		{ 100.0f, 0.5f, 100.0f },
 		{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f }
 		});
 
@@ -601,24 +601,61 @@ void Stage::MakeMainStage(void)
 
 
 	// 天井ライト
-	CreateCeilingLight(
+	std::vector<FurnitureData> lightDatas =
+	{
+
+    {
 		ResourceManager::SRC::CEILING_LIGHT,
-		VGet(-1000, 250, 0),
-		VGet(0.1f, 0.08f, 0.1f),
-		VGet(0, 0, 0)
-	);
-	CreateCeilingLight(
+		{ -1370.0f, 250.0f, -1050.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+    {
 		ResourceManager::SRC::CEILING_LIGHT,
-		VGet(-500, 250, 0),
-		VGet(0.1f, 0.08f, 0.1f),
-		VGet(0, 0, 0)
-	);
-	CreateCeilingLight(
+		{ -1370.0f, 250.0f, -450.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+    {
 		ResourceManager::SRC::CEILING_LIGHT,
-		VGet(0, 250, 0),
-		VGet(0.1f, 0.08f, 0.1f),
-		VGet(0, 0, 0)
-	);
+		{ -1370.0f, 250.0f, 0.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+    {
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1370.0f, 250.0f, 770.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+
+		// 廊下
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1610.0f, 250.0f, -775.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1610.0f, 250.0f, -15.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1610.0f, 250.0f, 435.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+
+	};
+
+
+	for (const auto& lightData : lightDatas)
+	{
+		CreateCeilingLight(lightData);
+	}
 }
 
 void Stage::CreateFurniture(const FurnitureData& data)
@@ -1086,26 +1123,27 @@ int Stage::CalcRemainDay(void) const
 	return SceneManager::GetInstance().GetGameRemainDay();
 }
 
-void Stage::CreateCeilingLight(
-	ResourceManager::SRC modelSrc,
-	VECTOR pos,
-	VECTOR scl,
-	VECTOR rot)
+void Stage::CreateCeilingLight(const Stage::FurnitureData& data)
 {
 	Transform trans;
 
 	trans.SetModel(
-		resMng_.LoadModelDuplicate(modelSrc)
+		resMng_.LoadModelDuplicate(data.modelSrc)
 	);
 
-	trans.pos = pos;
-	trans.scl = scl;
+	trans.pos.x = data.pos.x;
+	trans.pos.y = data.pos.y;
+	trans.pos.z = data.pos.z;
+
+	trans.scl.x = data.scl.x;
+	trans.scl.y = data.scl.y;
+	trans.scl.z = data.scl.z;
 
 	trans.quaRot =
 		Quaternion::Euler(
-			rot.x,
-			rot.y,
-			rot.z
+			data.rot.x,
+			data.rot.y,
+			data.rot.z
 		);
 
 	trans.Update();
@@ -1117,13 +1155,13 @@ void Stage::CreateCeilingLight(
 
 	ceilingLights_.push_back(light);
 
+	// ライトの共通設定
 	lightMng_.AddLight(
-		pos,
-		VGet(0.45f, 0.36f, 0.24f),      // 電球色
-		VGet(0.0f, -1.0f, 0.0f),        // 真下へ照らす
+		VGet(data.pos.x, data.pos.y, data.pos.z),
+		VGet(0.45f, 0.36f, 0.24f),      // 色
+		VGet(0.0f, -1.0f, 0.0f),        // 向き
 		950.0f,                         // 距離
 		DX_PI_F / 8.0f,                 // 内側角度
 		DX_PI_F / 3.5f                  // 外側角度
 	);
-
 }

@@ -50,12 +50,7 @@ public:
 	Planet* GetPlanet(NAME type);
 
 	void CreateFurniture(const FurnitureData& data);
-	void CreateCeilingLight(
-		ResourceManager::SRC modelSrc,
-		VECTOR pos,
-		VECTOR scl,
-		VECTOR rot
-	);
+	void CreateCeilingLight(const FurnitureData& data);
 
 private:
 

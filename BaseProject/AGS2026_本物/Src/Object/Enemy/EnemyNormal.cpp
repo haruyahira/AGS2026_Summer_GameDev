@@ -381,7 +381,7 @@ void EnemyNormal::UpdateAttack(Player* player)
 
 
 #ifdef _DEBUG
-            printfDx("Enemy Attack Hit Player\n");
+           // printfDx("Enemy Attack Hit Player\n");
 #endif
 
             player->Damage(attackPower_);

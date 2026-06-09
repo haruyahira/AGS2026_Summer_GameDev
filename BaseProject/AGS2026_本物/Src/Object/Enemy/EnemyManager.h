@@ -17,4 +17,9 @@ public:
 
 private:
 	std::vector<EnemyBase*> enemies_; // “G‚ğ‚Ü‚Æ‚ß‚ÄŠÇ—‚·‚é”z—ñ
+private:
+	std::vector<VECTOR> debugPatrolPoints_;
+	std::vector<std::vector<int>> debugPatrolLinks_;
+
+	bool isDrawDebugPatrol_ = true;
 };
