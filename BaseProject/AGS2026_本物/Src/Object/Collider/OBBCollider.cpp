@@ -391,3 +391,45 @@ bool OBBCollider::IsHitSegment(VECTOR start, VECTOR end) const
 
     return true;
 }
+
+void OBBCollider::DrawOutline(unsigned int color, bool isVerticalOnly) const
+{
+    VECTOR x = VScale(axisX_, halfSize_.x);
+    VECTOR y = VScale(axisY_, halfSize_.y);
+    VECTOR z = VScale(axisZ_, halfSize_.z);
+
+    VECTOR p[8];
+
+    p[0] = VAdd(center_, VAdd(VAdd(VScale(x, -1.0f), VScale(y, -1.0f)), VScale(z, -1.0f)));
+    p[1] = VAdd(center_, VAdd(VAdd(VScale(x, 1.0f), VScale(y, -1.0f)), VScale(z, -1.0f)));
+    p[2] = VAdd(center_, VAdd(VAdd(VScale(x, 1.0f), VScale(y, 1.0f)), VScale(z, -1.0f)));
+    p[3] = VAdd(center_, VAdd(VAdd(VScale(x, -1.0f), VScale(y, 1.0f)), VScale(z, -1.0f)));
+
+    p[4] = VAdd(center_, VAdd(VAdd(VScale(x, -1.0f), VScale(y, -1.0f)), VScale(z, 1.0f)));
+    p[5] = VAdd(center_, VAdd(VAdd(VScale(x, 1.0f), VScale(y, -1.0f)), VScale(z, 1.0f)));
+    p[6] = VAdd(center_, VAdd(VAdd(VScale(x, 1.0f), VScale(y, 1.0f)), VScale(z, 1.0f)));
+    p[7] = VAdd(center_, VAdd(VAdd(VScale(x, -1.0f), VScale(y, 1.0f)), VScale(z, 1.0f)));
+
+    // ècê¸ÇæÇØ
+    DrawLine3D(p[0], p[3], color);
+    DrawLine3D(p[1], p[2], color);
+    DrawLine3D(p[4], p[7], color);
+    DrawLine3D(p[5], p[6], color);
+
+    if (isVerticalOnly)
+    {
+        return;
+    }
+
+    // â∫ë§
+    DrawLine3D(p[0], p[1], color);
+    DrawLine3D(p[1], p[5], color);
+    DrawLine3D(p[5], p[4], color);
+    DrawLine3D(p[4], p[0], color);
+
+    // è„ë§
+    DrawLine3D(p[3], p[2], color);
+    DrawLine3D(p[2], p[6], color);
+    DrawLine3D(p[6], p[7], color);
+    DrawLine3D(p[7], p[3],color);
+}

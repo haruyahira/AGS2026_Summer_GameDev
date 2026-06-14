@@ -114,3 +114,8 @@ Furniture::Furniture(NAME name, const Transform* trans)
 
         return false;
     }
+
+    int Furniture::GetModelId(void) const
+    {
+        return trans_.modelId;
+    }

@@ -39,8 +39,6 @@ private:
     void DecideNextTarget(void);
 
     void InitAttackFrame(void);
-
-
 private:
     std::vector<VECTOR> patrolPoints_;
     std::vector<std::vector<int>> patrolLinks_;
@@ -58,4 +56,5 @@ private:
     int leftHandFrame_;
 
     bool isRightAttack_;
+
 };

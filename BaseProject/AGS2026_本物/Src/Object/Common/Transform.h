@@ -79,4 +79,6 @@ public:
 
 	VECTOR GetPos() const { return pos; }
 
+	VECTOR GetScale() const { return scl; }
+
 };

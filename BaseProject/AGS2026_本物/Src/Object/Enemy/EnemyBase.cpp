@@ -622,3 +622,9 @@ void EnemyBase::Damage(int damage)
 #endif
     }
 }
+
+
+VECTOR EnemyBase::GetPos(void) const
+{
+    return transform_.pos;
+}

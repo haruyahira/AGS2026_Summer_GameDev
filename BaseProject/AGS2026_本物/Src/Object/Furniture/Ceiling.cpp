@@ -1,5 +1,6 @@
 #include "Ceiling.h"
 #include "../../Manager/InputManager.h"
+#include "../Furniture/LightBlocker.h"
 
 // コンストラクタ
 Ceiling::Ceiling(const Transform* trans, float rotY)
@@ -123,4 +124,31 @@ bool Ceiling::ResolveCameraCollision(
     return obbCollider_.ResolveSphere(
         cameraPos,
         radius);
+}
+
+VECTOR Ceiling::GetPos() const
+{
+    return trans_.pos;
+}
+
+VECTOR Ceiling::GetAxisX() const
+{
+    return trans_.GetRight();
+}
+
+VECTOR Ceiling::GetAxisZ() const
+{
+    return trans_.GetForward();
+}
+
+VECTOR Ceiling::GetHalfSize() const
+{
+    return VGet(
+        trans_.scl.x * 500.0f,
+        30.0f,
+        trans_.scl.z * 500.0f
+    );
+}
+void Ceiling::DrawDebug(unsigned int color) const
+{
 }

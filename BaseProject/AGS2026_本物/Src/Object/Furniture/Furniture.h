@@ -40,7 +40,11 @@ public:
     bool IsUnder(VECTOR pos) const;
 
     bool isHideSpot_ = false;
-
+    int GetModelId(void) const;
+    virtual bool UseOutline() const
+    {
+        return true;
+    }
 private:
    
 protected:

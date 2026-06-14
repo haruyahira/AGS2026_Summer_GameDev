@@ -195,16 +195,19 @@
     <ClCompile Include="Src\Object\Furniture\CeilingLight.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Shader\Material.cpp">
+    <ClCompile Include="Src\Shader\Light\LightManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Shader\Shader.cpp">
+    <ClCompile Include="Src\Shader\Light\LightEffect.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Shader\Renderer.cpp">
+    <ClCompile Include="Src\Shader\Light\LightMaterial.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Shader\LightManager.cpp">
+    <ClCompile Include="Src\Shader\Light\LightRenderer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Object\Furniture\LightBlocker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -350,21 +353,31 @@
     <ClInclude Include="Src\Object\Furniture\CeilingLight.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Shader\Material.h">
+    <ClInclude Include="Src\Shader\Light\LightManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Shader\Shader.h">
+    <ClInclude Include="Src\Shader\Light\LightEffect.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Shader\Renderer.h">
+    <ClInclude Include="Src\Shader\Light\LightMaterial.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Shader\LightManager.h">
+    <ClInclude Include="Src\Shader\Light\LightRenderer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Object\Furniture\LightBlocker.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Src\Shader\PixelShader.hlsl" />
-    <FxCompile Include="Src\Shader\VertexShader.hlsl" />
+    <FxCompile Include="Src\Shader\Common\Vertex\Light3DVS.hlsl" />
+    <FxCompile Include="Src\Shader\Common\Pixel\Light3DPS.hlsl" />
+    <FxCompile Include="Src\Shader\Common\Vertex\Outline3DVS.hlsl" />
+    <FxCompile Include="Src\Shader\Common\Pixel\PostOutlinePS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Src\Shader\Common\Model3DCommon.hlsli" />
+    <None Include="Src\Shader\Common\Light3DCommon.hlsli" />
+    <None Include="Src\Shader\Common\Vertex\MV1Input.hlsli" />
   </ItemGroup>
 </Project>

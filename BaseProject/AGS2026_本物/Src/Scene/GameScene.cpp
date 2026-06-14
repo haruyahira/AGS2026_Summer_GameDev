@@ -52,6 +52,8 @@ void GameScene::Init(void)
 	// ステージの初期設定
 	stage_->ChangeStage(NAME::FIRST_STAGE);
 
+	enemyMng_->SetStage(stage_);
+
 	// スカイドーム
 	/*skyDome_ = new SkyDome(player_->GetTransform());
 	skyDome_->Init();*/
@@ -107,17 +109,14 @@ void GameScene::Update(void)
 
 void GameScene::Draw(void)
 {
-	// 全体を夜の色にする（少し青みを残して暗くする）
-	//SetDrawBright(50, 50, 100);
 
-
+	// ステージの描画
 	stage_->Draw();
-	
+
+	// プレイヤーの描画
 	player_->Draw();
-
+	
+	// 敵の描画
 	enemyMng_->Draw();
-
-	// 描画設定を元に戻す
-	//SetDrawBright(255, 255, 255);
 
 }

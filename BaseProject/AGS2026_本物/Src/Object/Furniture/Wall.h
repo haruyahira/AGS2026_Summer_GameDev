@@ -1,8 +1,12 @@
 #pragma once
 #include "Furniture.h"
+#include "../Furniture/LightBlocker.h"
 #include "../Collider/OBBCollider.h"
 
-class Wall : public Furniture {
+class Wall 
+    : public Furniture
+    , public LightBlocker
+{
 public:
     // コンストラクタ
     Wall(const Transform* trans, float rotY);
@@ -21,12 +25,27 @@ public:
         float radius) override;
 
     bool IsBlockingSight(VECTOR start, VECTOR end) const override;
+    void DrawOutline(unsigned int color, bool isVerticalOnly = true) const;
+ 
+    VECTOR GetPos() const;
 
+    VECTOR GetAxisX() const;
 
+    VECTOR GetAxisZ() const;
+
+    VECTOR GetHalfSize() const;
+
+    void DrawDebug(unsigned int color) const override;
+    bool UseOutline() const override
+    {
+        return false;
+    }
 private:
     OBBCollider obbCollider_;
 
     // 壁のY回転
     float rotY_;
-
+    VECTOR axisX_;
+    VECTOR axisZ_;
+    VECTOR center_;
 };

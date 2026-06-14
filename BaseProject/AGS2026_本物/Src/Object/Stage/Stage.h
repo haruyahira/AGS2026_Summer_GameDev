@@ -13,12 +13,14 @@
 #include "../Furniture/StoneDevice.h"
 #include "../Furniture/CeilingLight.h"
 #include "../Item.h"
-#include "../../Shader/LightManager.h"
+#include "../../Shader/Light/LightManager.h"
+#include "../../Shader/Light/LightEffect.h"
 
 class ResourceManager;
 class WarpStar;
 class Planet;
 class Player;
+class Wall;
 
 class Stage
 {
@@ -51,13 +53,12 @@ public:
 
 	void CreateFurniture(const FurnitureData& data);
 	void CreateCeilingLight(const FurnitureData& data);
+	void DrawDepthMaskForExternal3D(void);
 
+	bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
 private:
 
-	int vsHandle_ = -1;
-
-	int psHandle_ = -1;
-	LightManager lightMng_;
+	LightEffect lightEffect_;
 	// シングルトン参照
 	ResourceManager& resMng_;
 
@@ -75,6 +76,7 @@ private:
 	std::vector<Furniture*> furnitures_;
 	std::vector<Furniture*> glassFurnitures_;
 	std::vector<CeilingLight*> ceilingLights_;
+	std::vector<VECTOR> ceilingLightBeamPositions_;
 	// ワープスター
 	std::vector<WarpStar*> warpStars_;
 
@@ -85,9 +87,6 @@ private:
 
 	// 最初の惑星
 	void MakeMainStage(void);
-
-	// ワープスター
-	void MakeWarpStar(void);
 
 	void CreateFirstStage(void);
 
@@ -131,4 +130,41 @@ private:
 	int CalcStolenMoney(void) const;
 	int CalcTotalMoney(void) const;
 	int CalcRemainDay(void) const;
+
+
+	void DrawCeilingLightBeams(void);
+	void DrawOneCeilingLightBeam(const VECTOR& lightPos);
+	int beamGraph_ = -1;
+
+	void CreateBeamGraph(void);
+	void CreateKitchenLight(const FurnitureData& data);
+
+	void DrawDisc3D(
+		const VECTOR& center,
+		float radius,
+		int div,
+		int color
+	);
+
+	void UpdateFlashLightForShader(
+		const VECTOR& cameraPos,
+		const VECTOR& cameraTarget
+	);
+
+
+	int outlineRTColor_ = -1;
+	int outlineRTNormal_ = -1;
+	int outlineRTDepth_ = -1;
+
+	int outlinePostPS_ = -1;
+
+	bool InitPostOutline(void);
+	void ReleasePostOutline(void);
+	void DrawOpaqueSceneForOutline(
+		const VECTOR& cameraPos, const VECTOR& cameraTarget);
+	void DrawPostOutline(void);
+
+
+
+	
 };

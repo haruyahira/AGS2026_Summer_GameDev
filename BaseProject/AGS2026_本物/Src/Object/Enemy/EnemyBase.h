@@ -24,6 +24,9 @@ public:
 
     bool IsDead(void) const;
 
+    VECTOR GetPos(void) const;
+
+
 protected:
     // “G‚²‚Æ‚ÌŒÂ«
     virtual void UpdateWander(Player* player) = 0;
@@ -38,7 +41,6 @@ protected:
     // UŒ‚”»’è‚Ì’†SˆÊ’u
     virtual VECTOR GetAttackPos(void) const = 0;
 
-protected:
     // ‹¤’Êˆ—
     bool CheckPlayerAttack(Player* player);
     bool IsHitPlayer(Player* player);
@@ -59,6 +61,7 @@ protected:
 
     void InitHP(int maxHp, float invincibleFrame = 20.0f);
     void Damage(int damage);
+  
 
 protected:
     std::unique_ptr<AnimationController> animationController_;

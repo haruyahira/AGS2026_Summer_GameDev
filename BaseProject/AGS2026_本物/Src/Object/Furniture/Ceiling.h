@@ -1,8 +1,11 @@
 #pragma once
 #include "Furniture.h"
+#include "../Furniture/LightBlocker.h"
 #include "../Collider/OBBCollider.h"
 
-class Ceiling : public Furniture {
+class Ceiling
+    : public Furniture
+    , public LightBlocker {
 public:
     // コンストラクタ
     Ceiling(const Transform* trans, float rotY);
@@ -20,6 +23,14 @@ public:
         VECTOR& cameraPos,
         float radius) override;
 
+    VECTOR GetPos() const override;
+
+    VECTOR GetAxisX() const override;
+
+    VECTOR GetAxisZ() const override;
+
+    VECTOR GetHalfSize() const override;
+    void DrawDebug(unsigned int color) const override;
 
 private:
     OBBCollider obbCollider_;

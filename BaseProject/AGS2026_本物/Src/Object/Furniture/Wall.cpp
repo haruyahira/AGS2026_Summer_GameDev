@@ -10,7 +10,7 @@ Wall::Wall(const Transform* trans, float rotY)
 // ---------------------------------------------------------
 // 壁パラメータ
 // ---------------------------------------------------------
-float wallH = 400.0f;   // 高さ
+float wallH = 373.0f;   // 高さ
 float wallW = 440.0f;   // 横幅
 float wallD = 60.0f;    // 厚み
 
@@ -31,7 +31,7 @@ void Wall::Init() {
     float d = wallD * trans_.scl.z;
 
     // 壁の中心
-    VECTOR center = VAdd(
+    center_ = VAdd(
         pos,
         VGet(
             slideX,
@@ -44,16 +44,17 @@ void Wall::Init() {
     float c = cosf(rotY_);
     float s = sinf(rotY_);
 
-    VECTOR axisX = VGet(c, 0.0f, -s);
+    axisX_ = VGet(c, 0.0f, -s);
+    axisZ_ = VGet(s, 0.0f, c);
+
     VECTOR axisY = VGet(0.0f, 1.0f, 0.0f);
-    VECTOR axisZ = VGet(s, 0.0f, c);
 
     obbCollider_ = OBBCollider(
-        center,
+        center_,
         VGet(w / 2.0f, h / 2.0f, d / 2.0f),
-        axisX,
+        axisX_,
         axisY,
-        axisZ
+        axisZ_
     );
 
 
@@ -131,4 +132,48 @@ bool Wall::ResolveCameraCollision(
 bool Wall::IsBlockingSight(VECTOR start, VECTOR end) const
 {
     return obbCollider_.IsHitSegment(start, end);
+}
+
+void Wall::DrawOutline(unsigned int color, bool isVerticalOnly) const
+{
+    obbCollider_.DrawOutline(color, isVerticalOnly);
+}
+
+VECTOR Wall::GetPos() const
+{
+    return center_;
+}
+VECTOR Wall::GetAxisX() const
+{
+    return axisX_;
+}
+
+VECTOR Wall::GetAxisZ() const
+{
+    return axisZ_;
+
+}
+VECTOR Wall::GetHalfSize() const
+{
+
+    float w =
+        wallW * trans_.scl.x;
+
+    float h =
+        wallH * trans_.scl.y;
+
+    float d =
+        wallD * trans_.scl.z;
+
+    return VGet(
+        w * 0.5f,
+        h * 0.5f,
+        d * 0.5f
+    );
+
+}
+
+void Wall::DrawDebug(unsigned int color) const
+{
+    obbCollider_.DrawDebug(color);
 }

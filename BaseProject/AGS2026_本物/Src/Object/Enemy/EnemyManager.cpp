@@ -1,5 +1,6 @@
 #include "EnemyManager.h"
 #include "EnemyNormal.h"
+#include "../Stage/Stage.h"
 
 EnemyManager::EnemyManager(void) {}
 
@@ -124,17 +125,17 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	for (int i = 0; i < 5; i++)
-	{
-		EnemyNormal* enemy = new EnemyNormal();
+	//for (int i = 0; i < 5; i++)
+	//{
+	//	EnemyNormal* enemy = new EnemyNormal();
 
-		enemy->Init();
+	//	enemy->Init();
 
-		enemy->SetPatrolPoints(points);
-		enemy->SetPatrolLinks(links);
+	//	enemy->SetPatrolPoints(points);
+	//	enemy->SetPatrolLinks(links);
 
-		enemies_.push_back(enemy);
-	}
+	//	enemies_.push_back(enemy);
+	//}
 
 
 }
@@ -151,37 +152,121 @@ void EnemyManager::Update(Player* player)
 void EnemyManager::Draw(void)
 {
 	// すべての敵のDrawをループで回して描画する
+
+	VECTOR cameraPos = GetCameraPosition();
+
 	for (auto enemy : enemies_)
 	{
-		if (enemy) enemy->Draw();
-	}
-
-
-	// デバッグ：巡回ポイント番号表示
-	if (isDrawDebugPatrol_)
-	{
-		for (int i = 0; i < (int)debugPatrolPoints_.size(); i++)
+		if (enemy == nullptr)
 		{
-			VECTOR pos = debugPatrolPoints_[i];
+			continue;
+		}
 
-			// 少し上に表示する
-			pos.y += 40.0f;
+		bool isBlocked = false;
 
-			// 3D座標を画面座標に変換
-			VECTOR screenPos = ConvWorldPosToScreenPos(pos);
+		if (stage_ != nullptr)
+		{
+			VECTOR enemyPos = enemy->GetPos();
 
-			// 画面内・カメラ前だけ表示
-			if (screenPos.z >= 0.0f && screenPos.z <= 1.0f)
-			{
-				DrawFormatString(
-					(int)screenPos.x,
-					(int)screenPos.y,
-					GetColor(255, 255, 0),
-					"%d",
-					i
-				);
-			}
+			// 敵の足元ではなく、体の中心あたりを見る
+			enemyPos.y += 60.0f;
+
+			isBlocked = stage_->IsLineBlocked(
+				cameraPos,
+				enemyPos
+			);
+		}
+
+		if (!isBlocked)
+		{
+			enemy->Draw();
 		}
 	}
 
+#ifdef _DEBUG
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseLighting(FALSE);
+	SetUseBackCulling(FALSE);
+
+	// =========================
+	   // 巡回ルートの線
+	   // =========================
+	for (int i = 0; i < (int)debugPatrolLinks_.size(); i++)
+	{
+		if (i >= (int)debugPatrolPoints_.size())
+		{
+			continue;
+		}
+
+		VECTOR from = debugPatrolPoints_[i];
+
+		for (int nextIndex : debugPatrolLinks_[i])
+		{
+			if (nextIndex < 0 ||
+				nextIndex >= (int)debugPatrolPoints_.size())
+			{
+				continue;
+			}
+
+			VECTOR to = debugPatrolPoints_[nextIndex];
+
+
+			DrawLine3D(
+				from,
+				to,
+				GetColor(0, 180, 255)
+			);
+		}
+	}
+
+	// =========================
+	// 巡回ポイント番号
+	// =========================
+	for (int i = 0; i < (int)debugPatrolPoints_.size(); i++)
+	{
+		VECTOR pos = debugPatrolPoints_[i];
+
+		// 点を少し上に表示
+		VECTOR spherePos = pos;
+
+		DrawSphere3D(
+			spherePos,
+			13.0f,
+			8,
+			GetColor(255, 255, 0),
+			GetColor(255, 255, 0),
+			FALSE
+		);
+
+		// 番号はさらに上
+		VECTOR textPos = pos;
+		textPos.y += 25.0f;
+
+		VECTOR screenPos = ConvWorldPosToScreenPos(textPos);
+
+		if (screenPos.z >= 0.0f && screenPos.z <= 1.0f)
+		{
+			DrawFormatString(
+				(int)screenPos.x,
+				(int)screenPos.y,
+				GetColor(255, 255, 0),
+				"%d",
+				i
+			);
+		}
+	}
+
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+#endif
+
+}
+
+void EnemyManager::SetStage(Stage* stage)
+{
+	stage_ = stage;
 }

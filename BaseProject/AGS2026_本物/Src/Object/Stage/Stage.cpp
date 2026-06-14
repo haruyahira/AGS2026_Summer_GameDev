@@ -19,7 +19,8 @@
 #include "../Furniture/Showcase.h"
 #include "../Furniture/Ceiling.h"
 #include "../Furniture/StoneDevice.h"
-#include "../../Shader/LightManager.h"
+#include "../../Shader/Light/LightManager.h"
+#include "../../Shader/Light/LightEffect.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -81,21 +82,8 @@ Stage::~Stage(void)
 	}
 
 	ceilingLights_.clear();
-
-	lightMng_.Release();
-
-	if (vsHandle_ != -1)
-	{
-		DeleteShader(vsHandle_);
-		vsHandle_ = -1;
-	}
-
-	if (psHandle_ != -1)
-	{
-		DeleteShader(psHandle_);
-		psHandle_ = -1;
-	}
-
+	ReleasePostOutline();
+	lightEffect_.Release();
 }
 
 void Stage::Init(void)
@@ -103,25 +91,20 @@ void Stage::Init(void)
 	SRand(GetNowCount());
 
 	// HLSLライト用
-	lightMng_.Init();
+	bool isLightEffectOk = lightEffect_.Init(
+		"Data/Shader/Light3DVS.cso",
+		"Data/Shader/Light3DPS.cso"
+	);
+
+	// ポストエフェクト輪郭線用
+	InitPostOutline();
+
+	CreateBeamGraph();
 
 	MakeMainStage();
 
 	stoneDevice_ = new StoneDevice(player_);
 	stoneDevice_->Init();
-
-	vsHandle_ =
-		LoadVertexShader("Data/Shader/VertexShader.cso");
-
-	psHandle_ =
-		LoadPixelShader("Data/Shader/PixelShader.cso");
-
-	/*printfDx("VS = %d\n", vsHandle_);
-	printfDx("PS = %d\n", psHandle_);*/
-
-	MV1SetUseOrigShader(TRUE);
-
-	//SetUseLighting(FALSE);
 
 	step_ = -1.0f;
 }
@@ -161,11 +144,16 @@ void Stage::Update(void)
 
 	UpdateItemPickup();
 	UpdateStoneDeviceRegister();
+
 	if (player_ != nullptr)
 	{
+		lightEffect_.GetLightManager().SetViewPoint(
+			player_->GetPos()
+		);
+
 		if (player_->IsFlashLightOn())
 		{
-			lightMng_.SetFlashLight(
+			lightEffect_.GetLightManager().SetFlashLight(
 				player_->GetFlashLightPos(),
 				VGet(0.95f, 0.90f, 0.70f),
 				player_->GetFlashLightDir(),
@@ -176,112 +164,54 @@ void Stage::Update(void)
 		}
 		else
 		{
-			lightMng_.DisableFlashLight();
+			lightEffect_.GetLightManager().DisableFlashLight();
 		}
 	}
+
+
 }
 void Stage::Draw(void)
 {
-	// =========================
-	// 不透明モデル HLSL描画
-	// =========================
-	MV1SetUseOrigShader(TRUE);
+	VECTOR cameraPos = GetCameraPosition();
+	VECTOR cameraTarget = GetCameraTarget();
 
-	SetUseVertexShader(vsHandle_);
-	SetUsePixelShader(psHandle_);
+	// 重要：描画直前の正しいカメラ方向でライトを更新
+	UpdateFlashLightForShader(cameraPos, cameraTarget);
 
-	lightMng_.SendToShader();
+	// RTに不透明物 + 半透明物 + 光を描く
+	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
 
-	for (const auto& s : stages_)
-	{
-		s.second->Draw();
-	}
+	// 完成したRTを画面に出す
+	DrawPostOutline();
 
-	for (auto f : furnitures_)
-	{
-		f->Draw();
-	}
-
-	for (auto item : items_)
-	{
-		item->Draw();
-	}
-
-	if (stoneDevice_ != nullptr)
-	{
-		stoneDevice_->Draw();
-	}
 
 	// =========================
-	// HLSL解除
-	// =========================
+	 // Stage外の3D描画用に状態を戻す
+	 // =========================
+	SetDrawScreen(DX_SCREEN_BACK);
+
+	SetCameraNearFar(1.0f, 10000.0f);
+	SetupCamera_Perspective(DX_PI_F / 3.0f);
+	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
 	SetUseVertexShader(-1);
 	SetUsePixelShader(-1);
-	MV1SetUseOrigShader(FALSE);
 
-	// =========================
-	// 天井ライト本体
-	// =========================
-	SetDrawBright(255, 235, 190);
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
 
-	for (auto l : ceilingLights_)
-	{
-		l->Draw();
-	}
 
-	SetDrawBright(255, 255, 255);
-
-	// =========================
-	// ガラス家具 半透明描画
-	// =========================
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(FALSE);
-	SetUseBackCulling(FALSE);
-
-	MV1SetSemiTransDrawMode(
-		DX_SEMITRANSDRAWMODE_ALWAYS
-	);
-
-	SetDrawBlendMode(
-		DX_BLENDMODE_ALPHA,
-		255
-	);
-
-	// 夜ステージなので少し暗めにしたい場合
-	SetDrawBright(140, 160, 180);
-
-	for (auto f : glassFurnitures_)
-	{
-		f->Draw();
-	}
-
-	SetDrawBright(255, 255, 255);
-
-	SetDrawBlendMode(
-		DX_BLENDMODE_NOBLEND,
-		0
-	);
-
-	MV1SetSemiTransDrawMode(
-		DX_SEMITRANSDRAWMODE_NOT_SEMITRANS_ONLY
-	);
-
-	SetUseBackCulling(TRUE);
-	SetWriteZBuffer3D(TRUE);
-
-	// =========================
-	// 天井ライト発光
-	// =========================
-	for (auto l : ceilingLights_)
-	{
-		l->DrawGlow();
-	}
-
-	// =========================
-	// UI
-	// =========================
+	// UIだけ最後
 	DrawItemUI();
 }
+
 void Stage::ChangeStage(NAME type)
 {
 	activeName_ = type;
@@ -376,7 +306,7 @@ void Stage::MakeMainStage(void)
 			{ 1.8f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-	
+
 		// ②正面右壁
 		// -x 奥に進
 		// -z 左に進
@@ -408,14 +338,8 @@ void Stage::MakeMainStage(void)
 		{ 0.97f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 	},
-		// ④正面右壁（厨房の冷蔵庫の右の壁）
-		{
-			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, 330.0f },
-			{ 2.2f, 1.0f, 0.5f },
-			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-		},
-	
+		
+
 		// 正面壁（着替え室の壁）
 		{
 			ResourceManager::SRC::WALL,
@@ -451,17 +375,11 @@ void Stage::MakeMainStage(void)
 			{ 1.9f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ④正面左壁（厨房の冷蔵庫の左の壁）
-		{
-			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, -633.0f },
-			{ 0.9f, 1.0f, 0.5f },
-			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-		},
+	
 		// ④正面左壁（厨房扉の左の壁）
 		{
 			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, -1120.0f },
+			{ -3430.0f, -100.0f, -1122.0f },
 			{ 0.45f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
@@ -495,75 +413,90 @@ void Stage::MakeMainStage(void)
 			{ 3.7f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
 		},
-		// ②右の壁
-      	{
+		// ②右の壁(厨房の右壁）
+		{
 		ResourceManager::SRC::WALL,
-		{ -2565.0f, -100.0f, 800.0f },
-		{ 4.0f, 1.0f, 0.5f },
+		{ -2565.0f, -100.0f, 829.0f },
+		{ 3.87f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		},
 
 
 
 		// 右右の壁（秘密の部屋の左壁）
-      	{
+		{
 		ResourceManager::SRC::WALL,
 		{ -400.0f, -100.0f, 1000.0f },
 		{ 0.8f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		},
 		// 右右の壁（秘密の部屋の右壁）
-      	{
+		{
 		ResourceManager::SRC::WALL,
 		{ -1140.0f, -100.0f, 1000.0f },
 		{ 1.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		},
 		// ②右右の壁
-      	{
+		{
 		ResourceManager::SRC::WALL,
 		{ -2060.0f, -100.0f, 1000.0f },
 		{ 1.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		},
 		// ③右右の壁
-      	{
+		{
 		ResourceManager::SRC::WALL,
 		{ -3030.0f, -100.0f, 1000.0f },
 		{ 1.88f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		},
 
 
 		// 一番右の壁
-    	{
-	    ResourceManager::SRC::WALL,
-	    { -1500.0f, -100.0f, 1400.0f },
-	    { 15.0f, 1.0f, 0.5f },
-	    { 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
-	    },
+		{
+		ResourceManager::SRC::WALL,
+		{ -1500.0f, -100.0f, 1400.0f },
+		{ 15.0f, 1.0f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+		},
 
 		// 冷蔵庫、冷凍庫関連の壁
 		//右
 		{
 			ResourceManager::SRC::WALL,
-			{ -3670.0f, -100.0f, -140.0f },
+			{ -3668.5f, -100.0f, -140.0f },
 			{ 1.15f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
 		// 左
 		{
 			ResourceManager::SRC::WALL,
-			{ -3670.0f, -100.0f, -450.0f },
+			{ -3668.5f, -100.0f, -450.0f },
 			{ 1.15f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
 		// 後ろ
 		{
 			ResourceManager::SRC::WALL,
-			{ -3910.0f, -100.0f, -300.0f },
-			{ 0.71f, 1.0f, 0.5f },
+			{ -3937.0f, -100.0f, -295.0f },
+			{ 0.775f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		},
+		// ④正面左壁（厨房の冷蔵庫の左の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, -633.0f },
+			{ 0.9f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+
+		// ④正面右壁（厨房の冷蔵庫の右の壁）
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, 330.0f },
+			{ 2.2f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 	};
 
@@ -601,28 +534,29 @@ void Stage::MakeMainStage(void)
 
 
 	// 天井ライト
+
 	std::vector<FurnitureData> lightDatas =
 	{
 
-    {
+	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -1370.0f, 250.0f, -1050.0f },
 		{ 0.1f, 0.08f, 0.1f },
 		{ 0.0f, 0.0f, 0.0f }
 	},
-    {
+	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -1370.0f, 250.0f, -450.0f },
 		{ 0.1f, 0.08f, 0.1f },
 		{ 0.0f, 0.0f, 0.0f }
 	},
-    {
+	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -1370.0f, 250.0f, 0.0f },
 		{ 0.1f, 0.08f, 0.1f },
 		{ 0.0f, 0.0f, 0.0f }
 	},
-    {
+	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -1370.0f, 250.0f, 770.0f },
 		{ 0.1f, 0.08f, 0.1f },
@@ -648,8 +582,70 @@ void Stage::MakeMainStage(void)
 		{ 0.1f, 0.08f, 0.1f },
 		{ 0.0f, 0.0f, 0.0f }
 	},
+		// 廊下出口
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -3200.0f, 250.0f,  900.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -2700.0f, 250.0f,  900.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -2200.0f, 250.0f,  900.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	},
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1700.0f, 250.0f,  900.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	}
+
 
 	};
+
+
+
+	std::vector<FurnitureData> kitchenLightDatas =
+	{
+	{
+		ResourceManager::SRC::CEILING_LIGHT,
+		{ -1700.0f, 250.0f,  1200.0f },
+		{ 0.1f, 0.08f, 0.1f },
+		{ 0.0f, 0.0f, 0.0f }
+	}
+	};
+
+	// 厨房
+	for (int j = 0; j < 4; j++)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			FurnitureData data =
+			{
+				ResourceManager::SRC::CEILING_LIGHT,
+				{ -1780 - (j * 523.0f), 250.0f, -1100.0f + (i * 600.0f)},
+				{ 0.1f, 0.08f, 0.1f },
+				{ 0.0f, 0.0f, 0.0f }
+			};
+			kitchenLightDatas.push_back(data);
+		};
+
+	};
+
+
+	for (const auto& lightData : kitchenLightDatas)
+	{
+		CreateKitchenLight(lightData);
+	}
+
 
 
 	for (const auto& lightData : lightDatas)
@@ -674,9 +670,6 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	trans.quaRot = Quaternion::Euler(data.rot.x, data.rot.y, data.rot.z);
 
-	// 必要なら当たり判定
-	// trans.MakeCollider(Collider::TYPE::MESH);
-
 	trans.Update();
 
 	Furniture* f = nullptr;
@@ -688,7 +681,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	else if (data.modelSrc == ResourceManager::SRC::WALL)
 	{
 		f = new Wall(&trans, data.rot.y);
-		assert(f != nullptr);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::FLOOR)
+	{
+		f = new Ceiling(&trans, data.rot.y);
 	}
 	else if (data.modelSrc == ResourceManager::SRC::F_F)
 	{
@@ -698,10 +694,6 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	{
 		f = new Showcase(&trans);
 	}
-	else if (data.modelSrc == ResourceManager::SRC::FLOOR)
-	{
-		f = new Ceiling(&trans, data.rot.y);
-	}
 
 	if (f == nullptr)
 	{
@@ -710,20 +702,30 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	f->Init();
 
-	// ガラスモデルだけDXLib側でも半透明化
+	// 壁をライト遮蔽用に自動登録
+
+	LightBlocker* blocker =
+		dynamic_cast<LightBlocker*>(f);
+
+	if (blocker != nullptr)
+	{
+		lightEffect_
+			.GetLightManager()
+			.AddWallBlocker(blocker);
+	}
+
+
 	if (data.modelSrc == ResourceManager::SRC::F_G)
 	{
 		MV1SetOpacityRate(trans.modelId, 0.65f);
 		MV1SetSemiTransDrawMode(DX_SEMITRANSDRAWMODE_ALWAYS);
 	}
 
-	// ガラスは当たり判定に入れない
 	if (data.modelSrc != ResourceManager::SRC::F_G)
 	{
 		player_->AddFurniture(f);
 	}
 
-	// 描画リストを分ける
 	if (data.modelSrc == ResourceManager::SRC::F_G)
 	{
 		glassFurnitures_.push_back(f);
@@ -907,6 +909,7 @@ void Stage::UpdateStoneDeviceRegister(void)
 
 void Stage::DrawItemUI(void) const
 {
+	stoneDevice_->DrawUI();
 	if (lookingItemIndex_ != -1)
 	{
 		Item* item = items_[lookingItemIndex_];
@@ -1155,13 +1158,677 @@ void Stage::CreateCeilingLight(const Stage::FurnitureData& data)
 
 	ceilingLights_.push_back(light);
 
-	// ライトの共通設定
-	lightMng_.AddLight(
-		VGet(data.pos.x, data.pos.y, data.pos.z),
-		VGet(0.45f, 0.36f, 0.24f),      // 色
-		VGet(0.0f, -1.0f, 0.0f),        // 向き
-		950.0f,                         // 距離
-		DX_PI_F / 8.0f,                 // 内側角度
-		DX_PI_F / 3.5f                  // 外側角度
+
+	ceilingLightBeamPositions_.push_back(
+		VGet(data.pos.x, data.pos.y, data.pos.z)
 	);
+
+
+	lightEffect_.GetLightManager().AddLight(
+		VGet(data.pos.x, data.pos.y, data.pos.z),
+		VGet(0.45f, 0.36f, 0.24f),
+		VGet(0.0f, -1.0f, 0.0f),
+		950.0f,
+		DX_PI_F / 8.0f,
+		DX_PI_F / 3.5f,
+		true
+	);
+
+}
+
+
+void Stage::DrawCeilingLightBeams(void)
+{
+    for (const auto& pos : ceilingLightBeamPositions_)
+    {
+        DrawOneCeilingLightBeam(pos);
+    }
+}
+
+void Stage::DrawOneCeilingLightBeam(const VECTOR& lightPos)
+{
+	if (beamGraph_ == -1)
+	{
+		return;
+	}
+
+	const float topY = lightPos.y - 20.0f;
+	const float bottomY = -92.0f;
+
+	const float height = topY - bottomY;
+
+	VECTOR top = VGet(
+		lightPos.x,
+		topY,
+		lightPos.z
+	);
+
+	VECTOR bottom = VGet(
+		lightPos.x,
+		bottomY,
+		lightPos.z
+	);
+
+	// 光の幅
+	float topWidth = 25.0f;
+	float bottomWidth = 260.0f;
+
+	// カメラ位置
+	VECTOR cameraPos = GetCameraPosition();
+
+	// カメラ方向に向く横方向ベクトルを作る
+	VECTOR toCamera = VSub(cameraPos, bottom);
+	toCamera.y = 0.0f;
+
+	if (VSize(toCamera) < 0.001f)
+	{
+		toCamera = VGet(0.0f, 0.0f, 1.0f);
+	}
+
+	toCamera = VNorm(toCamera);
+
+	// 横方向
+	VECTOR right = VGet(
+		toCamera.z,
+		0.0f,
+		-toCamera.x
+	);
+
+	VECTOR topL = VSub(top, VScale(right, topWidth));
+	VECTOR topR = VAdd(top, VScale(right, topWidth));
+
+	VECTOR bottomL = VSub(bottom, VScale(right, bottomWidth));
+	VECTOR bottomR = VAdd(bottom, VScale(right, bottomWidth));
+
+	VERTEX3D v[6];
+
+	for (int i = 0; i < 6; i++)
+	{
+		v[i].norm = VGet(0.0f, 1.0f, 0.0f);
+		v[i].dif = GetColorU8(255, 255, 255, 255);
+		v[i].spc = GetColorU8(0, 0, 0, 0);
+	}
+
+	v[0].pos = topL;
+	v[0].u = 0.0f;
+	v[0].v = 0.0f;
+
+	v[1].pos = bottomL;
+	v[1].u = 0.0f;
+	v[1].v = 1.0f;
+
+	v[2].pos = bottomR;
+	v[2].u = 1.0f;
+	v[2].v = 1.0f;
+
+	v[3].pos = topL;
+	v[3].u = 0.0f;
+	v[3].v = 0.0f;
+
+	v[4].pos = bottomR;
+	v[4].u = 1.0f;
+	v[4].v = 1.0f;
+
+	v[5].pos = topR;
+	v[5].u = 1.0f;
+	v[5].v = 0.0f;
+
+	SetUseLighting(FALSE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+
+	// 加算合成。ここはかなり薄めでOK
+	SetDrawBlendMode(DX_BLENDMODE_ADD, 55);
+
+	DrawPrimitive3D(
+		v,
+		6,
+		DX_PRIMTYPE_TRIANGLELIST,
+		beamGraph_,
+		TRUE
+	);
+
+	// 床の光だまり
+	SetDrawBlendMode(DX_BLENDMODE_ADD, 10);
+
+
+	DrawDisc3D(
+		bottom,
+		120.0f,
+		32,
+		GetColor(255, 190, 90)
+	);
+
+
+	SetUseBackCulling(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	SetUseLighting(TRUE);
+}
+
+
+void Stage::CreateBeamGraph(void)
+{
+	const int w = 128;
+	const int h = 512;
+
+	beamGraph_ = MakeScreen(w, h, TRUE);
+
+	int oldScreen = GetDrawScreen();
+
+	SetDrawScreen(beamGraph_);
+	ClearDrawScreen();
+
+	for (int y = 0; y < h; y++)
+	{
+		float v = (float)y / (float)(h - 1);
+
+		// 上下を薄くする
+		float vertical = sinf(v * DX_PI_F);
+
+		for (int x = 0; x < w; x++)
+		{
+			float u = (float)x / (float)(w - 1);
+
+			// 中央が濃く、左右が薄い
+			float center = 1.0f - fabsf(u - 0.5f) * 2.0f;
+
+			if (center < 0.0f)
+			{
+				center = 0.0f;
+			}
+
+			// ふわっとさせる
+			center = powf(center, 2.2f);
+
+			float alphaRate = center * vertical;
+
+			int alpha = (int)(alphaRate * 180.0f);
+
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+			DrawPixel(
+				x,
+				y,
+				GetColor(255, 210, 120)
+			);
+		}
+	}
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	SetDrawScreen(oldScreen);
+}
+
+void Stage::DrawDisc3D(
+	const VECTOR& center,
+	float radius,
+	int div,
+	int color
+)
+{
+	for (int i = 0; i < div; i++)
+	{
+		float a0 = DX_TWO_PI_F * i / div;
+		float a1 = DX_TWO_PI_F * (i + 1) / div;
+
+		VECTOR p0 = VGet(
+			center.x + cosf(a0) * radius,
+			center.y,
+			center.z + sinf(a0) * radius
+		);
+
+		VECTOR p1 = VGet(
+			center.x + cosf(a1) * radius,
+			center.y,
+			center.z + sinf(a1) * radius
+		);
+
+		DrawTriangle3D(
+			center,
+			p0,
+			p1,
+			color,
+			TRUE
+		);
+	}
+}
+
+void Stage::CreateKitchenLight(const Stage::FurnitureData& data)
+{
+	Transform trans;
+
+	trans.SetModel(
+		resMng_.LoadModelDuplicate(data.modelSrc)
+	);
+
+	trans.pos.x = data.pos.x;
+	trans.pos.y = data.pos.y;
+	trans.pos.z = data.pos.z;
+
+	trans.scl.x = data.scl.x;
+	trans.scl.y = data.scl.y;
+	trans.scl.z = data.scl.z;
+
+	trans.quaRot =
+		Quaternion::Euler(
+			data.rot.x,
+			data.rot.y,
+			data.rot.z
+		);
+
+	trans.Update();
+
+	CeilingLight* light =
+		new CeilingLight(&trans);
+
+	light->Init();
+
+	ceilingLights_.push_back(light);
+
+	// 厨房用ライト
+	// 白っぽく、広く、少し強め
+	lightEffect_.GetLightManager().AddLight(
+		VGet(data.pos.x, data.pos.y, data.pos.z),
+
+		// 色：蛍光灯っぽい白
+		VGet(0.50f, 0.52f, 0.58f),
+
+		// 真下
+		VGet(0.0f, -1.0f, 0.0f),
+
+		// 届く距離
+		900.0f,
+
+		// 中心の明るい範囲
+		DX_PI_F / 3.2f,
+
+		// 外側までかなり広く
+		DX_PI_F / 1.8f,
+
+		// 壁で遮る
+		true
+	);
+
+}
+bool Stage::InitPostOutline(void)
+{
+	int w, h;
+	GetDrawScreenSize(&w, &h);
+
+	outlineRTColor_ = MakeScreen(w, h, false);
+	outlineRTNormal_ = MakeScreen(w, h, false);
+
+	SetCreateDrawValidGraphChannelNum(1);
+	SetCreateGraphChannelBitDepth(32);
+	outlineRTDepth_ = MakeScreen(w, h, false);
+	SetCreateGraphChannelBitDepth(0);
+	SetCreateDrawValidGraphChannelNum(4);
+
+	outlinePostPS_ = LoadPixelShader("Data/Shader/PostOutlinePS.cso");
+
+	return true;
+}
+void Stage::ReleasePostOutline(void)
+{
+	if (outlineRTColor_ != -1)
+	{
+		DeleteGraph(outlineRTColor_);
+		outlineRTColor_ = -1;
+	}
+
+	if (outlineRTNormal_ != -1)
+	{
+		DeleteGraph(outlineRTNormal_);
+		outlineRTNormal_ = -1;
+	}
+
+	if (outlineRTDepth_ != -1)
+	{
+		DeleteGraph(outlineRTDepth_);
+		outlineRTDepth_ = -1;
+	}
+
+	if (outlinePostPS_ != -1)
+	{
+		DeleteShader(outlinePostPS_);
+		outlinePostPS_ = -1;
+	}
+}
+
+void Stage::DrawOpaqueSceneForOutline(
+	const VECTOR& cameraPos,
+	const VECTOR& cameraTarget)
+{
+	if (outlineRTColor_ == -1 ||
+		outlineRTNormal_ == -1 ||
+		outlineRTDepth_ == -1)
+	{
+		return;
+	}
+
+	SetDrawScreen(outlineRTColor_);
+	ClearDrawScreen();
+
+	// RTに描く時も、保存したプレイヤーカメラを使う
+	SetCameraNearFar(1.0f, 10000.0f);
+	SetupCamera_Perspective(DX_PI_F / 3.0f);
+	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
+
+	FillGraph(outlineRTNormal_, 0, 0, 0, 0);
+	FillGraph(outlineRTDepth_, 1.0f, 0, 0, 0);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	SetRenderTargetToShader(1, outlineRTNormal_);
+	SetRenderTargetToShader(2, outlineRTDepth_);
+
+	lightEffect_.Begin();
+
+	for (const auto& s : stages_)
+	{
+		s.second->Draw();
+	}
+
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
+
+		f->Draw();
+	}
+
+	for (auto item : items_)
+	{
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		item->Draw();
+	}
+
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Draw();
+	}
+
+	lightEffect_.End();
+
+	// MRT解除
+	SetRenderTargetToShader(1, -1);
+	SetRenderTargetToShader(2, -1);
+
+	// =================================
+	// ここからはRTColorに通常描画する
+	// =================================
+
+	// 天井ライト本体
+	SetDrawBright(255, 235, 190);
+
+	for (auto l : ceilingLights_)
+	{
+		if (l != nullptr)
+		{
+			l->Draw();
+		}
+	}
+
+	SetDrawBright(255, 255, 255);
+
+	// =========================
+	// ガラス家具 半透明描画
+	// =========================
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_ALWAYS
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		255
+	);
+
+	SetDrawBright(140, 160, 180);
+
+	for (auto f : glassFurnitures_)
+	{
+		if (f != nullptr)
+		{
+			f->Draw();
+		}
+	}
+
+	SetDrawBright(255, 255, 255);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_NOT_SEMITRANS_ONLY
+	);
+
+	SetUseBackCulling(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	// =========================
+	// 天井ライトの光の柱
+	// =========================
+	DrawCeilingLightBeams();
+
+	// =========================
+	// 天井ライト発光
+	// =========================
+	for (auto l : ceilingLights_)
+	{
+		if (l != nullptr)
+		{
+			l->DrawGlow();
+		}
+	}
+}
+
+void Stage::DrawPostOutline(void)
+{
+	if (outlineRTColor_ < 0)
+	{
+		return;
+	}
+
+	SetDrawScreen(DX_SCREEN_BACK);
+	ClearDrawScreen();
+
+	if (outlinePostPS_ < 0 ||
+		outlineRTNormal_ < 0 ||
+		outlineRTDepth_ < 0)
+	{
+		DrawGraph(0, 0, outlineRTColor_, FALSE);
+
+		DrawFormatString(
+			20,
+			300,
+			GetColor(255, 0, 0),
+			"PostOutlinePS load failed : %d",
+			outlinePostPS_
+		);
+
+		return;
+	}
+
+	int w, h;
+	GetDrawScreenSize(&w, &h);
+
+	// 2Dポリゴン描画用の状態にする
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);   // ★重要
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	SetUseVertexShader(-1);
+
+	SetUseTextureToShader(0, outlineRTColor_);
+	SetUseTextureToShader(1, outlineRTNormal_);
+	SetUseTextureToShader(2, outlineRTDepth_);
+
+	SetUsePixelShader(outlinePostPS_);
+
+	VERTEX2DSHADER v[6];
+
+	for (int i = 0; i < 6; i++)
+	{
+		v[i].rhw = 1.0f;
+		v[i].dif = GetColorU8(255, 255, 255, 255);
+		v[i].spc = GetColorU8(0, 0, 0, 0);
+	}
+
+	// 1枚目の三角形
+	v[0].pos = VGet(0.0f, 0.0f, 0.0f);
+	v[0].u = 0.0f;
+	v[0].v = 0.0f;
+	v[0].su = 0.0f;
+	v[0].sv = 0.0f;
+
+	v[1].pos = VGet(0.0f, (float)h, 0.0f);
+	v[1].u = 0.0f;
+	v[1].v = 1.0f;
+	v[1].su = 0.0f;
+	v[1].sv = 1.0f;
+
+	v[2].pos = VGet((float)w, (float)h, 0.0f);
+	v[2].u = 1.0f;
+	v[2].v = 1.0f;
+	v[2].su = 1.0f;
+	v[2].sv = 1.0f;
+
+	// 2枚目の三角形
+	v[3].pos = VGet(0.0f, 0.0f, 0.0f);
+	v[3].u = 0.0f;
+	v[3].v = 0.0f;
+	v[3].su = 0.0f;
+	v[3].sv = 0.0f;
+
+	v[4].pos = VGet((float)w, (float)h, 0.0f);
+	v[4].u = 1.0f;
+	v[4].v = 1.0f;
+	v[4].su = 1.0f;
+	v[4].sv = 1.0f;
+
+	v[5].pos = VGet((float)w, 0.0f, 0.0f);
+	v[5].u = 1.0f;
+	v[5].v = 0.0f;
+	v[5].su = 1.0f;
+	v[5].sv = 0.0f;
+
+	DrawPrimitive2DToShader(
+		v,
+		6,
+		DX_PRIMTYPE_TRIANGLELIST
+	);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetUsePixelShader(-1);
+
+	// 状態を戻す
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	DrawFormatString(
+		20,
+		300,
+		GetColor(255, 255, 0),
+		"outlinePostPS_ = %d",
+		outlinePostPS_
+	);
+}
+
+//void Stage::DrawPostOutline(void)
+//{
+//	if (outlineRTColor_ < 0)
+//	{
+//		return;
+//	}
+//
+//	SetDrawScreen(DX_SCREEN_BACK);
+//
+//	// RTをそのまま描画
+//	DrawGraph(0, 0, outlineRTColor_, FALSE);
+//}
+void Stage::UpdateFlashLightForShader(
+	const VECTOR& cameraPos,
+	const VECTOR& cameraTarget
+)
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	// 視点位置もカメラ位置にした方が自然
+	lightEffect_.GetLightManager().SetViewPoint(cameraPos);
+
+	if (!player_->IsFlashLightOn())
+	{
+		lightEffect_.GetLightManager().DisableFlashLight();
+		return;
+	}
+
+	VECTOR dir = VSub(cameraTarget, cameraPos);
+
+	if (VSize(dir) < 0.001f)
+	{
+		dir = VGet(0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		dir = VNorm(dir);
+	}
+
+	lightEffect_.GetLightManager().SetFlashLight(
+		player_->GetFlashLightPos(),        // ライト位置は手元
+		VGet(0.95f, 0.90f, 0.70f),          // 色
+		dir,                                // カメラの向き
+		1200.0f,
+		DX_PI_F / 16.0f,
+		DX_PI_F / 5.0f
+	);
+}
+
+bool Stage::IsLineBlocked(const VECTOR& from, const VECTOR& to) const
+{
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
+
+		int modelId = f->GetModelId();
+
+		MV1_COLL_RESULT_POLY hit =
+			MV1CollCheck_Line(
+				modelId,
+				-1,
+				from,
+				to
+			);
+
+		if (hit.HitFlag)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

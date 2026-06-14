@@ -16,6 +16,7 @@ public:
     void Init(void);
     void Update(void);
     void Draw(void);
+    void DrawUI(void);
 
     bool IsActive(void) const;
     bool IsNearPlayer(void) const;
@@ -27,6 +28,8 @@ private:
    
     void DrawGuide(void) const;
     void DrawTimer(void) const;
+
+  
 
 private:
 

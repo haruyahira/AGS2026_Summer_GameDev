@@ -97,56 +97,10 @@ void EnemyNormal::Draw(void)
 
 
 #ifdef _DEBUG
-
-    // 巡回ポイント表示
-    for (int i = 0; i < static_cast<int>(patrolPoints_.size()); i++)
-    {
-        unsigned int color = GetColor(0, 100, 255);
-
-        if (i == targetIndex_)
-        {
-            color = GetColor(255, 255, 0);
-        }
-
-        VECTOR drawPos = patrolPoints_[i];
-        drawPos.y += 30.0f;
-
-        DrawSphere3D(
-            drawPos,
-            20.0f,
-            12,
-            color,
-            color,
-            FALSE);
-    }
-
-    // 巡回ポイント同士を線でつなぐ
-    for (int i = 0; i < static_cast<int>(patrolLinks_.size()); i++)
-    {
-        if (i < 0 || i >= static_cast<int>(patrolPoints_.size()))
-        {
-            continue;
-        }
-
-        for (int next : patrolLinks_[i])
-        {
-            if (next < 0 || next >= static_cast<int>(patrolPoints_.size()))
-            {
-                continue;
-            }
-
-            VECTOR p1 = patrolPoints_[i];
-            VECTOR p2 = patrolPoints_[next];
-
-            p1.y += 30.0f;
-            p2.y += 30.0f;
-
-            DrawLine3D(
-                p1,
-                p2,
-                GetColor(0, 100, 255));
-        }
-    }
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+    SetUseLighting(FALSE);
+    SetUseBackCulling(FALSE);
 
     // 敵から現在の目的地まで線を引く
     if (!patrolPoints_.empty() &&
@@ -161,6 +115,10 @@ void EnemyNormal::Draw(void)
             targetDrawPos,
             GetColor(255, 255, 0));
     }
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(TRUE);
+    SetUseLighting(TRUE);
+    SetUseBackCulling(TRUE);
 
 #endif
 }

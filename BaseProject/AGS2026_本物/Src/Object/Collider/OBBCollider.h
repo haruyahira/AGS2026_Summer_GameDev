@@ -54,7 +54,7 @@ public:
         float radius) const;
 
     bool IsHitSegment(VECTOR start, VECTOR end) const;
-
+    void DrawOutline(unsigned int color, bool isVerticalOnly = false) const;
 
 private:
 
