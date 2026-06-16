@@ -162,7 +162,7 @@ bool IsWallBlocked(
         // ƒqƒbƒg”»’è
         // =========================
 
-        if (tmax >= tmin)
+        if (tmax >= tmin - 5.0f)
         {
             if (tmin > 0.0f &&
                 tmin < rayLen)

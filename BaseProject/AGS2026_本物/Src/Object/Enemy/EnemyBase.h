@@ -100,6 +100,39 @@ protected:
 
     float bodyHeight_;
     float bodyCenterOffsetY_;
+    // ‘«‰¹”½‰
+    bool isHearingFootstep_;
+    float hearingTimer_;
+    float hearingDuration_;
+    VECTOR lastHeardPos_;
 
+    // ‘«‰¹ŒŸ’m”ÍˆÍ
+    float footstepHearRangeNormal_;
+    float footstepHearRangeAlert_;
 
+    float GetCurrentFootstepHearRange(void) const;
+
+    // Œx‰úó‘Ô
+    bool isAlert_;
+    float alertTimer_;
+    float alertDuration_;
+    float alertFootstepRangeRate_;
+
+    bool CanHearPlayerFootstep(Player* player);
+    void StartHearFootstep(Player* player);
+    void UpdateHearFootstep(Player* player);
+
+    void StartAlert(void);
+    void UpdateAlert(Player* player);
+
+    void LookAtPosition(const VECTOR& targetPos);
+    
+#ifdef _DEBUG
+    float debugFootstepHearRange_;
+    bool debugCanHearFootstep_;
+    void DrawFootstepHearRangeDebug(void);
+#endif
+
+    bool wasChasing_;
+    VECTOR lastKnownPlayerPos_;
 };

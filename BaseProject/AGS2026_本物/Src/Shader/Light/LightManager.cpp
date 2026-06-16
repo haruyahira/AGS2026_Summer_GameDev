@@ -155,7 +155,7 @@ void LightManager::SendToShader()
                 )
             );
 
-        if (dist > 2000.0f)
+        if (dist > 1700.0f)
         {
             continue;
         }

@@ -129,6 +129,11 @@ public:
 
 	VECTOR GetFlashLightDir() const;
 
+
+	bool IsFootstepActive() const;
+	float GetFootstepRange() const;
+	VECTOR GetFootstepPos() const;
+
 private:
 
 	void PlayAnimation(ANIM_TYPE animType, bool isLoop = true);
@@ -264,5 +269,19 @@ private:
 	int maxHp_;
 	bool isDead_;
 
+
+	// ‘«‰¹
+	bool isFootstepActive_;
+	float footstepRange_;
+
+	static constexpr float FOOTSTEP_RANGE_WALK = 180.0f;
+	static constexpr float FOOTSTEP_RANGE_RUN = 320.0f;
+	static constexpr float FOOTSTEP_RANGE_PRONE = 80.0f;
+
+	void UpdateFootstepRange();
+
+#ifdef _DEBUG
+	void DrawFootstepDebug() const;
+#endif
 
 };

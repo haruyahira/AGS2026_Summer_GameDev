@@ -376,13 +376,7 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 	
-		// ‡C³–Ê¶•Çi~–[”à‚Ì¶‚Ì•Çj
-		{
-			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, -1122.0f },
-			{ 0.45f, 1.0f, 0.5f },
-			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-		},
+		
 		// ‡Dˆê”ÔŒã‚ë‰E‚Ì•Ç
 	{
 		ResourceManager::SRC::WALL,
@@ -494,8 +488,16 @@ void Stage::MakeMainStage(void)
 		// ‡C³–Ê‰E•Çi~–[‚Ì—â‘ ŒÉ‚Ì‰E‚Ì•Çj
 		{
 			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, 330.0f },
+			{ -3430.0f, -100.0f, 329.0f },
 			{ 2.2f, 1.0f, 0.5f },
+			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		},
+
+			// ‡C³–Ê¶•Çi~–[”à‚Ì¶‚Ì•Çj
+		{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, -100.0f, -1092.0f },
+			{ 0.43f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 	};

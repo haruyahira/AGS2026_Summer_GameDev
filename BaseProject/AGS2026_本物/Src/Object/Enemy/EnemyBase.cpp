@@ -43,7 +43,29 @@ EnemyBase::EnemyBase(void) : ActorBase()
 
     maxHp_ = 1;
     attackPower_ = 1;
+    // 足音反応
+    isHearingFootstep_ = false;
+    hearingTimer_ = 0.0f;
+    hearingDuration_ = 60.0f;
 
+    // 警戒状態
+    isAlert_ = false;
+    alertTimer_ = 0.0f;
+
+    // 180F = 60FPS想定で約3秒
+    alertDuration_ = 300.0f;
+
+    // Enemy側の足音検知範囲
+    footstepHearRangeNormal_ = 250.0f;
+    footstepHearRangeAlert_ = 500.0f;
+
+    lastHeardPos_ = VGet(0.0f, 0.0f, 0.0f);
+    wasChasing_ = false;
+    lastKnownPlayerPos_ = VGet(0.0f, 0.0f, 0.0f);
+#ifdef _DEBUG
+    debugFootstepHearRange_ = footstepHearRangeNormal_;
+    debugCanHearFootstep_ = false;
+#endif
 }
 
 EnemyBase::~EnemyBase(void)
@@ -63,10 +85,30 @@ void EnemyBase::Update(Player* player)
         return;
     }
 
+#ifdef _DEBUG
+
+    debugFootstepHearRange_ = GetCurrentFootstepHearRange();
+    debugCanHearFootstep_ = false;
+
+#endif
+
+
     // 攻撃インターバル更新
     if (attackIntervalTimer_ > 0.0f)
     {
         attackIntervalTimer_ -= 1.0f;
+    }
+
+    // 警戒タイマー更新
+    if (isAlert_)
+    {
+        alertTimer_ -= 1.0f;
+
+        if (alertTimer_ <= 0.0f)
+        {
+            isAlert_ = false;
+            alertTimer_ = 0.0f;
+        }
     }
 
     // プレイヤーの攻撃を受けたか
@@ -83,13 +125,49 @@ void EnemyBase::Update(Player* player)
     }
 
     // 視野判定
-    if (IsPlayerInView(player))
+    bool canSeePlayer = IsPlayerInView(player);
+
+    if (canSeePlayer)
     {
         isChasing_ = true;
+        isHearingFootstep_ = false;
+
+        wasChasing_ = true;
+
+        if (player != nullptr)
+        {
+            lastKnownPlayerPos_ = player->GetTransform().pos;
+            lastKnownPlayerPos_.y = transform_.pos.y;
+        }
+
+        // 見えている間は警戒を消さない
+        // 追跡中も、警戒タイマーは別で進む
     }
     else
     {
         isChasing_ = false;
+
+        // 直前まで追跡していて、今見失った瞬間
+        if (wasChasing_)
+        {
+            wasChasing_ = false;
+
+            // 見失ったので警戒状態に入る
+            StartAlert();
+
+            // 最後に見た場所を見る
+            LookAtPosition(lastKnownPlayerPos_);
+
+#ifdef _DEBUG
+            printfDx("Enemy Lost Player -> Alert Start\n");
+#endif
+        }
+
+        // 視界に入っていない時だけ足音を聞く
+        if (CanHearPlayerFootstep(player))
+        {
+            StartHearFootstep(player);
+        }
     }
 
     // 攻撃中は攻撃処理を優先
@@ -99,6 +177,7 @@ void EnemyBase::Update(Player* player)
     }
     else
     {
+
         // 視野内、近距離、インターバル終了なら攻撃
         if (isChasing_ &&
             IsPlayerInAttackRange(player) &&
@@ -110,10 +189,17 @@ void EnemyBase::Update(Player* player)
         {
             UpdateChase(player);
         }
+        else if (isHearingFootstep_)
+        {
+            // 足音を聞いた直後だけ、その方向を見る
+            UpdateHearFootstep(player);
+        }
         else
         {
+            // 警戒中でも巡回する
             UpdateWander(player);
         }
+
     }
 
     // アニメーション更新
@@ -157,6 +243,37 @@ void EnemyBase::Draw(void)
 
     // 攻撃判定
     DrawAttackRange();
+
+
+    // 足音検知範囲
+    DrawFootstepHearRangeDebug();
+
+
+    // 足音を聞いている時のデバッグ表示
+    if (isHearingFootstep_)
+    {
+        VECTOR enemyPos = transform_.pos;
+        enemyPos.y += 40.0f;
+
+        VECTOR heardPos = lastHeardPos_;
+        heardPos.y += 40.0f;
+
+        DrawLine3D(
+            enemyPos,
+            heardPos,
+            GetColor(255, 255, 0)
+        );
+
+        VECTOR screenPos = ConvWorldPosToScreenPos(enemyPos);
+
+        DrawFormatString(
+            static_cast<int>(screenPos.x) - 50,
+            static_cast<int>(screenPos.y) - 20,
+            GetColor(255, 255, 0),
+            "HEARD FOOTSTEP"
+        );
+    }
+    
 
 
     // HP表示
@@ -627,4 +744,213 @@ void EnemyBase::Damage(int damage)
 VECTOR EnemyBase::GetPos(void) const
 {
     return transform_.pos;
+}
+
+bool EnemyBase::CanHearPlayerFootstep(Player* player)
+{
+#ifdef _DEBUG
+    debugFootstepHearRange_ = GetCurrentFootstepHearRange();
+    debugCanHearFootstep_ = false;
+#endif
+
+    if (player == nullptr)
+    {
+        return false;
+    }
+
+    // プレイヤーが足音を出していないなら聞こえない
+    if (!player->IsFootstepActive())
+    {
+        return false;
+    }
+
+    VECTOR soundPos = player->GetFootstepPos();
+
+    VECTOR diff = VSub(soundPos, transform_.pos);
+    diff.y = 0.0f;
+
+    float distSq = VDot(diff, diff);
+
+    // Enemy側の固定検知範囲を使う
+    float hearRange = GetCurrentFootstepHearRange();
+
+    bool canHear = distSq <= hearRange * hearRange;
+
+#ifdef _DEBUG
+    debugFootstepHearRange_ = hearRange;
+    debugCanHearFootstep_ = canHear;
+#endif
+
+    return canHear;
+}void EnemyBase::StartHearFootstep(Player* player)
+{
+    if (player == nullptr)
+    {
+        return;
+    }
+
+    isHearingFootstep_ = true;
+    hearingTimer_ = hearingDuration_;
+
+    lastHeardPos_ = player->GetFootstepPos();
+    lastHeardPos_.y = transform_.pos.y;
+
+    // 足音を聞いたので警戒状態に入る
+    StartAlert();
+
+    // 足音がした方向を向く
+    LookAtPosition(lastHeardPos_);
+}
+
+void EnemyBase::UpdateHearFootstep(Player* player)
+{
+    // IDLEにする
+    // EnemyNormal の ANIM_TYPE::IDLE が 0 なので 0 を指定
+    ChangeAnimation(0, true);
+
+    // 足音がまだ聞こえているなら、最新の足音位置へ向き直す
+    if (CanHearPlayerFootstep(player))
+    {
+        lastHeardPos_ = player->GetFootstepPos();
+        lastHeardPos_.y = transform_.pos.y;
+
+        // 聞こえ続けている間は聞き耳時間を更新
+        hearingTimer_ = hearingDuration_;
+
+        // 警戒時間も延長
+        StartAlert();
+    }
+
+    LookAtPosition(lastHeardPos_);
+
+    hearingTimer_ -= 1.0f;
+
+    if (hearingTimer_ <= 0.0f)
+    {
+        isHearingFootstep_ = false;
+    }
+}
+
+void EnemyBase::StartAlert(void)
+{
+    isAlert_ = true;
+    alertTimer_ = alertDuration_;
+}
+
+void EnemyBase::LookAtPosition(const VECTOR& targetPos)
+{
+    VECTOR toTarget = VSub(targetPos, transform_.pos);
+    toTarget.y = 0.0f;
+
+    if (VSize(toTarget) < 0.001f)
+    {
+        return;
+    }
+
+    VECTOR dir = VNorm(toTarget);
+
+    forwardDir_ = dir;
+
+    float angleY = atan2f(dir.x, dir.z);
+
+    transform_.quaRot =
+        Quaternion::AngleAxis(angleY, AsoUtility::AXIS_Y);
+}
+
+#ifdef _DEBUG
+void EnemyBase::DrawFootstepHearRangeDebug(void)
+{
+    float drawRange = GetCurrentFootstepHearRange();
+
+    if (drawRange <= 0.0f)
+    {
+        return;
+    }
+
+    unsigned int color = GetColor(0, 180, 255);
+
+    // 通常時：水色
+    if (!isAlert_)
+    {
+        color = GetColor(0, 180, 255);
+    }
+
+    // 警戒中：オレンジ
+    if (isAlert_)
+    {
+        color = GetColor(255, 160, 0);
+    }
+
+    // 実際に足音を聞けている時：黄色
+
+    if (debugCanHearFootstep_)
+    {
+        color = GetColor(255, 255, 0);
+    }
+
+    VECTOR center = transform_.pos;
+
+    // 地面と被ると見えにくいので少し上げる
+    center.y += 15.0f;
+
+    VECTOR pos1 = center;
+    VECTOR pos2 = center;
+
+    // 薄い円柱にして、円として見せる
+    pos2.y += 3.0f;
+
+    // デバッグ描画用
+    SetUseLighting(FALSE);
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+
+    DrawCylinder3D(
+        pos1,
+        pos2,
+        drawRange,
+        64,
+        color,
+        color,
+        FALSE
+    );
+
+    // 描画設定を戻す
+    SetWriteZBuffer3D(TRUE);
+    SetUseZBuffer3D(TRUE);
+    SetUseLighting(TRUE);
+
+    VECTOR textPos = transform_.pos;
+    textPos.y += 150.0f;
+
+    VECTOR screenPos = ConvWorldPosToScreenPos(textPos);
+
+    DrawFormatString(
+        (int)screenPos.x - 90,
+        (int)screenPos.y,
+        color,
+        "Hear Range: %.1f",
+        drawRange
+    );
+
+    if (isAlert_)
+    {
+        DrawFormatString(
+            (int)screenPos.x - 90,
+            (int)screenPos.y + 18,
+            GetColor(255, 160, 0),
+            "ALERT %.0f",
+            alertTimer_
+        );
+    }
+}
+#endif
+
+float EnemyBase::GetCurrentFootstepHearRange(void) const
+{
+    if (isAlert_)
+    {
+        return footstepHearRangeAlert_;
+    }
+
+    return footstepHearRangeNormal_;
 }

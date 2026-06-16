@@ -1,5 +1,6 @@
 ﻿#include <string>
 #include <cassert>
+#include <cmath>
 #include "../Application.h"
 #include "../Utility/AsoUtility.h"
 #include "../Manager/InputManager.h"
@@ -43,8 +44,11 @@ Player::Player(void)
 
 	capsule_ = nullptr;
 
-	maxHp_ = 5;
+	maxHp_ = 10;
 	isDead_ = false;
+
+	isFootstepActive_ = false;
+	footstepRange_ = 0.0f;
 
 }
 
@@ -152,12 +156,32 @@ void Player::Draw(void)
 	// 丸影描画
 	DrawShadow();
 #ifdef _DEBUG
+	{
+		XINPUT_STATE x;
+		ZeroMemory(&x, sizeof(x));
+
+		int xResult = GetJoypadXInputState(DX_INPUT_PAD1, &x);
+
+		DrawFormatString(
+			20,
+			100,
+			GetColor(0, 255, 255),
+			"XInput result:%d  LT:%d  RT:%d",
+			xResult,
+			x.LeftTrigger,
+			x.RightTrigger
+		);
+	}
+#endif
+
+#ifdef _DEBUG
 
 	// すべてのカプセルを描画
 	for (auto& pair : capsules_) {
 		pair.second->Draw();
 	}
 
+	DrawFootstepDebug();
 
 	DrawFormatString(
 		20,
@@ -417,7 +441,16 @@ void Player::UpdateCommon(void)
 
 	// 通常・うつ伏せ切り替え (Cキー)
 	// 通常・うつ伏せ切り替え (Cキー)
-	if (ins.IsTrgDown(KEY_INPUT_C)&&!isAttacking_)
+
+	bool isProneTrigger =
+	ins.IsTrgDown(KEY_INPUT_C) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::R_STICK_PUSH); // 右スティック押し込み
+
+
+	if (isProneTrigger && !isAttacking_)
+
 	{
 		// ⭕ 起き上がれない時は「何もしない」ように明示的に分ける
 		if (IsProne())
@@ -440,9 +473,8 @@ void Player::UpdateCommon(void)
 	// ジャンプ処理
 	ProcessJump();
 
-
-
-
+	// 足音範囲更新
+	UpdateFootstepRange();
 
 	// 移動方向に応じた回転
 	Rotate();
@@ -465,8 +497,16 @@ void Player::UpdateFlashLight(void)
 {
 	auto& ins = InputManager::GetInstance();
 
-	// Fキーが押されたらライトのON/OFFを切り替える
-	if (ins.IsTrgMouseRight())
+	// 押されたらライトのON/OFFを切り替える
+    // ライト：右クリック or LT
+	bool isLightTrigger =
+		ins.IsTrgMouseRight() ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::L_TRIGGER);
+
+	if (isLightTrigger)
+
 	{
 		flashlight_.isOn = !flashlight_.isOn;
 		SetLightEnableHandle(flashlight_.handle, flashlight_.isOn);
@@ -551,43 +591,92 @@ void Player::DrawShadow(void)
 	// 必ず戻す
 	SetUseLighting(TRUE);
 	SetUseZBuffer3D(TRUE);
-}void Player::ProcessMove(void)
+}
+void Player::ProcessMove(void)
 {
 	auto& ins = InputManager::GetInstance();
 
-	// 移動量をゼロ
 	movePow_ = AsoUtility::VECTOR_ZERO;
 
-	// カメラのX軸回転を除いた向きを取得
 	Quaternion cameraRot =
 		SceneManager::GetInstance().GetCamera()->GetQuaRotOutX();
 
 	VECTOR dir = AsoUtility::VECTOR_ZERO;
 
+	// -----------------------------
+	// キーボード移動
+	// -----------------------------
 	if (ins.IsPress(KEY_INPUT_W))
 	{
-		dir = cameraRot.GetForward();
+		dir = VAdd(dir, cameraRot.GetForward());
 	}
 
 	if (ins.IsPress(KEY_INPUT_S))
 	{
-		dir = cameraRot.GetBack();
+		dir = VAdd(dir, cameraRot.GetBack());
 	}
 
 	if (ins.IsPress(KEY_INPUT_D))
 	{
-		dir = cameraRot.GetRight();
+		dir = VAdd(dir, cameraRot.GetRight());
 	}
 
 	if (ins.IsPress(KEY_INPUT_A))
 	{
-		dir = cameraRot.GetLeft();
+		dir = VAdd(dir, cameraRot.GetLeft());
+	}
+
+	// -----------------------------
+	// コントローラ左スティック移動
+	// -----------------------------
+	const int DEAD_ZONE = 300;
+
+	int lx = ins.GetPadAKeyLX(InputManager::JOYPAD_NO::PAD1);
+	int ly = ins.GetPadAKeyLY(InputManager::JOYPAD_NO::PAD1);
+
+	if (abs(lx) < DEAD_ZONE) lx = 0;
+	if (abs(ly) < DEAD_ZONE) ly = 0;
+
+	if (lx != 0 || ly != 0)
+	{
+		float stickX = static_cast<float>(lx) / 1000.0f;
+		float stickY = static_cast<float>(ly) / 1000.0f;
+
+		VECTOR padDir = AsoUtility::VECTOR_ZERO;
+
+		// 左右
+		padDir = VAdd(
+			padDir,
+			VScale(cameraRot.GetRight(), stickX)
+		);
+
+		// 前後
+		// 多くの環境ではスティック上がマイナスなので -stickY
+		padDir = VAdd(
+			padDir,
+			VScale(cameraRot.GetForward(), -stickY)
+		);
+
+		dir = VAdd(dir, padDir);
+	}
+
+	// 斜め移動で速くなりすぎないよう正規化
+	if (!AsoUtility::EqualsVZero(dir))
+	{
+		dir = VNorm(dir);
 	}
 
 	bool isMove = !AsoUtility::EqualsVZero(dir);
-	bool isRun = ins.IsPress(KEY_INPUT_LSHIFT);
 
-	// 地上、またはジャンプ処理的に移動可能な状態
+
+	bool isRun =
+		ins.IsPress(KEY_INPUT_LSHIFT) ||
+		ins.IsPress(KEY_INPUT_RSHIFT) ||
+		ins.IsPadBtnNew(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::L_STICK_PUSH);
+
+
 	bool canMove = (isJump_ || IsEndLanding());
 
 	if (isMove && canMove)
@@ -606,7 +695,6 @@ void Player::DrawShadow(void)
 		moveDir_ = dir;
 		movePow_ = VScale(dir, currentSpeed);
 
-		// 攻撃中は攻撃アニメーションを優先
 		if (!isAttacking_)
 		{
 			if (IsProne())
@@ -635,7 +723,6 @@ void Player::DrawShadow(void)
 	}
 	else
 	{
-		// 移動していない時は待機へ戻す
 		if (!isAttacking_)
 		{
 			if (!isJump_ && IsEndLanding())
@@ -653,16 +740,25 @@ void Player::DrawShadow(void)
 	}
 }
 
-
 void Player::ProcessJump(void)
 {
 	InputManager& ins = InputManager::GetInstance();
 
 	// 押した瞬間だけ true
-	bool isJumpTrigger = ins.IsTrgDown(KEY_INPUT_SPACE);
+	bool isJumpTrigger =
+	ins.IsTrgDown(KEY_INPUT_SPACE) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::DOWN); // Xbox:A / PS:×
+
 
 	// 押している間 true
-	bool isJumpPress = ins.IsNew(KEY_INPUT_SPACE);
+	bool isJumpPress =
+	ins.IsNew(KEY_INPUT_SPACE) ||
+		ins.IsPadBtnNew(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::DOWN);
+
 
 
 
@@ -713,8 +809,15 @@ void Player::ProcessAttack(void)
 	auto& ins = InputManager::GetInstance();
 
 	// 攻撃開始
-	if (!isAttacking_ &&
-		ins.IsTrgMouseLeft())
+
+	bool isAttackTrigger =
+		ins.IsTrgMouseLeft() ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::R_TRIGGER);
+
+
+	if (!isAttacking_ && isAttackTrigger)
 	{
 		isAttacking_ = true;
 
@@ -1338,4 +1441,115 @@ VECTOR Player::GetFlashLightDir() const
 	}
 
 	return VNorm(dir);
+}
+
+void Player::UpdateFootstepRange()
+{
+	auto& ins = InputManager::GetInstance();
+
+	// 初期化
+	isFootstepActive_ = false;
+	footstepRange_ = 0.0f;
+
+	// 移動しているか
+	bool isMove = VSize(movePow_) > 0.01f;
+
+	// ジャンプ中は足音を出さない
+	if (!isMove || isJump_)
+	{
+		return;
+	}
+
+	// 着地していない時も足音なし
+	if (!IsEndLanding())
+	{
+		return;
+	}
+
+	isFootstepActive_ = true;
+
+	// うつ伏せ中は小さい足音
+	if (IsProne())
+	{
+		footstepRange_ = FOOTSTEP_RANGE_PRONE;
+		return;
+	}
+
+	// Shift中は大きい足音
+
+	if (ins.IsPress(KEY_INPUT_LSHIFT) ||
+		ins.IsPress(KEY_INPUT_RSHIFT) ||
+		ins.IsPadBtnNew(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::L_STICK_PUSH))
+
+	{
+		footstepRange_ = FOOTSTEP_RANGE_RUN;
+	}
+	else
+	{
+		footstepRange_ = FOOTSTEP_RANGE_WALK;
+	}
+}
+
+#ifdef _DEBUG
+void Player::DrawFootstepDebug() const
+{
+	int color = GetColor(0, 180, 255);
+
+	DrawFormatString(
+		20,
+		70,
+		color,
+		"Footstep Active : %s  Range : %.1f",
+		isFootstepActive_ ? "TRUE" : "FALSE",
+		footstepRange_
+	);
+
+	if (!isFootstepActive_)
+	{
+		return;
+	}
+
+	if (footstepRange_ <= 0.0f)
+	{
+		return;
+	}
+
+	VECTOR center = transform_.pos;
+
+	// 地面と重なって見えなくなるのを防ぐため、少し上に描画
+
+	VECTOR pos1 = center;
+	VECTOR pos2 = center;
+	pos2.y += 1.0f;
+
+	// 足音範囲を円で表示
+
+	DrawCylinder3D(
+		pos1,
+		pos2,
+		footstepRange_,
+		64,
+		color,
+		color,
+		FALSE
+	);
+
+}
+#endif
+
+bool Player::IsFootstepActive() const
+{
+	return isFootstepActive_;
+}
+
+float Player::GetFootstepRange() const
+{
+	return footstepRange_;
+}
+
+VECTOR Player::GetFootstepPos() const
+{
+	return transform_.pos;
 }
