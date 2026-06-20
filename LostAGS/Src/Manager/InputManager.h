@@ -36,18 +36,23 @@ public:
     // ゲームコントローラーボタン
     enum class JOYPAD_BTN
     {
+
         TOP,
         LEFT,
         RIGHT,
         DOWN,
 
-        R_TRIGGER,
+        L_BUTTON,
+        R_BUTTON,
+
         L_TRIGGER,
+        R_TRIGGER,
 
         L_STICK_PUSH,
         R_STICK_PUSH,
 
         MAX
+
     };
 
     // ゲームコントローラーの入力情報
@@ -110,7 +115,7 @@ public:
 
     // デバッグ確認用：ボタンの生値を取得
     int GetPadButtonValue(JOYPAD_NO no, JOYPAD_BTN btn) const;
-
+    DINPUT_JOYSTATE GetJPadDInputState(JOYPAD_NO no);
 private:
 
     struct Info
@@ -162,7 +167,7 @@ private:
 
     JOYPAD_TYPE GetJPadType(JOYPAD_NO no);
 
-    DINPUT_JOYSTATE GetJPadDInputState(JOYPAD_NO no);
+    
     XINPUT_STATE GetJPadXInputState(JOYPAD_NO no);
 
     void SetJPadInState(JOYPAD_NO jpNo);

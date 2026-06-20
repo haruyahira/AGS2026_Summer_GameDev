@@ -832,7 +832,13 @@ void Stage::UpdateItemPickup(void)
 		return;
 	}
 
-	if (ins.IsTrgDown(KEY_INPUT_F))
+	if (
+		ins.IsTrgDown(KEY_INPUT_F) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::LEFT)
+		)
+
 	{
 		itemCount_[typeIndex]++;
 
@@ -885,7 +891,12 @@ void Stage::UpdateStoneDeviceRegister(void)
 	auto& ins = InputManager::GetInstance();
 
 	// Eキー：リザルト画面へ
-	if (ins.IsTrgDown(KEY_INPUT_E))
+	if (
+		ins.IsTrgDown(KEY_INPUT_E) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::TOP)
+		)
 	{
 		int stolenMoney = CalcStolenMoney();
 
@@ -900,7 +911,13 @@ void Stage::UpdateStoneDeviceRegister(void)
 		return;
 	}
 
-	if (ins.IsTrgDown(KEY_INPUT_F))
+
+	if (
+		ins.IsTrgDown(KEY_INPUT_F) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::LEFT)
+		)
 	{
 		if (HasAnyItem())
 		{

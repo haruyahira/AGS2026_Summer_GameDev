@@ -5,6 +5,7 @@
 
 #include "../../Utility/AsoUtility.h"
 #include "../../Manager/ResourceManager.h"
+#include "../../Manager/SceneManager.h"
 #include "../Common/AnimationController.h"
 #include "../Player.h"
 #include "../../Application.h"
@@ -12,7 +13,7 @@
 
 EnemyNormal::EnemyNormal(void) : EnemyBase()
 {
-    speed_ = 1.2f;
+    speed_ = 300.0f;
 
     waitTimer_ = 0.0f;
     isWaiting_ = false;
@@ -55,7 +56,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     bodyHeight_ = 130.0f;
     bodyCenterOffsetY_ = 65.0f;
 
-    maxHp_ = 30;
+    maxHp_ = 168;
     attackPower_ = 1;
 }
 
@@ -218,9 +219,13 @@ void EnemyNormal::UpdateWander(Player* player)
 
     VECTOR beforePos = transform_.pos;
 
+
+    float dt =
+        SceneManager::GetInstance().GetDeltaTime();
+
     transform_.pos = VAdd(
         transform_.pos,
-        VScale(dir, speed_));
+        VScale(dir, speed_ * dt));
 
     transform_.pos.y = groundY_;
 
@@ -266,11 +271,14 @@ void EnemyNormal::UpdateChase(Player* player)
 
     VECTOR beforePos = transform_.pos;
 
+    float dt =
+        SceneManager::GetInstance().GetDeltaTime();
+
     float chaseSpeed = speed_ * 1.5f;
 
     transform_.pos = VAdd(
         transform_.pos,
-        VScale(dir, chaseSpeed));
+        VScale(dir, chaseSpeed * dt));
 
     transform_.pos.y = groundY_;
 

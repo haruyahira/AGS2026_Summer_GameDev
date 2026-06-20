@@ -18,4 +18,5 @@ private:
     int totalMoney_;
     int targetMoney_;
     int needMoney_;
+    int selectIndex_;
 };

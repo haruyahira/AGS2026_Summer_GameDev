@@ -85,6 +85,9 @@ void InputManager::Init(void)
     Add(KEY_INPUT_RETURN);
 
     Add(KEY_INPUT_1);
+    Add(KEY_INPUT_2);
+    Add(KEY_INPUT_3);
+    Add(KEY_INPUT_4);
 
     Add(MOUSE_INPUT_LEFT);
     Add(MOUSE_INPUT_RIGHT);
@@ -329,48 +332,69 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
 
     int inputType = static_cast<int>(no);
 
+    auto type = GetJPadType(no);
+
     // =====================================================
-    // Xbox系は必ずXInputを最優先
-    // LT / RT は DirectInput ではなく XInput の専用メンバで取る
+    // XInput
+    // DualSense 以外は XInput を優先
     // =====================================================
     XINPUT_STATE x;
     ZeroMemory(&x, sizeof(x));
 
-    if (GetJoypadXInputState(inputType, &x) == 0)
+    if (type != JOYPAD_TYPE::DUAL_SENSE &&
+        GetJoypadXInputState(inputType, &x) == 0)
     {
         int idx;
 
-        //   Y
-        // X   B
-        //   A
-
+        // Y
         idx = static_cast<int>(JOYPAD_BTN::TOP);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_Y];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_Y];
 
+        // X
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_X];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_X];
 
+        // B
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_B];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_B];
 
+        // A
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_A];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_A];
+
+        // LB
+        idx = static_cast<int>(JOYPAD_BTN::L_BUTTON);
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_LEFT_SHOULDER];
+
+        // RB
+        idx = static_cast<int>(JOYPAD_BTN::R_BUTTON);
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER];
 
         // LT
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
-        ret.ButtonsNew[idx] = x.LeftTrigger;
+        ret.ButtonsNew[idx] =
+            x.LeftTrigger;
 
         // RT
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
-        ret.ButtonsNew[idx] = x.RightTrigger;
+        ret.ButtonsNew[idx] =
+            x.RightTrigger;
 
-        // 左スティック押し込み
+        // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_LEFT_THUMB];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_LEFT_THUMB];
 
-        // 右スティック押し込み
+        // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
-        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_RIGHT_THUMB];
+        ret.ButtonsNew[idx] =
+            x.Buttons[XINPUT_BUTTON_RIGHT_THUMB];
 
         // 左スティック
         ret.AKeyLX = x.ThumbLX;
@@ -384,89 +408,135 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     }
 
     // =====================================================
-    // XInputで取れない場合だけDirectInput
-    // ここではLT/RTは扱わない
-    // DirectInputではLT/RTが同じZ軸扱いになることがあり誤反応するため
+    // DirectInput
     // =====================================================
-    auto type = GetJPadType(no);
-
     switch (type)
     {
+        // =====================================================
+        // PS5 DualSense
+        // =====================================================
     case InputManager::JOYPAD_TYPE::DUAL_SENSE:
     {
         auto d = GetJPadDInputState(no);
+
         int idx;
 
+        // △
         idx = static_cast<int>(JOYPAD_BTN::TOP);
-        ret.ButtonsNew[idx] = d.Buttons[3];
+        ret.ButtonsNew[idx] =
+            d.Buttons[3];
 
+        // □
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
-        ret.ButtonsNew[idx] = d.Buttons[0];
+        ret.ButtonsNew[idx] =
+            d.Buttons[0];
 
+        // ○
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
-        ret.ButtonsNew[idx] = d.Buttons[2];
+        ret.ButtonsNew[idx] =
+            d.Buttons[2];
 
+        // ×
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
-        ret.ButtonsNew[idx] = d.Buttons[1];
+        ret.ButtonsNew[idx] =
+            d.Buttons[1];
 
-        // DirectInput側ではLT/RTは0にする
+        // L1
+        idx = static_cast<int>(JOYPAD_BTN::L_BUTTON);
+        ret.ButtonsNew[idx] =
+            d.Buttons[4];
+
+        // R1
+        idx = static_cast<int>(JOYPAD_BTN::R_BUTTON);
+        ret.ButtonsNew[idx] =
+            d.Buttons[5];
+
+        // LT
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[6];
 
+        // RT
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[7];
 
+
+
+        // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
-        ret.ButtonsNew[idx] = d.Buttons[10];
+        ret.ButtonsNew[idx] =
+            d.Buttons[10];
 
+        // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
-        ret.ButtonsNew[idx] = d.Buttons[11];
+        ret.ButtonsNew[idx] =
+            d.Buttons[11];
 
+
+        // 左スティック
         ret.AKeyLX = d.X;
         ret.AKeyLY = d.Y;
 
+        // 右スティック
         ret.AKeyRX = d.Z;
         ret.AKeyRY = d.Rz;
+
     }
     break;
 
+    // =====================================================
+    // その他 DirectInput
+    // =====================================================
     default:
     {
         auto d = GetJPadDInputState(no);
+
         int idx;
 
+        // Y
         idx = static_cast<int>(JOYPAD_BTN::TOP);
-        ret.ButtonsNew[idx] = d.Buttons[3];
+        ret.ButtonsNew[idx] =
+            d.Buttons[3];
 
+        // X
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
-        ret.ButtonsNew[idx] = d.Buttons[2];
+        ret.ButtonsNew[idx] =
+            d.Buttons[0];
 
+        // B
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
-        ret.ButtonsNew[idx] = d.Buttons[1];
+        ret.ButtonsNew[idx] =
+            d.Buttons[2];
 
+        // A
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
-        ret.ButtonsNew[idx] = d.Buttons[0];
+        ret.ButtonsNew[idx] =
+            d.Buttons[1];
 
-        // 重要：
-        // DirectInput側ではLT/RTをZ軸から作らない
-        // LTでRTも反応する原因になるため
+
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[6];
 
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[7];
 
+
+        // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
-        ret.ButtonsNew[idx] = d.Buttons[8];
+        ret.ButtonsNew[idx] =
+            d.Buttons[10];
 
+        // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
-        ret.ButtonsNew[idx] = d.Buttons[9];
+        ret.ButtonsNew[idx] =
+            d.Buttons[11];
 
+        // 左スティック
         ret.AKeyLX = d.X;
         ret.AKeyLY = d.Y;
 
-        ret.AKeyRX = d.Rx;
-        ret.AKeyRY = d.Ry;
+        // 右スティック
+        ret.AKeyRX = d.Z;
+        ret.AKeyRY = d.Rz;
     }
     break;
     }

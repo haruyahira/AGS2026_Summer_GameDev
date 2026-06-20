@@ -10,12 +10,15 @@ public:
         GAME,
         TITLE,
         CHASE,
+        CLEAR
     };
 
     enum class SE
     {
         WALK,
         RUN,
+        ATTACK,
+        HIT,
     };
 
 public:
@@ -45,6 +48,7 @@ public:
     void SetSEPitch(float pitch);
     void SetSEPlaySpeed(float speed, SE se);
 
+    void StopSE(SE se);
     void StopAllSound();
 private:
 

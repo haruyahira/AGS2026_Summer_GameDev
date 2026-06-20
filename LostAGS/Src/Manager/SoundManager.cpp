@@ -1,6 +1,7 @@
 #include "SoundManager.h"
 #include "ResourceManager.h"
 #include <DxLib.h>
+#include <algorithm>
 
 SoundManager& SoundManager::GetInstance()
 {
@@ -28,16 +29,22 @@ void SoundManager::Init()
         res.Load(ResourceManager::SRC::TITLE_BGM).handleId_;
 
     bgms_[BGM::CHASE] =
-        res.Load(ResourceManager::SRC::CHASE_BGM).handleId_;
+        res.Load(ResourceManager::SRC::CHASE_BGM).handleId_; 
+    
+    bgms_[BGM::CLEAR] =
+        res.Load(ResourceManager::SRC::CLEAR_BGM).handleId_;
+
+
 
     ses_[SE::WALK] =
         res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
-
+  
     ses_[SE::RUN] =
-        res.Load(ResourceManager::SRC::WALK_SE).handleId_;
-
-  /*  ses_[SE::RUN] =
-        res.Load(ResourceManager::SRC::RUN_SE).handleId_;*/
+        res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
+    ses_[SE::ATTACK] =
+        res.Load(ResourceManager::SRC::ATTACK_SE).handleId_;  
+    ses_[SE::HIT] =
+        res.Load(ResourceManager::SRC::HIT_SE).handleId_;
 }
 
 void SoundManager::PlayBGM(BGM bgm, bool loop)
@@ -80,17 +87,9 @@ void SoundManager::PlaySE(SE se)
 {
     int handle = ses_[se];
 
-    // çƒê∂íÜÇ»ÇÁñ¬ÇÁÇ≥Ç»Ç¢
-    if (CheckSoundMem(handle) == 1)
-    {
-        return;
-    }
+    StopSoundMem(handle);
 
     ChangeVolumeSoundMem(seVolume_, handle);
-
-    SetFrequencySoundMem(
-        static_cast<int>(44100 * sePitch_),
-        handle);
 
     PlaySoundMem(handle, DX_PLAYTYPE_BACK);
 }
@@ -116,13 +115,19 @@ void SoundManager::SetBGMPlaySpeed(float speed, BGM bgm)
 
 void SoundManager::SetSEPlaySpeed(float speed, SE se)
 {
+    speed = std::clamp(speed, 0.1f, 4.0f);
 
     int handle = ses_[se];
 
-    SetFrequencySoundMem(
-        static_cast<int>(44100 * speed),
-        handle);
+    int baseFreq = GetFrequencySoundMem(handle);
 
+    SetFrequencySoundMem(
+        static_cast<int>(baseFreq * speed),
+        handle);
+}
+void SoundManager::StopSE(SE se)
+{
+    StopSoundMem(ses_[se]);
 }
 
 void SoundManager::StopAllSound()

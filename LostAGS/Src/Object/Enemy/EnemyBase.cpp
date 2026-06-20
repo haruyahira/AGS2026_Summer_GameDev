@@ -6,6 +6,8 @@
 #include "../Furniture/Furniture.h"
 #include "../Player.h"
 #include "../Common/Hp/HpManager.h"
+#include "../../Manager/SoundManager.h"
+#include "../../Manager/SceneManager.h"
 #include "EnemyBase.h"
 
 EnemyBase::EnemyBase(void) : ActorBase()
@@ -52,8 +54,8 @@ EnemyBase::EnemyBase(void) : ActorBase()
     isAlert_ = false;
     alertTimer_ = 0.0f;
 
-    // 180F = 60FPS想定で約3秒
-    alertDuration_ = 300.0f;
+ // 警戒時間
+    alertDuration_ = 20.0f;
 
     // Enemy側の足音検知範囲
     footstepHearRangeNormal_ = 250.0f;
@@ -62,6 +64,7 @@ EnemyBase::EnemyBase(void) : ActorBase()
     lastHeardPos_ = VGet(0.0f, 0.0f, 0.0f);
     wasChasing_ = false;
     lastKnownPlayerPos_ = VGet(0.0f, 0.0f, 0.0f);
+    isPlayerAttackHit_ = false;
 #ifdef _DEBUG
     debugFootstepHearRange_ = footstepHearRangeNormal_;
     debugCanHearFootstep_ = false;
@@ -100,9 +103,13 @@ void EnemyBase::Update(Player* player)
     }
 
     // 警戒タイマー更新
+
     if (isAlert_)
     {
-        alertTimer_ -= 1.0f;
+        float dt =
+            SceneManager::GetInstance().GetDeltaTime();
+
+        alertTimer_ -= dt;
 
         if (alertTimer_ <= 0.0f)
         {
@@ -111,21 +118,56 @@ void EnemyBase::Update(Player* player)
         }
     }
 
-    // プレイヤーの攻撃を受けたか
-    if (CheckPlayerAttack(player))
-    {
 
-        Damage(1);
+    // 攻撃していないならリセット
+    if (player != nullptr &&
+        !player->IsAttacking())
+    {
+        isPlayerAttackHit_ = false;
+    }
+
+    // まだヒットしていない時だけ当たる
+    if (!isPlayerAttackHit_ &&
+        CheckPlayerAttack(player))
+    {
+        isPlayerAttackHit_ = true;
+
+        int beforeHp = GetHP();
+
+        Damage(10);
+
+        if (GetHP() < beforeHp)
+        {
+            SoundManager::GetInstance().PlaySE(
+                SoundManager::SE::HIT);
+        }
 
         if (isDead_)
         {
             return;
         }
-
     }
 
     // 視野判定
     bool canSeePlayer = IsPlayerInView(player);
+
+    // =========================
+    // BGM切り替え
+    // =========================
+
+    // 追跡開始した瞬間
+    if (canSeePlayer && !isChasing_)
+    {
+        SoundManager::GetInstance().PlayBGM(
+            SoundManager::BGM::CHASE);
+    }
+    // 見失った瞬間
+    if (!canSeePlayer && isChasing_)
+    {
+        SoundManager::GetInstance().PlayBGM(
+            SoundManager::BGM::GAME);
+    }
+
 
     if (canSeePlayer)
     {
@@ -133,6 +175,8 @@ void EnemyBase::Update(Player* player)
         isHearingFootstep_ = false;
 
         wasChasing_ = true;
+
+        StartAlert();
 
         if (player != nullptr)
         {
@@ -965,4 +1009,17 @@ float EnemyBase::GetCurrentFootstepHearRange(void) const
     }
 
     return footstepHearRangeNormal_;
+}
+
+int EnemyBase::GetHP(void) const
+{
+    const Hp* hp =
+        HpManager::GetInstance().GetHP(this);
+
+    if (hp == nullptr)
+    {
+        return 0;
+    }
+
+    return hp->GetCurrent();
 }

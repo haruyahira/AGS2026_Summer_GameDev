@@ -14,8 +14,8 @@ class Player : public ActorBase
 public:
 
 	// スピード
-	static constexpr float SPEED_MOVE = 2.0f;
-	static constexpr float SPEED_RUN = 4.5f;
+	static constexpr float SPEED_MOVE = 300.0f;
+	static constexpr float SPEED_RUN = 500.0f;
 
 	// 回転完了までの時間
 	static constexpr float TIME_ROT = 1.0f;
@@ -228,7 +228,7 @@ private:
 
 	float attackRange_ = 80.0f;
 	float attackAngleRad_;
-
+	bool isDash_;
 
 	// 更新ステップ
 	void UpdateNone(void);

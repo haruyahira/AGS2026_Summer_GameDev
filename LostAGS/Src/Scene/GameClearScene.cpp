@@ -1,6 +1,7 @@
 #include <DxLib.h>
 #include "../Manager/InputManager.h"
 #include "../Manager/SceneManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Application.h"
 #include "GameClearScene.h"
 
@@ -14,7 +15,11 @@ GameClearScene::~GameClearScene(void)
 
 void GameClearScene::Init(void)
 {
-    // •K—v‚È‚ç‚±‚±‚Å‰æ‘œ‚âBGM‚ğ“Ç‚İ‚Ş
+    auto& snd = SoundManager::GetInstance();
+
+    snd.SetBGMVolume(255);
+
+    snd.PlayBGM(SoundManager::BGM::CLEAR, true);
 }
 
 void GameClearScene::Update(void)

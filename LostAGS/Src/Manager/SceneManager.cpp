@@ -7,6 +7,7 @@
 #include "../Scene/ResultScene.h"
 #include "../Scene/GameOverScene.h"
 #include "../Scene/GameClearScene.h"
+#include "../Manager/SoundManager.h"
 #include "../Application.h"
 #include "Camera.h"
 #include "ResourceManager.h"
@@ -55,7 +56,6 @@ void SceneManager::Init(void)
 
 	// 3D用の設定
 	Init3D();
-
 	// 初期シーンの設定
 #ifdef _DEBUG
 	DoChangeScene(SCENE_ID::GAME);
@@ -251,7 +251,8 @@ void SceneManager::ResetDeltaTime(void)
 
 void SceneManager::DoChangeScene(SCENE_ID sceneId)
 {
-
+	// 全サウンド停止
+	SoundManager::GetInstance().StopAllSound();
 	// リソースの解放
 	ResourceManager::GetInstance().Release();
 
@@ -281,8 +282,6 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 	case SCENE_ID::GAMECLEAR:
 		scene_ = new GameClearScene();
 		break;
-		
-
 	}
 
 	scene_->Init();

@@ -61,7 +61,7 @@ protected:
 
     void InitHP(int maxHp, float invincibleFrame = 20.0f);
     void Damage(int damage);
-  
+    int GetHP(void) const;
 
 protected:
     std::unique_ptr<AnimationController> animationController_;
@@ -135,4 +135,6 @@ protected:
 
     bool wasChasing_;
     VECTOR lastKnownPlayerPos_;
+
+    bool isPlayerAttackHit_;
 };

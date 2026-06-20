@@ -65,7 +65,7 @@ void Application::Init(void)
 
 
 	// FPS
-	fpsController_ = std::make_unique<FpsController>(68.0f);
+	fpsController_ = std::make_unique<FpsController>(168.0f);
 
 	// DxLib‚Ì‰Šú‰»
 	SetUseDirect3DVersion(DX_DIRECT3D_11);

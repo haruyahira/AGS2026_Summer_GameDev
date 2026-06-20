@@ -267,35 +267,54 @@ void Camera::ProcessRot(void)
 	// =============================
 	 // 右スティック視点移動
 	 // =============================
-	const int DEAD_ZONE = 300;
 
-	int rx = ins.GetPadAKeyRX(InputManager::JOYPAD_NO::PAD1);
-	int ry = ins.GetPadAKeyRY(InputManager::JOYPAD_NO::PAD1);
+	const int DEAD_ZONE = 100;
 
-	if (abs(rx) < DEAD_ZONE) rx = 0;
-	if (abs(ry) < DEAD_ZONE) ry = 0;
+	int rx =
+		ins.GetPadAKeyRX(
+			InputManager::JOYPAD_NO::PAD1);
+
+	int ry =
+		ins.GetPadAKeyRY(
+			InputManager::JOYPAD_NO::PAD1);
+
+	// デッドゾーン
+	if (abs(rx) < DEAD_ZONE)
+	{
+		rx = 0;
+	}
+
+	if (abs(ry) < DEAD_ZONE)
+	{
+		ry = 0;
+	}
 
 	if (rx != 0 || ry != 0)
 	{
-		float stickX = static_cast<float>(rx) / 1000.0f;
-		float stickY = static_cast<float>(ry) / 1000.0f;
+		// -1.0 ～ 1.0
+		float stickX =
+			static_cast<float>(rx) / 1000.0f;
 
-		// 右スティック感度
-		float padSensitivity = 0.045f;
+		float stickY =
+			static_cast<float>(ry) / 1000.0f;
 
-		// 横回転
-		angles_.y += stickX * padSensitivity;
+		// 感度
+		const float padSensitivity = 0.03f;
 
-		// 縦回転
-		// 上下が逆なら、ここを -= にしてください
-		angles_.x -= stickY * padSensitivity;
+		// 横
+		angles_.y +=
+			stickX * padSensitivity;
+
+		// 縦
+		angles_.x -=
+			stickY * padSensitivity;
 	}
-
 
 	// --- 角度の制限 (リミッター) ---
 	if (angles_.x > LIMIT_X_UP_RAD)  angles_.x = LIMIT_X_UP_RAD;
 	if (angles_.x < -LIMIT_X_DW_RAD) angles_.x = -LIMIT_X_DW_RAD;
 
+	
 }
 
 void Camera::SetBeforeDrawFixedPoint(void)

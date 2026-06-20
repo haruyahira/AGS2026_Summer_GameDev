@@ -12,7 +12,7 @@ ResultScene::ResultScene(void)
 
     targetMoney_ = 0;
     needMoney_ = 0;
-      
+    selectIndex_ = 0;
 }
 
 ResultScene::~ResultScene(void)
@@ -38,8 +38,14 @@ void ResultScene::Update(void)
 {
     InputManager& ins = InputManager::GetInstance();
 
-    if (ins.IsTrgDown(KEY_INPUT_SPACE))
+    if (
+        ins.IsTrgDown(KEY_INPUT_SPACE) ||
+        ins.IsPadBtnTrgDown(
+            InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::DOWN)
+        )
     {
+
         if (SceneManager::GetInstance().CanGoNextDay())
         {
             // ŽŸ‚Ì“ú‚Ö

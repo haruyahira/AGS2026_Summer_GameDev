@@ -47,6 +47,7 @@ Player::Player(void)
 
 	maxHp_ = 10;
 	isDead_ = false;
+	isDash_ = false;
 
 	isFootstepActive_ = false;
 	footstepRange_ = 0.0f;
@@ -164,15 +165,6 @@ void Player::Draw(void)
 
 		int xResult = GetJoypadXInputState(DX_INPUT_PAD1, &x);
 
-		DrawFormatString(
-			20,
-			100,
-			GetColor(0, 255, 255),
-			"XInput result:%d  LT:%d  RT:%d",
-			xResult,
-			x.LeftTrigger,
-			x.RightTrigger
-		);
 	}
 #endif
 
@@ -218,6 +210,32 @@ void Player::Draw(void)
 		GetHP(),
 		GetMaxHP()
 	);
+
+	auto& ins = InputManager::GetInstance();
+
+	int rx =
+		ins.GetPadAKeyRX(
+			InputManager::JOYPAD_NO::PAD1);
+
+	int ry =
+		ins.GetPadAKeyRY(
+			InputManager::JOYPAD_NO::PAD1);
+
+	auto d =
+		ins.GetJPadDInputState(
+			InputManager::JOYPAD_NO::PAD1);
+
+	for (int i = 0; i < 16; i++)
+	{
+		DrawFormatString(
+			20,
+			200 + i * 20,
+			GetColor(255, 255, 0),
+			"Button[%d] : %d",
+			i,
+			d.Buttons[i]
+		);
+	}
 
 	
 }
@@ -451,6 +469,16 @@ void Player::UpdateCommon(void)
 			InputManager::JOYPAD_BTN::R_STICK_PUSH); // 右スティック押し込み
 
 
+	// ダッシュ切り替え
+	if (ins.IsPadBtnTrgDown(
+		InputManager::JOYPAD_NO::PAD1,
+		InputManager::JOYPAD_BTN::L_STICK_PUSH))
+	{
+		isDash_ = !isDash_;
+	}
+
+
+
 	if (isProneTrigger && !isAttacking_)
 
 	{
@@ -602,7 +630,8 @@ void Player::ProcessMove(void)
 {
 	auto& ins = InputManager::GetInstance();
 
-	movePow_ = AsoUtility::VECTOR_ZERO;
+	movePow_ = AsoUtility::VECTOR_ZERO; 
+	moveDir_ = AsoUtility::VECTOR_ZERO;
 
 	Quaternion cameraRot =
 		SceneManager::GetInstance().GetCamera()->GetQuaRotOutX();
@@ -678,9 +707,7 @@ void Player::ProcessMove(void)
 	bool isRun =
 		ins.IsPress(KEY_INPUT_LSHIFT) ||
 		ins.IsPress(KEY_INPUT_RSHIFT) ||
-		ins.IsPadBtnNew(
-			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::L_STICK_PUSH);
+		isDash_;
 
 
 	bool canMove = (isJump_ || IsEndLanding());
@@ -691,7 +718,7 @@ void Player::ProcessMove(void)
 
 		if (IsProne())
 		{
-			currentSpeed = isRun ? 1.8f : 2.3f;
+			currentSpeed = isRun ? 200.0f : 100.0f;
 		}
 		else
 		{
@@ -699,7 +726,10 @@ void Player::ProcessMove(void)
 		}
 
 		moveDir_ = dir;
-		movePow_ = VScale(dir, currentSpeed);
+		movePow_ = VScale(
+			dir,
+			currentSpeed * scnMng_.GetDeltaTime());
+
 
 		if (!isAttacking_)
 		{
@@ -827,7 +857,14 @@ void Player::ProcessAttack(void)
 	{
 		isAttacking_ = true;
 
-		attackTimer_ = 90.0f;
+
+		auto& snd = SoundManager::GetInstance();
+
+		snd.SetSEVolume(255);
+		snd.PlaySE(SoundManager::SE::ATTACK);
+
+		attackTimer_ = 0.7f;
+
 
 		if (isRightAttack_)
 		{
@@ -852,18 +889,17 @@ void Player::ProcessAttack(void)
 	}
 
 	// 攻撃中
+	// 攻撃中
 	if (isAttacking_)
 	{
-		attackTimer_ -= 1.0f;
+		attackTimer_ -= scnMng_.GetDeltaTime();
 
 		if (attackTimer_ <= 0.0f)
 		{
 			isAttacking_ = false;
 
-			// 状態に応じて戻す
 			if (IsProne())
 			{
-				// 攻撃から戻るため、一度 current をリセットして確実に再生
 				currentAnimType_ = -1;
 				PlayAnimation(ANIM_TYPE::PRONE_IDLE);
 			}
@@ -1458,7 +1494,9 @@ void Player::UpdateFootstepRange()
 	footstepRange_ = 0.0f;
 
 	// 移動しているか
-	bool isMove = VSize(movePow_) > 0.01f;
+	bool isMove =
+		!AsoUtility::EqualsVZero(moveDir_);
+
 
 	// ジャンプ中は足音を出さない
 	if (!isMove || isJump_)
@@ -1483,11 +1521,11 @@ void Player::UpdateFootstepRange()
 
 	// Shift中は大きい足音
 
+
 	if (ins.IsPress(KEY_INPUT_LSHIFT) ||
 		ins.IsPress(KEY_INPUT_RSHIFT) ||
-		ins.IsPadBtnNew(
-			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::L_STICK_PUSH))
+		isDash_)
+
 
 	{
 		footstepRange_ = FOOTSTEP_RANGE_RUN;
@@ -1572,23 +1610,31 @@ void Player::UpdateFootstepSound()
 {
 	if (!isFootstepActive_)
 	{
+
 		footstepTimer_ = 0.0f;
+
+		auto& snd = SoundManager::GetInstance();
+
+		snd.StopSE(SoundManager::SE::WALK);
+		snd.StopSE(SoundManager::SE::RUN);
+
 		return;
+
 	}
 
 	footstepTimer_ += scnMng_.GetDeltaTime();
 
 	auto& ins = InputManager::GetInstance();
 
+
 	bool isRun =
 		ins.IsPress(KEY_INPUT_LSHIFT) ||
 		ins.IsPress(KEY_INPUT_RSHIFT) ||
-		ins.IsPadBtnNew(
-			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::L_STICK_PUSH);
+		isDash_;
+
 
 	// 歩きと走りで間隔変更
-	footstepInterval_ = isRun ? 0.25f : 0.45f;
+	footstepInterval_ = isRun ? 0.3f : 0.6f;
 
 	if (footstepTimer_ < footstepInterval_)
 	{
@@ -1602,14 +1648,12 @@ void Player::UpdateFootstepSound()
 	if (isRun)
 	{
 		snd.SetSEVolume(255);
-		snd.SetSEPlaySpeed(1.5f, SoundManager::SE::RUN);
 
 		snd.PlaySE(SoundManager::SE::RUN);
 	}
 	else
 	{
 		snd.SetSEVolume(255);
-		snd.SetSEPitch(1.0f);
 
 		snd.PlaySE(SoundManager::SE::WALK);
 	}

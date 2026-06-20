@@ -146,16 +146,21 @@ void ResourceManager::Init(void)
 
 	// SoundŠÖ˜A
 	// BGM
-	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.");
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.mp3");
 	resourcesMap_.emplace(SRC::GAME_BGM, res);	
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/TitleBgm.wav");
-	
 	resourcesMap_.emplace(SRC::TITLE_BGM, res);
-	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.");
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.mp3");
 	resourcesMap_.emplace(SRC::CHASE_BGM, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ClearBgm.mp3");
+	resourcesMap_.emplace(SRC::CLEAR_BGM, res);
 	// SE
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");
 	resourcesMap_.emplace(SRC::WALK_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "Se/Attack.mp3");
+	resourcesMap_.emplace(SRC::ATTACK_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "Se/Hit.mp3");
+	resourcesMap_.emplace(SRC::HIT_SE, res);
 
 }
 

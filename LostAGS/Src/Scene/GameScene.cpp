@@ -3,6 +3,7 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Object/Collider/Capsule.h"
 #include "../Object/Collider/Collider.h"
 #include "../Object/Common/Hp/HpManager.h"
@@ -76,6 +77,12 @@ void GameScene::Init(void)
 	/*if (auto camera = camera_.lock()) {*/
 		camera->Update();
 	//}
+	// Sound
+	auto& snd = SoundManager::GetInstance();
+
+	snd.SetBGMVolume(180);
+
+	snd.PlayBGM(SoundManager::BGM::GAME, true);
 }
 
 void GameScene::Update(void)
@@ -85,7 +92,18 @@ void GameScene::Update(void)
 	InputManager& ins = InputManager::GetInstance();
 	if (ins.IsTrgDown(KEY_INPUT_1))
 	{
+		SoundManager::GetInstance().StopAllSound();
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::TITLE);
+	}
+	if (ins.IsTrgDown(KEY_INPUT_3))
+	{
+		SoundManager::GetInstance().StopAllSound();
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMECLEAR);
+	}
+	if (ins.IsTrgDown(KEY_INPUT_4))
+	{
+		SoundManager::GetInstance().StopAllSound();
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 	}
 
 	HpManager::GetInstance().Update();
@@ -100,6 +118,7 @@ void GameScene::Update(void)
 
 	if (player_->IsDead())
 	{
+		SoundManager::GetInstance().StopAllSound();
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 		return;
 	}
