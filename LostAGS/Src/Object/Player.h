@@ -133,6 +133,7 @@ public:
 	bool IsFootstepActive() const;
 	float GetFootstepRange() const;
 	VECTOR GetFootstepPos() const;
+	void UpdateFootstepSound();
 
 private:
 
@@ -279,6 +280,9 @@ private:
 	static constexpr float FOOTSTEP_RANGE_PRONE = 80.0f;
 
 	void UpdateFootstepRange();
+	// ‘«‰¹
+	float footstepTimer_;
+	float footstepInterval_;
 
 #ifdef _DEBUG
 	void DrawFootstepDebug() const;

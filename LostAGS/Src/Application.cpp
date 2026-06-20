@@ -4,6 +4,7 @@
 #include "Manager/InputManager.h"
 #include "Manager/ResourceManager.h"
 #include "Manager/SceneManager.h"
+#include "Manager/SoundManager.h"
 #include "Application.h"
 
 //Application* Application::instance_ = nullptr;
@@ -12,6 +13,7 @@ std::unique_ptr<Application> Application::instance_ = nullptr;
 const std::string Application::PATH_IMAGE = "Data/Image/";
 const std::string Application::PATH_MODEL = "Data/Model/";
 const std::string Application::PATH_EFFECT = "Data/Effect/";
+const std::string Application::PATH_SOUND = "Data/Sound/";
 
 void Application::CreateInstance(void)
 {
@@ -63,7 +65,7 @@ void Application::Init(void)
 
 
 	// FPS
-	fpsController_ = std::make_unique<FpsController>(168.0f);
+	fpsController_ = std::make_unique<FpsController>(68.0f);
 
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
@@ -83,6 +85,9 @@ void Application::Init(void)
 
 	// リソース管理初期化
 	ResourceManager::CreateInstance();
+
+	// サウンド管理初期化
+	SoundManager::GetInstance().Init();
 
 	// シーン管理初期化
 	SceneManager::CreateInstance();
@@ -132,12 +137,6 @@ void Application::Destroy(void)
 	{
 		isReleaseFail_ = true;
 	}
-	// FPS制御のメモリ解放
-	//delete fpsController_;
-
-	//delete instance_;
-
-
 
 }
 

@@ -34,6 +34,12 @@ public:
 		RETURN_POINT,
 		LAPTOP,
 
+		// Sound
+		WALK_SE,
+		GAME_BGM,
+		CHASE_BGM,
+		TITLE_BGM,
+
 
 
 		SPEECH_BALLOON,
@@ -89,7 +95,7 @@ private:
 	std::map<SRC, std::unique_ptr<Resource>> resourcesMap_;
 
 	// ì«Ç›çûÇ›çœÇ›ÉäÉ\Å[ÉX
-	std::map<SRC, Resource&> loadedMap_;
+	std::map<SRC, Resource*> loadedMap_;
 
 	Resource dummy_;
 

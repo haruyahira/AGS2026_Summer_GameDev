@@ -77,8 +77,12 @@ void Resource::Load(void)
 		handleId_ = MV1LoadModel(path_.c_str());
 		break;
 
-	case Resource::TYPE::EFFEKSEER:
+	case Resource::TYPE::SOUND:
+		// ƒTƒEƒ“ƒh
+		handleId_ = LoadSoundMem(path_.c_str());
+		break;
 
+	case Resource::TYPE::EFFEKSEER:
 		handleId_ = LoadEffekseerEffect(path_.c_str());
 		break;
 
@@ -115,6 +119,10 @@ void Resource::Release(void)
 			MV1DeleteModel(id);
 		}
 	}
+	break;
+
+	case Resource::TYPE::SOUND:
+		DeleteSoundMem(handleId_);
 	break;
 
 	case Resource::TYPE::EFFEKSEER:

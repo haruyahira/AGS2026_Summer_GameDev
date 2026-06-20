@@ -158,9 +158,6 @@ void EnemyBase::Update(Player* player)
             // ÅŒã‚ÉŒ©‚½êŠ‚ðŒ©‚é
             LookAtPosition(lastKnownPlayerPos_);
 
-#ifdef _DEBUG
-            printfDx("Enemy Lost Player -> Alert Start\n");
-#endif
         }
 
         // Ž‹ŠE‚É“ü‚Á‚Ä‚¢‚È‚¢Žž‚¾‚¯‘«‰¹‚ð•·‚­

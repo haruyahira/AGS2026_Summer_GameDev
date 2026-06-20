@@ -30,6 +30,7 @@ void ResourceManager::Init(void)
 	static std::string PATH_IMG = Application::PATH_IMAGE;
 	static std::string PATH_MDL = Application::PATH_MODEL;
 	static std::string PATH_EFF = Application::PATH_EFFECT;
+	static std::string PATH_SND = Application::PATH_SOUND;
 
 	Resource* res;
 
@@ -143,18 +144,41 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "Tank/Barrel.mv1");
 	resourcesMap_.emplace(SRC::TANK_BARREL, res);
 
+	// Sound関連
+	// BGM
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.");
+	resourcesMap_.emplace(SRC::GAME_BGM, res);	
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/TitleBgm.wav");
+	
+	resourcesMap_.emplace(SRC::TITLE_BGM, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.");
+	resourcesMap_.emplace(SRC::CHASE_BGM, res);
+	// SE
+	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");
+	resourcesMap_.emplace(SRC::WALK_SE, res);
+
 }
 
 void ResourceManager::Release(void)
 {
 	for (auto& p : loadedMap_)
 	{
-		p.second.Release();
+		if (p.second == nullptr)
+		{
+			continue;
+		}
+
+		// SOUND は解放しない
+		if (p.second->type_ == Resource::TYPE::SOUND)
+		{
+			continue;
+		}
+
+		p.second->Release();
 	}
 
 	loadedMap_.clear();
 }
-
 void ResourceManager::Destroy(void)
 {
 	Release();
@@ -217,7 +241,7 @@ Resource& ResourceManager::_Load(SRC src)
 	rPair->second->Load();
 
 	// 念のためコピーコンストラクタ
-	loadedMap_.emplace(src, *rPair->second);
+	loadedMap_.emplace(src, rPair->second.get());
 
 	return *rPair->second;
 }

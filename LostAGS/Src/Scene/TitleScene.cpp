@@ -5,6 +5,7 @@
 #include "../Utility/ColorUtility.h"
 #include "../Manager/SceneManager.h"
 #include "../Manager/ResourceManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Manager/InputManager.h"
 #include "../Manager/Camera.h"
 #include "TitleScene.h"
@@ -27,11 +28,6 @@ TitleScene::TitleScene(void)
 
 TitleScene::~TitleScene(void)
 {
-	if (bgm_ != -1)
-	{
-		StopSoundMem(bgm_);
-		DeleteSoundMem(bgm_);
-	}
 }
 
 void TitleScene::Init(void)
@@ -65,15 +61,11 @@ void TitleScene::Init(void)
 		    Color::WHITE
 			});
 	}
+	auto& snd = SoundManager::GetInstance();
 
-	bgm_ = LoadSoundMem("Data/Bgm/TitleBgm.wav");
+	snd.SetBGMVolume(180);
 
-	ChangeVolumeSoundMem(180, bgm_);
-
-	// 3. ループ再生を開始
-	if (bgm_ != -1) {
-		PlaySoundMem(bgm_, DX_PLAYTYPE_LOOP);
-	}
+	snd.PlayBGM(SoundManager::BGM::TITLE, true);
 
 	// 定点カメラ
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIXED_POINT);
@@ -88,6 +80,7 @@ void TitleScene::Update(void)
 	InputManager& ins = InputManager::GetInstance();
 	if (ins.IsTrgDown(KEY_INPUT_SPACE))
 	{
+		SoundManager::GetInstance().StopAllSound();
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
 	}
 	// レッサーパンダ更新
@@ -192,6 +185,7 @@ void TitleScene::UpdateSelect(void)
 	{
 		// 1番目（スタート）
 		if (drawIndex_ == 1) {
+			SoundManager::GetInstance().StopAllSound();
 			SceneManager::GetInstance().ResetGameResultData();
 			SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
 		}
@@ -245,21 +239,6 @@ void TitleScene::DrawRedpanda(void)
 
 void TitleScene::DrawSelect(void)
 {
-	//DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_,  imgTitleSelect_, true);
-	
-	//// マウスが乗っている選択肢のみ、光っている画像(imgSelectHandles_)を重ねる
-	//if (drawIndex_ > 0) {
-	//	int i = drawIndex_ - 1; // 0, 1, 2 に変換
-
-	//	// 当たり判定の四角形(btnRects_)をそのまま使って描画
-	//	DrawExtendGraph(
-	//		0,
-	//		0,
-	//		Application::SCREEN_SIZE_X ,
-	//		Application::adjustedSizeY_,
-	//		imgSelectHandles_[drawIndex_], TRUE
-	//	);
-	//}
 	// 光っていない選択肢画像の描画（ベースとして常に表示）
 	DrawExtendGraph(0, 0, Application::SCREEN_SIZE_X, Application::adjustedSizeY_, imgTitleSelect_, TRUE);
 

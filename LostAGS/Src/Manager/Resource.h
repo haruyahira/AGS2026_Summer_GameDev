@@ -14,6 +14,7 @@ public:
 		IMG,
 		IMGS,
 		MODEL,
+		SOUND,
 		EFFEKSEER
 	};
 

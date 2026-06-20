@@ -6,6 +6,7 @@
 #include "../Manager/InputManager.h"
 #include "../Manager/SceneManager.h"
 #include "../Manager/ResourceManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Manager/Camera.h"
 #include "Common/AnimationController.h"
 #include "Common/Hp/HpManager.h"
@@ -49,7 +50,8 @@ Player::Player(void)
 
 	isFootstepActive_ = false;
 	footstepRange_ = 0.0f;
-
+	footstepTimer_ = 0.0f;
+	footstepInterval_ = 20.0f;
 }
 
 Player::~Player(void)
@@ -475,6 +477,10 @@ void Player::UpdateCommon(void)
 
 	// 足音範囲更新
 	UpdateFootstepRange();
+
+	// 足音再生
+	UpdateFootstepSound();
+
 
 	// 移動方向に応じた回転
 	Rotate();
@@ -1560,4 +1566,51 @@ float Player::GetFootstepRange() const
 VECTOR Player::GetFootstepPos() const
 {
 	return transform_.pos;
+}
+
+void Player::UpdateFootstepSound()
+{
+	if (!isFootstepActive_)
+	{
+		footstepTimer_ = 0.0f;
+		return;
+	}
+
+	footstepTimer_ += scnMng_.GetDeltaTime();
+
+	auto& ins = InputManager::GetInstance();
+
+	bool isRun =
+		ins.IsPress(KEY_INPUT_LSHIFT) ||
+		ins.IsPress(KEY_INPUT_RSHIFT) ||
+		ins.IsPadBtnNew(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::L_STICK_PUSH);
+
+	// 歩きと走りで間隔変更
+	footstepInterval_ = isRun ? 0.25f : 0.45f;
+
+	if (footstepTimer_ < footstepInterval_)
+	{
+		return;
+	}
+
+	footstepTimer_ = 0.0f;
+
+	auto& snd = SoundManager::GetInstance();
+
+	if (isRun)
+	{
+		snd.SetSEVolume(255);
+		snd.SetSEPlaySpeed(1.5f, SoundManager::SE::RUN);
+
+		snd.PlaySE(SoundManager::SE::RUN);
+	}
+	else
+	{
+		snd.SetSEVolume(255);
+		snd.SetSEPitch(1.0f);
+
+		snd.PlaySE(SoundManager::SE::WALK);
+	}
 }
