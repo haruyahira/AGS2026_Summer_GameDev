@@ -152,7 +152,7 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::TITLE_BGM, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.mp3");
 	resourcesMap_.emplace(SRC::CHASE_BGM, res);
-	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ClearBgm.mp3");
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm//*ClearBgm*/.mp3");
 	resourcesMap_.emplace(SRC::CLEAR_BGM, res);
 	// SE
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");

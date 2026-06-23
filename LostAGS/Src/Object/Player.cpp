@@ -211,33 +211,6 @@ void Player::Draw(void)
 		GetMaxHP()
 	);
 
-	auto& ins = InputManager::GetInstance();
-
-	int rx =
-		ins.GetPadAKeyRX(
-			InputManager::JOYPAD_NO::PAD1);
-
-	int ry =
-		ins.GetPadAKeyRY(
-			InputManager::JOYPAD_NO::PAD1);
-
-	auto d =
-		ins.GetJPadDInputState(
-			InputManager::JOYPAD_NO::PAD1);
-
-	for (int i = 0; i < 16; i++)
-	{
-		DrawFormatString(
-			20,
-			200 + i * 20,
-			GetColor(255, 255, 0),
-			"Button[%d] : %d",
-			i,
-			d.Buttons[i]
-		);
-	}
-
-	
 }
 
 void Player::AddCollider(Collider* collider)

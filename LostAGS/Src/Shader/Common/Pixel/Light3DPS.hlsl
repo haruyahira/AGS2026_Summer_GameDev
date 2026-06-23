@@ -193,12 +193,26 @@ PSOutput main(VertexToPixel input)
     // ŠÂ‹«Œõ
     // =========================
 
+    //float3 light =
+    //    float3(
+    //        0.018f,
+    //        0.018f,
+    //        0.026f
+    //    );
+    
+    
+    float3 environmentLight =
+    float3(
+        0.06f,
+        0.06f,
+        0.08f
+    );
+    
+    
     float3 light =
-        float3(
-            0.018f,
-            0.018f,
-            0.026f
-        );
+    environmentLight;
+
+
 
     int count =
         min(
@@ -269,8 +283,9 @@ PSOutput main(VertexToPixel input)
         texColor.rgb *
         input.Diffuse.rgb;
 
+  
     float3 finalColor =
-        baseColor * light;
+    baseColor * light;
 
     output.color =
         float4(
