@@ -3,6 +3,7 @@
 #include <memory>
 #include <DxLib.h>
 #include "ActorBase.h"
+#include "Common/Hp/HpUI.h"
 class AnimationController;
 class Collider;
 class Capsule;
@@ -267,6 +268,8 @@ private:
 	// ÉJÉÅÉâ
 	void SetFirstPerson(void);
 
+	// HPä÷òA
+	HpUI hpUI_;
 	int maxHp_;
 	bool isDead_;
 

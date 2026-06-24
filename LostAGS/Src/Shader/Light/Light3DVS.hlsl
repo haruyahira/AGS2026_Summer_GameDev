@@ -1,5 +1,5 @@
-#include "MV1Input.hlsli"
-#include "../Model3DCommon.hlsli"
+#include "../Common/Vertex/MV1Input.hlsli"
+#include "../Common/Model3DCommon.hlsli"
 
 struct DX_D3D11_VS_CONST_BUFFER_BASE
 {

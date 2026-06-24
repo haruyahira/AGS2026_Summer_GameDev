@@ -1,6 +1,7 @@
 #pragma once
 #include "SceneBase.h"
 #include <memory>
+#include "../Shader/PostEffect/PostEffect.h"
 class Stage;
 class SkyDome;
 class Player;
@@ -20,6 +21,8 @@ public:
 	void Init(void) override;
 	void Update(void) override;
 	void Draw(void) override;
+	void DrawPostEffect(int mainScreen);
+
 
 private:
 
@@ -34,5 +37,8 @@ private:
 
 	// 敵達
 	std::unique_ptr<EnemyManager> enemyMng_;
+
+	// ポストエフェクト
+	std::unique_ptr<PostEffect> postEffect_;
 	
 };

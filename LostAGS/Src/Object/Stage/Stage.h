@@ -26,145 +26,155 @@ class Stage
 {
 public:
 
-	// ステージの切り替え間隔
-	static constexpr float TIME_STAGE_CHANGE = 1.0f;
+    // ステージの切り替え間隔
+    static constexpr float TIME_STAGE_CHANGE = 1.0f;
 
-	// 家具の設計図
-	struct FurnitureData
-	{
-		ResourceManager::SRC modelSrc;
-		Vector3 pos;
-		Vector3 scl;
-		Vector3 rot;
-	};
+    // 家具の設計図
+    struct FurnitureData
+    {
+        ResourceManager::SRC modelSrc;
+        Vector3 pos;
+        Vector3 scl;
+        Vector3 rot;
+    };
 
-	Stage(Player* player);
-	~Stage(void);
+public:
 
-	void Init(void);
-	void Update(void);
-	void Draw(void);
+    Stage(Player* player);
+    ~Stage(void);
 
-	// ステージ変更
-	void ChangeStage(NAME type);
+    void Init(void);
+    void Update(void);
+    void Draw(void);
 
-	// 対象ステージを取得
-	Planet* GetPlanet(NAME type);
+    // ステージ変更
+    void ChangeStage(NAME type);
 
-	void CreateFurniture(const FurnitureData& data);
-	void CreateCeilingLight(const FurnitureData& data);
-	void DrawDepthMaskForExternal3D(void);
+    // 対象ステージを取得
+    Planet* GetPlanet(NAME type);
 
-	bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
+    void CreateFurniture(const FurnitureData& data);
+    void CreateCeilingLight(const FurnitureData& data);
+    void DrawDepthMaskForExternal3D(void);
+
+    bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
+
 private:
 
-	LightEffect lightEffect_;
-	// シングルトン参照
-	ResourceManager& resMng_;
+    // HLSLライト
+    LightEffect lightEffect_;
 
-	Player* player_;
-	StoneDevice* stoneDevice_;
+    // シングルトン参照
+    ResourceManager& resMng_;
 
-	// ステージアクティブになっている惑星の情報
-	NAME activeName_;
-	Planet* activePlanet_;
+    Player* player_;
+    StoneDevice* stoneDevice_;
 
-	// 惑星
-	std::map<NAME, Planet*> stages_;
+    // ステージアクティブになっている惑星の情報
+    NAME activeName_;
+    Planet* activePlanet_;
 
-	// 家具
-	std::vector<Furniture*> furnitures_;
-	std::vector<Furniture*> glassFurnitures_;
-	std::vector<CeilingLight*> ceilingLights_;
-	std::vector<VECTOR> ceilingLightBeamPositions_;
-	// ワープスター
-	std::vector<WarpStar*> warpStars_;
+    // 惑星
+    std::map<NAME, Planet*> stages_;
 
-	// 空のPlanet
-	Planet* nullPlanet = nullptr;
+    // 家具
+    std::vector<Furniture*> furnitures_;
+    std::vector<Furniture*> glassFurnitures_;
+    std::vector<CeilingLight*> ceilingLights_;
+    std::vector<VECTOR> ceilingLightBeamPositions_;
 
-	float step_;
+    // ワープスター
+    std::vector<WarpStar*> warpStars_;
 
-	// 最初の惑星
-	void MakeMainStage(void);
+    // 空のPlanet
+    Planet* nullPlanet = nullptr;
 
-	void CreateFirstStage(void);
+    float step_;
 
-	// アイテム
-	std::vector<Item*> items_;
+    // 最初の惑星
+    void MakeMainStage(void);
+    void CreateFirstStage(void);
 
-	int itemCount_[(int)Item::TYPE::MAX];
-	int registeredItemCount_[(int)Item::TYPE::MAX];
-	int stolenItemCount_[(int)Item::TYPE::MAX];
+    // アイテム
+    std::vector<Item*> items_;
 
-	// 所持上限：3個のノートPCを拾えるようにする
-	static constexpr int MAX_ITEM_COUNT = 3;
+    int itemCount_[(int)Item::TYPE::MAX];
+    int registeredItemCount_[(int)Item::TYPE::MAX];
+    int stolenItemCount_[(int)Item::TYPE::MAX];
 
-	int lookingItemIndex_;
-	bool isItemMax_;
+    static constexpr int MAX_ITEM_COUNT = 3;
 
-	// アイテム出現候補地点
-	std::vector<VECTOR> itemSpawnPoints_;
+    int lookingItemIndex_;
+    bool isItemMax_;
 
-	void CreateItem(
-		Item::TYPE type,
-		ResourceManager::SRC modelSrc,
-		VECTOR pos,
-		VECTOR scl);
+    // アイテム出現候補地点
+    std::vector<VECTOR> itemSpawnPoints_;
 
-	// 候補地点からノートPCをランダム生成
-	void CreateRandomLaptopItemsFromSpawnPoints(int count);
+    void CreateItem(
+        Item::TYPE type,
+        ResourceManager::SRC modelSrc,
+        VECTOR pos,
+        VECTOR scl
+    );
 
-	int FindLookingItem(void);
-	void UpdateItemPickup(void);
+    void CreateRandomLaptopItemsFromSpawnPoints(int count);
 
-	bool HasAnyItem(void) const;
-	void RegisterItemsToStoneDevice(void);
-	void UpdateStoneDeviceRegister(void);
+    int FindLookingItem(void);
+    void UpdateItemPickup(void);
 
-	void DrawItemUI(void) const;
+    bool HasAnyItem(void) const;
+    void RegisterItemsToStoneDevice(void);
+    void UpdateStoneDeviceRegister(void);
 
-	int GetTotalItemCount(void) const;
+    void DrawItemUI(void) const;
 
-	int GetItemPrice(Item::TYPE type) const;
-	int CalcStolenMoney(void) const;
-	int CalcTotalMoney(void) const;
-	int CalcRemainDay(void) const;
+    int GetTotalItemCount(void) const;
 
+    int GetItemPrice(Item::TYPE type) const;
+    int CalcStolenMoney(void) const;
+    int CalcTotalMoney(void) const;
+    int CalcRemainDay(void) const;
 
-	void DrawCeilingLightBeams(void);
-	void DrawOneCeilingLightBeam(const VECTOR& lightPos);
-	int beamGraph_ = -1;
+    // 天井ライト
+    void DrawCeilingLightBeams(void);
+    void DrawOneCeilingLightBeam(const VECTOR& lightPos);
 
-	void CreateBeamGraph(void);
-	void CreateKitchenLight(const FurnitureData& data);
+    int beamGraph_ = -1;
 
-	void DrawDisc3D(
-		const VECTOR& center,
-		float radius,
-		int div,
-		int color
-	);
+    void CreateBeamGraph(void);
+    void CreateKitchenLight(const FurnitureData& data);
 
-	void UpdateFlashLightForShader(
-		const VECTOR& cameraPos,
-		const VECTOR& cameraTarget
-	);
+    void DrawDisc3D(
+        const VECTOR& center,
+        float radius,
+        int div,
+        int color
+    );
 
+    void UpdateFlashLightForShader(
+        const VECTOR& cameraPos,
+        const VECTOR& cameraTarget
+    );
 
-	int outlineRTColor_ = -1;
-	int outlineRTNormal_ = -1;
-	int outlineRTDepth_ = -1;
+    // =========================
+    // ポストアウトライン用
+    // =========================
 
-	int outlinePostPS_ = -1;
+    int outlineRTColor_ = -1;
+    int outlineRTNormal_ = -1;
+    int outlineRTDepth_ = -1;
 
-	bool InitPostOutline(void);
-	void ReleasePostOutline(void);
-	void DrawOpaqueSceneForOutline(
-		const VECTOR& cameraPos, const VECTOR& cameraTarget);
-	void DrawPostOutline(void);
+    int outlinePostPS_ = -1;
 
+    bool InitPostOutline(void);
+    void ReleasePostOutline(void);
 
+    void DrawOpaqueSceneForOutline(
+        const VECTOR& cameraPos,
+        const VECTOR& cameraTarget
+    );
 
-	
+    // 重要：
+    // DX_SCREEN_BACKに直接描かないため、出力先を受け取る
+    void DrawPostOutline(int outputScreen);
 };

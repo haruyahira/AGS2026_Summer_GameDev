@@ -1,5 +1,5 @@
-#include "../Model3DCommon.hlsli"
-#include "../Light3DCommon.hlsli"
+#include "../Common/Model3DCommon.hlsli"
+#include "../Common/Light3DCommon.hlsli"
 
 Texture2D DiffuseTexture : register(t0);
 SamplerState DiffuseSampler : register(s0);

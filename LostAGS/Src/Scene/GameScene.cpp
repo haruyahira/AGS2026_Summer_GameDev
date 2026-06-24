@@ -1,9 +1,11 @@
 #include <DxLib.h>
 #include "../Utility/AsoUtility.h"
+#include "../Application.h"
 #include "../Manager/SceneManager.h"
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
 #include "../Manager/SoundManager.h"
+#include "../Shader/PostEffect/PostEffect.h"
 #include "../Object/Collider/Capsule.h"
 #include "../Object/Collider/Collider.h"
 #include "../Object/Common/Hp/HpManager.h"
@@ -61,6 +63,15 @@ void GameScene::Init(void)
 
 	//SetUsePerPixelLighting(TRUE);
 
+
+	// ポストエフェクト
+	postEffect_ = std::make_unique<PostEffect>();
+
+	postEffect_->Init(
+		Application::SCREEN_SIZE_X,
+		Application::adjustedSizeY_,
+		Application::PATH_SHADER);
+
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
 	// 初期視点設定
@@ -106,6 +117,8 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 	}
 
+	postEffect_->Select({ PostEffect::TYPE::GAMING });
+
 	HpManager::GetInstance().Update();
 
 	stage_->Update();
@@ -123,6 +136,14 @@ void GameScene::Update(void)
 		return;
 	}
 
+	// 時間
+	static float time = 0;
+
+	time += 0.15f;
+
+	// 使用中のエフェクトだけ更新
+	postEffect_->Update(time);
+
 
 }
 
@@ -138,4 +159,43 @@ void GameScene::Draw(void)
 	// 敵の描画
 	enemyMng_->Draw();
 
+	//int mainScreen = SceneManager::GetInstance().GetMainScreen();
+
+	//// ポストエフェクト描画
+	//postEffect_->Draw(mainScreen);
+}
+
+void GameScene::DrawPostEffect(int mainScreen)
+{
+	if (postEffect_ == nullptr)
+	{
+		DrawGraph(0, 0, mainScreen, FALSE);
+		return;
+	}
+
+	// 2Dポストエフェクト用に状態をリセット
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+	SetUseLighting(FALSE);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// mainScreen に対してポストエフェクトをかける
+	postEffect_->Draw(mainScreen);
+
+	// 次の描画に備えて戻す
+	SetUseLighting(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }

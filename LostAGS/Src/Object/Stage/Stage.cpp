@@ -170,25 +170,72 @@ void Stage::Update(void)
 
 
 }
+//void Stage::Draw(void)
+//{
+//	VECTOR cameraPos = GetCameraPosition();
+//	VECTOR cameraTarget = GetCameraTarget();
+//
+//	// 重要：描画直前の正しいカメラ方向でライトを更新
+//	UpdateFlashLightForShader(cameraPos, cameraTarget);
+//
+//	// RTに不透明物 + 半透明物 + 光を描く
+//	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
+//
+//	// 完成したRTを画面に出す
+//	DrawPostOutline();
+//
+//
+//	// =========================
+//	 // Stage外の3D描画用に状態を戻す
+//	 // =========================
+//	SetDrawScreen(DX_SCREEN_BACK);
+//
+//	SetCameraNearFar(1.0f, 10000.0f);
+//	SetupCamera_Perspective(DX_PI_F / 3.0f);
+//	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
+//
+//	SetUseZBuffer3D(TRUE);
+//	SetWriteZBuffer3D(TRUE);
+//	SetUseBackCulling(TRUE);
+//	SetUseLighting(TRUE);
+//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+//
+//	SetUseVertexShader(-1);
+//	SetUsePixelShader(-1);
+//
+//	SetUseTextureToShader(0, -1);
+//	SetUseTextureToShader(1, -1);
+//	SetUseTextureToShader(2, -1);
+//
+//
+//	// UIだけ最後
+//	DrawItemUI();
+//}
 void Stage::Draw(void)
 {
+	// SceneManager が設定している描画先を保存する
+	// 通常は mainScrenn_ が入っている
+	int oldScreen = GetDrawScreen();
+
 	VECTOR cameraPos = GetCameraPosition();
 	VECTOR cameraTarget = GetCameraTarget();
 
-	// 重要：描画直前の正しいカメラ方向でライトを更新
+	// 描画直前の正しいカメラ方向でライトを更新
 	UpdateFlashLightForShader(cameraPos, cameraTarget);
 
-	// RTに不透明物 + 半透明物 + 光を描く
+	// ステージ専用RTに、
+	// 不透明物、半透明物、ライト、輪郭線用情報を描画
 	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
 
-	// 完成したRTを画面に出す
-	DrawPostOutline();
-
+	// 完成したアウトライン付きステージ画像を、
+	// 元の描画先に描く
+	DrawPostOutline(oldScreen);
 
 	// =========================
-	 // Stage外の3D描画用に状態を戻す
-	 // =========================
-	SetDrawScreen(DX_SCREEN_BACK);
+	// Stage外の3D描画用に状態を戻す
+	// =========================
+
+	SetDrawScreen(oldScreen);
 
 	SetCameraNearFar(1.0f, 10000.0f);
 	SetupCamera_Perspective(DX_PI_F / 3.0f);
@@ -198,6 +245,7 @@ void Stage::Draw(void)
 	SetWriteZBuffer3D(TRUE);
 	SetUseBackCulling(TRUE);
 	SetUseLighting(TRUE);
+
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
 	SetUseVertexShader(-1);
@@ -207,11 +255,9 @@ void Stage::Draw(void)
 	SetUseTextureToShader(1, -1);
 	SetUseTextureToShader(2, -1);
 
-
 	// UIだけ最後
 	DrawItemUI();
 }
-
 void Stage::ChangeStage(NAME type)
 {
 	activeName_ = type;
@@ -1457,13 +1503,13 @@ void Stage::CreateKitchenLight(const Stage::FurnitureData& data)
 		VGet(0.0f, -1.0f, 0.0f),
 
 		// 届く距離
-		900.0f,
+		800.0f,
 
 		// 中心の明るい範囲
 		DX_PI_F / 3.2f,
 
 		// 外側までかなり広く
-		DX_PI_F / 1.8f,
+		DX_PI_F / 3.0f,
 
 		// 壁で遮る
 		true
@@ -1653,24 +1699,145 @@ void Stage::DrawOpaqueSceneForOutline(
 			l->DrawGlow();
 		}
 	}
+
+	// =========================
+	// RT描画後の状態リセット
+	// =========================
+	SetRenderTargetToShader(1, -1);
+	SetRenderTargetToShader(2, -1);
+
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseLighting(TRUE);
 }
 
-void Stage::DrawPostOutline(void)
+//void Stage::DrawPostOutline(void)
+//{
+//	if (outlineRTColor_ < 0)
+//	{
+//		return;
+//	}
+//
+//	SetDrawScreen(DX_SCREEN_BACK);
+//	ClearDrawScreen();
+//
+//	if (outlinePostPS_ < 0 ||
+//		outlineRTNormal_ < 0 ||
+//		outlineRTDepth_ < 0)
+//	{
+//		DrawGraph(0, 0, outlineRTColor_, FALSE);
+//
+//		return;
+//	}
+//
+//	int w, h;
+//	GetDrawScreenSize(&w, &h);
+//
+//	// 2Dポリゴン描画用の状態にする
+//	SetUseZBuffer3D(FALSE);
+//	SetWriteZBuffer3D(FALSE);
+//	SetUseBackCulling(FALSE);   // ★重要
+//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+//
+//	SetUseVertexShader(-1);
+//
+//	SetUseTextureToShader(0, outlineRTColor_);
+//	SetUseTextureToShader(1, outlineRTNormal_);
+//	SetUseTextureToShader(2, outlineRTDepth_);
+//
+//	SetUsePixelShader(outlinePostPS_);
+//
+//	VERTEX2DSHADER v[6];
+//
+//	for (int i = 0; i < 6; i++)
+//	{
+//		v[i].rhw = 1.0f;
+//		v[i].dif = GetColorU8(255, 255, 255, 255);
+//		v[i].spc = GetColorU8(0, 0, 0, 0);
+//	}
+//
+//	// 1枚目の三角形
+//	v[0].pos = VGet(0.0f, 0.0f, 0.0f);
+//	v[0].u = 0.0f;
+//	v[0].v = 0.0f;
+//	v[0].su = 0.0f;
+//	v[0].sv = 0.0f;
+//
+//	v[1].pos = VGet(0.0f, (float)h, 0.0f);
+//	v[1].u = 0.0f;
+//	v[1].v = 1.0f;
+//	v[1].su = 0.0f;
+//	v[1].sv = 1.0f;
+//
+//	v[2].pos = VGet((float)w, (float)h, 0.0f);
+//	v[2].u = 1.0f;
+//	v[2].v = 1.0f;
+//	v[2].su = 1.0f;
+//	v[2].sv = 1.0f;
+//
+//	// 2枚目の三角形
+//	v[3].pos = VGet(0.0f, 0.0f, 0.0f);
+//	v[3].u = 0.0f;
+//	v[3].v = 0.0f;
+//	v[3].su = 0.0f;
+//	v[3].sv = 0.0f;
+//
+//	v[4].pos = VGet((float)w, (float)h, 0.0f);
+//	v[4].u = 1.0f;
+//	v[4].v = 1.0f;
+//	v[4].su = 1.0f;
+//	v[4].sv = 1.0f;
+//
+//	v[5].pos = VGet((float)w, 0.0f, 0.0f);
+//	v[5].u = 1.0f;
+//	v[5].v = 0.0f;
+//	v[5].su = 1.0f;
+//	v[5].sv = 0.0f;
+//
+//	DrawPrimitive2DToShader(
+//		v,
+//		6,
+//		DX_PRIMTYPE_TRIANGLELIST
+//	);
+//
+//	SetUseTextureToShader(0, -1);
+//	SetUseTextureToShader(1, -1);
+//	SetUseTextureToShader(2, -1);
+//
+//	SetUsePixelShader(-1);
+//
+//	// 状態を戻す
+//	SetUseBackCulling(TRUE);
+//	SetUseZBuffer3D(TRUE);
+//	SetWriteZBuffer3D(TRUE);
+//}
+void Stage::DrawPostOutline(int outputScreen)
 {
 	if (outlineRTColor_ < 0)
 	{
 		return;
 	}
 
-	SetDrawScreen(DX_SCREEN_BACK);
-	ClearDrawScreen();
+	// 重要：
+	// DX_SCREEN_BACKに直接描かない。
+	// SceneManagerが指定していた描画先に描く。
+	SetDrawScreen(outputScreen);
 
 	if (outlinePostPS_ < 0 ||
 		outlineRTNormal_ < 0 ||
 		outlineRTDepth_ < 0)
 	{
 		DrawGraph(0, 0, outlineRTColor_, FALSE);
-
 		return;
 	}
 
@@ -1680,7 +1847,8 @@ void Stage::DrawPostOutline(void)
 	// 2Dポリゴン描画用の状態にする
 	SetUseZBuffer3D(FALSE);
 	SetWriteZBuffer3D(FALSE);
-	SetUseBackCulling(FALSE);   // ★重要
+	SetUseBackCulling(FALSE);
+	SetUseLighting(FALSE);
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
 	SetUseVertexShader(-1);
@@ -1707,13 +1875,13 @@ void Stage::DrawPostOutline(void)
 	v[0].su = 0.0f;
 	v[0].sv = 0.0f;
 
-	v[1].pos = VGet(0.0f, (float)h, 0.0f);
+	v[1].pos = VGet(0.0f, static_cast<float>(h), 0.0f);
 	v[1].u = 0.0f;
 	v[1].v = 1.0f;
 	v[1].su = 0.0f;
 	v[1].sv = 1.0f;
 
-	v[2].pos = VGet((float)w, (float)h, 0.0f);
+	v[2].pos = VGet(static_cast<float>(w), static_cast<float>(h), 0.0f);
 	v[2].u = 1.0f;
 	v[2].v = 1.0f;
 	v[2].su = 1.0f;
@@ -1726,13 +1894,13 @@ void Stage::DrawPostOutline(void)
 	v[3].su = 0.0f;
 	v[3].sv = 0.0f;
 
-	v[4].pos = VGet((float)w, (float)h, 0.0f);
+	v[4].pos = VGet(static_cast<float>(w), static_cast<float>(h), 0.0f);
 	v[4].u = 1.0f;
 	v[4].v = 1.0f;
 	v[4].su = 1.0f;
 	v[4].sv = 1.0f;
 
-	v[5].pos = VGet((float)w, 0.0f, 0.0f);
+	v[5].pos = VGet(static_cast<float>(w), 0.0f, 0.0f);
 	v[5].u = 1.0f;
 	v[5].v = 0.0f;
 	v[5].su = 1.0f;
@@ -1751,9 +1919,11 @@ void Stage::DrawPostOutline(void)
 	SetUsePixelShader(-1);
 
 	// 状態を戻す
+	SetUseLighting(TRUE);
 	SetUseBackCulling(TRUE);
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
 //void Stage::DrawPostOutline(void)

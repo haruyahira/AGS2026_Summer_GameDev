@@ -54,6 +54,13 @@ void SceneManager::Init(void)
 	// デルタタイム
 	preTime_ = std::chrono::system_clock::now();
 
+	// メインスクリーンの作成
+	mainScrenn_ = MakeScreen(
+
+		Application::SCREEN_SIZE_X,
+		Application::adjustedSizeY_,
+		TRUE);
+
 	// 3D用の設定
 	Init3D();
 	// 初期シーンの設定
@@ -152,34 +159,99 @@ void SceneManager::Update(void)
 
 }
 
+//void SceneManager::Draw(void)
+//{
+//	
+//	// 描画先グラフィック領域の指定
+//	// (３Ｄ描画で使用するカメラの設定などがリセットされる)
+//	SetDrawScreen(mainScrenn_);
+//
+//	// 画面を初期化
+//	ClearDrawScreen();
+//
+//	// カメラ設定
+//	camera_->SetBeforeDraw();
+//
+//	// Effekseerにより再生中のエフェクトを更新する。
+//	UpdateEffekseer3D();
+//
+//	// 描画
+//	scene_->Draw();
+//
+//	// 主にポストエフェクト用
+//	camera_->Draw();
+//
+//	// Effekseerにより再生中のエフェクトを描画する。
+//	DrawEffekseer3D();
+//	
+//	// 暗転・明転
+//	fader_->Draw();
+//
+//	// 背面スクリーンにメインスクリーンを描画
+//	SetDrawScreen(DX_SCREEN_BACK);
+//	DrawGraph(0, 0, mainScrenn_, true);
+//
+//}
+
 void SceneManager::Draw(void)
 {
-	
-	// 描画先グラフィック領域の指定
-	// (３Ｄ描画で使用するカメラの設定などがリセットされる)
-	SetDrawScreen(DX_SCREEN_BACK);
-
-	// 画面を初期化
+	// =========================
+	// 1. mainScrenn_ にゲーム画面を描く
+	// =========================
+	SetDrawScreen(mainScrenn_);
 	ClearDrawScreen();
 
 	// カメラ設定
 	camera_->SetBeforeDraw();
 
-	// Effekseerにより再生中のエフェクトを更新する。
+	// Effekseer更新
 	UpdateEffekseer3D();
 
-	// 描画
-	scene_->Draw();
+	// シーン描画
+	if (scene_ != nullptr)
+	{
+		scene_->Draw();
+	}
 
-	// 主にポストエフェクト用
+	// カメラのデバッグ描画など
 	camera_->Draw();
 
-	// Effekseerにより再生中のエフェクトを描画する。
+	// Effekseer描画
+	Effekseer_Sync3DSetting();
 	DrawEffekseer3D();
-	
-	// 暗転・明転
-	fader_->Draw();
 
+	// =========================
+	// 2. DX_SCREEN_BACK に戻す
+	// =========================
+	SetDrawScreen(DX_SCREEN_BACK);
+	ClearDrawScreen();
+
+	// =========================
+	// 3. ポストエフェクトをかける
+	// =========================
+	//if (sceneId_ == SCENE_ID::GAME)
+	//{
+	//	GameScene* gameScene = dynamic_cast<GameScene*>(scene_);
+
+	//	if (gameScene != nullptr)
+	//	{
+	//		gameScene->DrawPostEffect(mainScrenn_);
+	//	}
+	//	else
+	//	{
+	//		DrawGraph(0, 0, mainScrenn_, FALSE);
+	//	}
+	//}
+	//else
+	//{
+		// タイトルやリザルトなどは通常描画
+		DrawGraph(0, 0, mainScrenn_, FALSE);
+	//}
+
+	// =========================
+	// 4. フェードは最後
+	// =========================
+	fader_->Draw();
 }
 
 void SceneManager::Destroy(void)
@@ -192,6 +264,8 @@ void SceneManager::Destroy(void)
 
 	delete fader_;
 	delete camera_;
+
+	DeleteGraph(mainScrenn_);
 	delete instance_;
 
 }
@@ -419,4 +493,9 @@ bool SceneManager::IsGameClear(void) const
 	}
 
 	return true;
+}
+
+int SceneManager::GetMainScreen(void)
+{
+	return mainScrenn_;
 }

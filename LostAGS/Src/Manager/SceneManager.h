@@ -71,7 +71,8 @@ public:
 
 	bool IsGameClear(void) const;
 
-
+	// メインスクリーン
+	int GetMainScreen(void);
 
 private:
 
@@ -115,6 +116,9 @@ private:
 
 	// フェード
 	void Fade(void);
+
+	// メインスクリーン
+	int mainScrenn_;
 
 
 	static constexpr int START_REMAIN_DAY = 3;

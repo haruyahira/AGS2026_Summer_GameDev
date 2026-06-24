@@ -45,7 +45,7 @@ Player::Player(void)
 
 	capsule_ = nullptr;
 
-	maxHp_ = 10;
+	maxHp_ = 100;
 	isDead_ = false;
 	isDash_ = false;
 
@@ -202,14 +202,8 @@ void Player::Draw(void)
 #endif
 
 
-	DrawFormatString(
-		20,
-		45,
-		GetColor(255, 100, 100),
-		"HP: %d / %d",
-		GetHP(),
-		GetMaxHP()
-	);
+
+	hpUI_.DrawPlayerHP(this, 0, 40, "Player");
 
 }
 
