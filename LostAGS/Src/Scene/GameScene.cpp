@@ -72,6 +72,8 @@ void GameScene::Init(void)
 		Application::adjustedSizeY_,
 		Application::PATH_SHADER);
 
+	postEffect_->Select({ PostEffect::TYPE::HORROR });
+
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
 	
 	// ‰ŠúŽ‹“_Ý’è
@@ -117,7 +119,7 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 	}
 
-	postEffect_->Select({ PostEffect::TYPE::GAMING });
+	
 
 	HpManager::GetInstance().Update();
 

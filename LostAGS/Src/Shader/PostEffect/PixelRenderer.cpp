@@ -1,4 +1,5 @@
 #include "PixelRenderer.h"
+#include <assert.h>
 
 PixelRenderer::PixelRenderer(
     PixelMaterial& material,
@@ -10,6 +11,8 @@ PixelRenderer::PixelRenderer(
     // スクリーン生成
     screenHandle_ =
         MakeScreen(width, height, true);
+
+    assert(screenHandle_ != -1);
 }
 
 
@@ -79,46 +82,103 @@ void PixelRenderer::MakeSquareVertex(
 
 void PixelRenderer::Draw(int textureHandle)
 {
+    int oldScreen = GetDrawScreen();
 
-    // 描画先変更
     SetDrawScreen(screenHandle_);
-
-    // クリア
     ClearDrawScreen();
 
-    // オリジナルシェーダON
-    MV1SetUseOrigShader(true);
-
-    // シェーダ設定
-    SetUsePixelShader(material_.shader_);
-
-    // テクスチャ設定
-    SetUseTextureToShader(0, textureHandle);
-
-
-    // 定数バッファをピクセルシェーダー用定数バッファレジスタにセット
-    SetShaderConstantBuffer(
-        material_.constBuf_, DX_SHADERTYPE_PIXEL, CONSTANT_BUF_SLOT_BEGIN_PS);
-
-    // 描画
-    DrawPolygonIndexed2DToShader(
-        vertexs_,
-        NUM_VERTEX,
-        indexes_,
-        NUM_POLYGON);
-
-
-    // 後始末
-    // テクスチャ解除
-    SetUseTextureToShader(0, -1);
-
-    // ピクセルシェーダ解除
+    SetUseVertexShader(-1);
     SetUsePixelShader(-1);
 
-    // オリジナルシェーダ設定(OFF)
-    MV1SetUseOrigShader(false);
+    SetUseTextureToShader(0, -1);
+    SetUseTextureToShader(1, -1);
+    SetUseTextureToShader(2, -1);
 
-    // メインに戻す
-    SetDrawScreen(textureHandle);
-    DrawGraph(0, 0, screenHandle_, false);
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+    SetUseBackCulling(FALSE);
+    SetUseLighting(FALSE);
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    MV1SetUseOrigShader(FALSE);
+
+    SetUseTextureToShader(0, textureHandle);
+    SetUsePixelShader(material_.shader_);
+
+    SetShaderConstantBuffer(
+        material_.constBuf_,
+        DX_SHADERTYPE_PIXEL,
+        CONSTANT_BUF_SLOT_BEGIN_PS
+    );
+
+    float x0 = static_cast<float>(pos_.x);
+    float y0 = static_cast<float>(pos_.y);
+    float x1 = static_cast<float>(pos_.x + size_.x);
+    float y1 = static_cast<float>(pos_.y + size_.y);
+
+    VERTEX2DSHADER v[6];
+
+    for (int i = 0; i < 6; i++)
+    {
+        v[i].rhw = 1.0f;
+        v[i].dif = GetColorU8(255, 255, 255, 255);
+        v[i].spc = GetColorU8(0, 0, 0, 0);
+    }
+
+    v[0].pos = VGet(x0, y0, 0.0f);
+    v[0].u = 0.0f;
+    v[0].v = 0.0f;
+    v[0].su = 0.0f;
+    v[0].sv = 0.0f;
+
+    v[1].pos = VGet(x0, y1, 0.0f);
+    v[1].u = 0.0f;
+    v[1].v = 1.0f;
+    v[1].su = 0.0f;
+    v[1].sv = 1.0f;
+
+    v[2].pos = VGet(x1, y1, 0.0f);
+    v[2].u = 1.0f;
+    v[2].v = 1.0f;
+    v[2].su = 1.0f;
+    v[2].sv = 1.0f;
+
+    v[3].pos = VGet(x0, y0, 0.0f);
+    v[3].u = 0.0f;
+    v[3].v = 0.0f;
+    v[3].su = 0.0f;
+    v[3].sv = 0.0f;
+
+    v[4].pos = VGet(x1, y1, 0.0f);
+    v[4].u = 1.0f;
+    v[4].v = 1.0f;
+    v[4].su = 1.0f;
+    v[4].sv = 1.0f;
+
+    v[5].pos = VGet(x1, y0, 0.0f);
+    v[5].u = 1.0f;
+    v[5].v = 0.0f;
+    v[5].su = 1.0f;
+    v[5].sv = 0.0f;
+
+    DrawPrimitive2DToShader(
+        v,
+        6,
+        DX_PRIMTYPE_TRIANGLELIST
+    );
+
+    SetUseTextureToShader(0, -1);
+    SetUsePixelShader(-1);
+    SetUseVertexShader(-1);
+
+    SetDrawScreen(oldScreen);
+
+    DrawGraph(0, 0, screenHandle_, FALSE);
+
+    SetUseLighting(TRUE);
+    SetUseBackCulling(TRUE);
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }

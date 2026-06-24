@@ -118,4 +118,5 @@ void PostEffect::Draw(int screenHandle)
     {
         renderers_[effect]->Draw(screenHandle);
     }
+
 }

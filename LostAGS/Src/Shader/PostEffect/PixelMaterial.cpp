@@ -1,4 +1,5 @@
 #include "PixelMaterial.h"
+#include <assert.h>
 
 PixelMaterial::PixelMaterial()
 {
@@ -23,6 +24,8 @@ void PixelMaterial::Load(
 {
     // ピクセルシェーダのロード
     shader_ = LoadPixelShader(shaderFileName.c_str());
+
+	assert(shader_ != -1);
 
     // FLOAT4数
     constBufFloat4Size_ = constBufFloat4Size;

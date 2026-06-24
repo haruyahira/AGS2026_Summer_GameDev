@@ -229,24 +229,24 @@ void SceneManager::Draw(void)
 	// =========================
 	// 3. ポストエフェクトをかける
 	// =========================
-	//if (sceneId_ == SCENE_ID::GAME)
-	//{
-	//	GameScene* gameScene = dynamic_cast<GameScene*>(scene_);
+	if (sceneId_ == SCENE_ID::GAME)
+	{
+		GameScene* gameScene = dynamic_cast<GameScene*>(scene_);
 
-	//	if (gameScene != nullptr)
-	//	{
-	//		gameScene->DrawPostEffect(mainScrenn_);
-	//	}
-	//	else
-	//	{
-	//		DrawGraph(0, 0, mainScrenn_, FALSE);
-	//	}
-	//}
-	//else
-	//{
+		if (gameScene != nullptr)
+		{
+			gameScene->DrawPostEffect(mainScrenn_);
+		}
+		else
+		{
+			DrawGraph(0, 0, mainScrenn_, FALSE);
+		}
+	}
+	else
+	{
 		// タイトルやリザルトなどは通常描画
 		DrawGraph(0, 0, mainScrenn_, FALSE);
-	//}
+	}
 
 	// =========================
 	// 4. フェードは最後
