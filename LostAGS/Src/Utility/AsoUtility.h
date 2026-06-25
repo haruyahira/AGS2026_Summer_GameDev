@@ -120,5 +120,7 @@ public:
 
 	// ŒvZŒn
 	static float GetRandomFloat(float min, float max);
+	static float EaseOutQuad(float t);
+	static float EaseOutJump(float t);
 };
 

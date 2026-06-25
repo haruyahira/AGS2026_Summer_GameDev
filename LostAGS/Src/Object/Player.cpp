@@ -795,7 +795,17 @@ void Player::ProcessJump(void)
 
 		if (stepJump_ < TIME_JUMP_IN)
 		{
-			jumpPow_ = VScale(AsoUtility::DIR_U, POW_JUMP);
+			// 0.0f ～ 1.0f に正規化
+			float t = stepJump_ / TIME_JUMP_IN;
+
+			// 念のため範囲制限
+			if (t < 0.0f) t = 0.0f;
+			if (t > 1.0f) t = 1.0f;
+
+			// 最初は強く、後半は弱くなる
+			float ease = AsoUtility::EaseOutJump(t);
+
+			jumpPow_ = VScale(AsoUtility::DIR_U, POW_JUMP * ease);
 		}
 	}
 
@@ -941,8 +951,11 @@ void Player::Collision(void)
 
 void Player::CollisionGravity(void)
 {
+	// FPS補正
+	float dtScale = scnMng_.GetDeltaTime() * FPS_BASE;
+
 	// ジャンプ量を加算
-	movedPos_ = VAdd(movedPos_, jumpPow_);
+	movedPos_ = VAdd(movedPos_, VScale(jumpPow_, dtScale));
 
 	// 重力方向
 	VECTOR dirGravity = AsoUtility::DIR_D;
@@ -954,28 +967,22 @@ void Player::CollisionGravity(void)
 	float gravityPow = Planet::DEFAULT_GRAVITY_POW;
 
 	float checkPow = 10.0f;
+
 	gravHitPosUp_ = VAdd(movedPos_, VScale(dirUpGravity, gravityPow));
 	gravHitPosUp_ = VAdd(gravHitPosUp_, VScale(dirUpGravity, checkPow * 2.0f));
 	gravHitPosDown_ = VAdd(movedPos_, VScale(dirGravity, checkPow));
+
 	for (const auto c : colliders_)
 	{
-
-		// 地面との衝突
 		auto hit = MV1CollCheck_Line(
 			c->modelId_, -1, gravHitPosUp_, gravHitPosDown_);
 
-		// 最初は上の行のように実装して、木の上に登ってしまうことを確認する
-		//if (hit.HitFlag > 0)
 		if (hit.HitFlag > 0 && VDot(dirGravity, jumpPow_) > 0.9f)
 		{
-
-			// 衝突地点から、少し上に移動
 			movedPos_ = VAdd(hit.HitPosition, VScale(dirUpGravity, 2.0f));
 
-			// ジャンプリセット
 			jumpPow_ = AsoUtility::VECTOR_ZERO;
 			stepJump_ = 0.0f;
-
 
 			if (isJump_)
 			{
@@ -991,13 +998,9 @@ void Player::CollisionGravity(void)
 					true);
 			}
 
-
 			isJump_ = false;
-
 		}
-
 	}
-
 }
 
 void Player::CollisionCapsule(void)
@@ -1185,28 +1188,28 @@ void Player::CollisionBox()
 
 void Player::CalcGravityPow(void)
 {
-
 	// 重力方向
 	VECTOR dirGravity = AsoUtility::DIR_D;
 
 	// 重力の強さ
 	float gravityPow = Planet::DEFAULT_GRAVITY_POW;
 
+	// FPS補正
+	float dtScale = scnMng_.GetDeltaTime() * FPS_BASE;
+
 	// 重力
-	VECTOR gravity = VScale(dirGravity, gravityPow);
+	VECTOR gravity = VScale(dirGravity, gravityPow * dtScale);
 	jumpPow_ = VAdd(jumpPow_, gravity);
 
-	// 最初は実装しない。地面と突き抜けることを確認する。
 	// 内積
 	float dot = VDot(dirGravity, jumpPow_);
+
 	if (dot >= 0.0f)
 	{
-		// 重力方向と反対方向(マイナス)でなければ、ジャンプ力を無くす
-		jumpPow_ = gravity;
+		// 落下中なら最低限の落下速度にする
+		jumpPow_ = VScale(dirGravity, gravityPow);
 	}
-
 }
-
 bool Player::IsEndLanding(void)
 {
 

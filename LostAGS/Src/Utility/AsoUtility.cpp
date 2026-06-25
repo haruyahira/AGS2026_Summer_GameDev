@@ -561,4 +561,14 @@ float AsoUtility::GetRandomFloat(float min, float max)
     return min + (GetRand(range) / 10.0f);
 }
 
+float AsoUtility::EaseOutQuad(float t)
+{
+    return 1.0f - (1.0f - t) * (1.0f - t);
+}
 
+float AsoUtility::EaseOutJump(float t)
+{
+    // t : 0.0f Å` 1.0f
+    // ñﬂÇËíl : 1.0f Å` 0.0f Ç…ÇµÇΩÇ¢ÇÃÇ≈îΩì]Ç∑ÇÈ
+    return 1.0f - EaseOutQuad(t);
+}

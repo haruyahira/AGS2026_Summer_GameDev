@@ -17,6 +17,8 @@ public:
 	// スピード
 	static constexpr float SPEED_MOVE = 300.0f;
 	static constexpr float SPEED_RUN = 500.0f;
+	
+	static constexpr float FPS_BASE = 60.0f;
 
 	// 回転完了までの時間
 	static constexpr float TIME_ROT = 1.0f;
@@ -25,7 +27,7 @@ public:
 	static constexpr float POW_JUMP = 35.0f;
 
 	// ジャンプ受付時間
-	static constexpr float TIME_JUMP_IN = 0.3f;
+	static constexpr float TIME_JUMP_IN = 0.45f;
 
 	// 当たり判定部位
 	enum class BONE_PART

@@ -67,7 +67,7 @@ void SceneManager::Init(void)
 #ifdef _DEBUG
 	DoChangeScene(SCENE_ID::GAME);
 #else
-	DoChangeScene(SCENE_ID::GAME);
+	DoChangeScene(SCENE_ID::TITLE);
 #endif
 
 }
