@@ -433,3 +433,23 @@ void OBBCollider::DrawOutline(unsigned int color, bool isVerticalOnly) const
     DrawLine3D(p[6], p[7], color);
     DrawLine3D(p[7], p[3],color);
 }
+
+float OBBCollider::GetTopY(void) const
+{
+    float extentY =
+        fabsf(axisX_.y) * halfSize_.x +
+        fabsf(axisY_.y) * halfSize_.y +
+        fabsf(axisZ_.y) * halfSize_.z;
+
+    return center_.y + extentY;
+}
+
+float OBBCollider::GetBottomY(void) const
+{
+    float extentY =
+        fabsf(axisX_.y) * halfSize_.x +
+        fabsf(axisY_.y) * halfSize_.y +
+        fabsf(axisZ_.y) * halfSize_.z;
+
+    return center_.y - extentY;
+}

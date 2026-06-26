@@ -2,6 +2,7 @@
 #include <vector>
 #include "../Common/Transform.h"
 #include "../Collider/BoxCollider.h"
+#include "../Collider/OBBCollider.h"
 #include "../../Manager/ResourceManager.h"
 #include "../Name.h"
 
@@ -45,10 +46,15 @@ public:
     {
         return true;
     }
-private:
-   
+
+    const std::vector<OBBCollider>& GetOBBColliders() const
+    {
+        return obbColliders_;
+    }
+
 protected:
     NAME      name_;  // 家具の名前（ID）
     Transform trans_; // 位置・回転・スケール・モデル・コライダを保持
     std::vector<BoxCollider> colliders_;
+    std::vector<OBBCollider> obbColliders_;
 };

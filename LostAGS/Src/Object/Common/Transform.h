@@ -81,4 +81,10 @@ public:
 
 	VECTOR GetScale() const { return scl; }
 
+	Quaternion GetRot(void) const
+	{
+		return quaRot;
+	}
+
+
 };

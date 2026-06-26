@@ -55,7 +55,8 @@ public:
 
     bool IsHitSegment(VECTOR start, VECTOR end) const;
     void DrawOutline(unsigned int color, bool isVerticalOnly = false) const;
-
+    float GetTopY(void) const;
+    float GetBottomY(void) const;
 private:
 
     // ’†SÀ•W

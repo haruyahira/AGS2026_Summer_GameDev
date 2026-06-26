@@ -100,7 +100,7 @@ void Stage::Init(void)
 	InitPostOutline();
 
 	CreateBeamGraph();
-
+	// ステージ
 	MakeMainStage();
 
 	stoneDevice_ = new StoneDevice(player_);
@@ -334,6 +334,16 @@ void Stage::MakeMainStage(void)
 			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
 		}
 	}
+
+
+	CreateFurniture({
+		ResourceManager::SRC::F_TABLE,
+		{ -1829.0f, -100.0f, 283.0f },
+		{ 0.5f, 0.5f, 0.5f },
+		{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		});
+
+
 
 	// 壁一覧
 	std::vector<FurnitureData> wallDatas =
@@ -582,7 +592,6 @@ void Stage::MakeMainStage(void)
 
 
 	// 天井ライト
-
 	std::vector<FurnitureData> lightDatas =
 	{
 
@@ -1721,106 +1730,6 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetUseLighting(TRUE);
 }
 
-//void Stage::DrawPostOutline(void)
-//{
-//	if (outlineRTColor_ < 0)
-//	{
-//		return;
-//	}
-//
-//	SetDrawScreen(DX_SCREEN_BACK);
-//	ClearDrawScreen();
-//
-//	if (outlinePostPS_ < 0 ||
-//		outlineRTNormal_ < 0 ||
-//		outlineRTDepth_ < 0)
-//	{
-//		DrawGraph(0, 0, outlineRTColor_, FALSE);
-//
-//		return;
-//	}
-//
-//	int w, h;
-//	GetDrawScreenSize(&w, &h);
-//
-//	// 2Dポリゴン描画用の状態にする
-//	SetUseZBuffer3D(FALSE);
-//	SetWriteZBuffer3D(FALSE);
-//	SetUseBackCulling(FALSE);   // ★重要
-//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-//
-//	SetUseVertexShader(-1);
-//
-//	SetUseTextureToShader(0, outlineRTColor_);
-//	SetUseTextureToShader(1, outlineRTNormal_);
-//	SetUseTextureToShader(2, outlineRTDepth_);
-//
-//	SetUsePixelShader(outlinePostPS_);
-//
-//	VERTEX2DSHADER v[6];
-//
-//	for (int i = 0; i < 6; i++)
-//	{
-//		v[i].rhw = 1.0f;
-//		v[i].dif = GetColorU8(255, 255, 255, 255);
-//		v[i].spc = GetColorU8(0, 0, 0, 0);
-//	}
-//
-//	// 1枚目の三角形
-//	v[0].pos = VGet(0.0f, 0.0f, 0.0f);
-//	v[0].u = 0.0f;
-//	v[0].v = 0.0f;
-//	v[0].su = 0.0f;
-//	v[0].sv = 0.0f;
-//
-//	v[1].pos = VGet(0.0f, (float)h, 0.0f);
-//	v[1].u = 0.0f;
-//	v[1].v = 1.0f;
-//	v[1].su = 0.0f;
-//	v[1].sv = 1.0f;
-//
-//	v[2].pos = VGet((float)w, (float)h, 0.0f);
-//	v[2].u = 1.0f;
-//	v[2].v = 1.0f;
-//	v[2].su = 1.0f;
-//	v[2].sv = 1.0f;
-//
-//	// 2枚目の三角形
-//	v[3].pos = VGet(0.0f, 0.0f, 0.0f);
-//	v[3].u = 0.0f;
-//	v[3].v = 0.0f;
-//	v[3].su = 0.0f;
-//	v[3].sv = 0.0f;
-//
-//	v[4].pos = VGet((float)w, (float)h, 0.0f);
-//	v[4].u = 1.0f;
-//	v[4].v = 1.0f;
-//	v[4].su = 1.0f;
-//	v[4].sv = 1.0f;
-//
-//	v[5].pos = VGet((float)w, 0.0f, 0.0f);
-//	v[5].u = 1.0f;
-//	v[5].v = 0.0f;
-//	v[5].su = 1.0f;
-//	v[5].sv = 0.0f;
-//
-//	DrawPrimitive2DToShader(
-//		v,
-//		6,
-//		DX_PRIMTYPE_TRIANGLELIST
-//	);
-//
-//	SetUseTextureToShader(0, -1);
-//	SetUseTextureToShader(1, -1);
-//	SetUseTextureToShader(2, -1);
-//
-//	SetUsePixelShader(-1);
-//
-//	// 状態を戻す
-//	SetUseBackCulling(TRUE);
-//	SetUseZBuffer3D(TRUE);
-//	SetWriteZBuffer3D(TRUE);
-//}
 void Stage::DrawPostOutline(int outputScreen)
 {
 	if (outlineRTColor_ < 0)

@@ -840,7 +840,7 @@ void Player::ProcessAttack(void)
 		snd.SetSEVolume(255);
 		snd.PlaySE(SoundManager::SE::ATTACK);
 
-		attackTimer_ = 0.7f;
+		attackTimer_ = 0.6f;
 
 
 		if (isRightAttack_)
@@ -1063,22 +1063,43 @@ void Player::CollisionCapsule(void)
 
 void Player::CollisionBox()
 {
-	if (furnitures_.empty()) return;
+	if (furnitures_.empty())
+	{
+		return;
+	}
 
 	isStand_ = true;
 
-	// 身長を実際のカプセルに合わせて少し高くする（天板をすり抜けないように）
-	// float pHeight = IsProne() ? 30.0f : 90.0f;
-	VECTOR currentHeadPos = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
-	float pHeight = currentHeadPos.y - transform_.pos.y;
+	// 身長を実際のカプセルに合わせる
+	VECTOR currentHeadPos =
+		MV1GetFramePosition(
+			transform_.modelId,
+			headBoneFrame_);
 
-	for (auto f : furnitures_) {
+	float pHeight =
+		currentHeadPos.y - transform_.pos.y;
+
+	// -----------------------------------------------------
+	// 前フレームの足元・頭の高さ
+	// 横から近づいただけで机に乗らないように使う
+	// -----------------------------------------------------
+	float prevBottomY = transform_.pos.y;
+	float prevTopY = transform_.pos.y + pHeight;
+
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
 
 		float pBottomY = movedPos_.y;
 		float pTopY = movedPos_.y + pHeight;
 		float pStandTopY = movedPos_.y + standHeight_;
 
+		// -----------------------------------------------------
 		// Wallなど、独自の当たり判定を持つ家具用
+		// -----------------------------------------------------
 		if (f->ResolveCollision(
 			movedPos_,
 			pRadius_,
@@ -1088,50 +1109,188 @@ void Player::CollisionBox()
 			continue;
 		}
 
-		for (const auto& box : f->GetColliders()) {
+		// -----------------------------------------------------
+// OBB Collider 判定
+// Tableなど、回転・スケールする家具用
+// -----------------------------------------------------
+		bool isOBBHit = false;
 
-			float pBottomY = movedPos_.y;          // 足元
-			float pTopY = movedPos_.y + pHeight;// 頭
-			float pStandTopY = movedPos_.y + standHeight_;
+		for (const auto& obb : f->GetOBBColliders())
+		{
+			pBottomY = movedPos_.y;
+			pTopY = movedPos_.y + pHeight;
+			pStandTopY = movedPos_.y + standHeight_;
+
+			float obbTopY = obb.GetTopY();
+			float obbBottomY = obb.GetBottomY();
+
+			const float TOP_MARGIN = 10.0f;
+			const float BOTTOM_MARGIN = 10.0f;
+			const float UNDER_MARGIN = 3.0f;
+
+			// -------------------------------------------------
+			// 0. 机の下に潜っている判定
+			// うつ伏せ中で、実際の頭の高さが天板下面より低いなら、
+			// 天板とは横衝突させない
+			// -------------------------------------------------
+			if (IsProne() && pTopY <= obbBottomY - UNDER_MARGIN)
+			{
+				// 立ったら頭がぶつかる高さなら、立ち上がり不可
+				if (pStandTopY > obbBottomY)
+				{
+					isStand_ = false;
+				}
+
+				// このOBBは通過扱い
+				// ※脚OBBは下面が低いので、基本ここには入りにくく、脚には当たる
+				continue;
+			}
+
+			// -------------------------------------------------
+			// 1. 机の上に乗る判定
+			// 横から近づいただけでは乗らないように、
+			// 前フレームで上にいて、今回落ちてきた時だけ乗る
+			// -------------------------------------------------
+			bool isFallOnTop =
+				prevBottomY >= obbTopY - TOP_MARGIN &&
+				pBottomY <= obbTopY + TOP_MARGIN &&
+				jumpPow_.y <= 0.0f;
+
+			if (isFallOnTop)
+			{
+				if (obb.ResolveCollisionTop(
+					movedPos_,
+					pRadius_,
+					pBottomY,
+					pTopY))
+				{
+					jumpPow_ = AsoUtility::VECTOR_ZERO;
+					stepJump_ = 0.0f;
+
+					if (isJump_)
+					{
+						animationController_->Play(
+							static_cast<int>(ANIM_TYPE::JUMP),
+							false,
+							29.0f,
+							45.0f,
+							false,
+							true);
+					}
+
+					isJump_ = false;
+
+					isOBBHit = true;
+					break;
+				}
+			}
+
+			// -------------------------------------------------
+			// 2. 机の裏に頭をぶつける判定
+			// -------------------------------------------------
+			bool isHitBottom =
+				prevTopY <= obbBottomY + BOTTOM_MARGIN &&
+				pTopY >= obbBottomY - BOTTOM_MARGIN &&
+				jumpPow_.y > 0.0f;
+
+			if (isHitBottom)
+			{
+				if (obb.ResolveCollisionBottom(
+					movedPos_,
+					pRadius_,
+					pBottomY,
+					pTopY))
+				{
+					jumpPow_.y = 0.0f;
+					isStand_ = false;
+
+					isOBBHit = true;
+					break;
+				}
+			}
+
+			// -------------------------------------------------
+			// 3. 横方向の押し出し
+			// ここが重要：
+			// pStandTopY ではなく、実際の頭の高さ pTopY を使う
+			// -------------------------------------------------
+			if (obb.ResolveCollisionXZ(
+				movedPos_,
+				pRadius_,
+				pBottomY,
+				pTopY))
+			{
+				isOBBHit = true;
+				break;
+			}
+		}
+
+		// OBBで解決した家具は、BoxCollider判定へ進まない
+		if (isOBBHit)
+		{
+			continue;
+		}
+
+		// -----------------------------------------------------
+		// 既存 BoxCollider 判定
+		// Wall / Showcase / Ceiling など用
+		// -----------------------------------------------------
+		for (const auto& box : f->GetColliders())
+		{
+			pBottomY = movedPos_.y;
+			pTopY = movedPos_.y + pHeight;
+			pStandTopY = movedPos_.y + standHeight_;
+
 			float boxBottom = box.center.y - box.halfSize.y;
 			float boxTop = box.center.y + box.halfSize.y;
 
+			// 高さが重なっていないならスキップ
+			if (pBottomY > boxTop || pStandTopY < boxBottom)
+			{
+				continue;
+			}
 
-			// 1. 高さのチェック（Y軸が重なっているか）
-			if (pBottomY > boxTop || pStandTopY < boxBottom) continue;
-
-			// 2. XZ平面での判定
+			// XZ平面での最近点
 			float minX = box.center.x - box.halfSize.x;
 			float maxX = box.center.x + box.halfSize.x;
 			float minZ = box.center.z - box.halfSize.z;
 			float maxZ = box.center.z + box.halfSize.z;
 
-			float closestX = fmaxf(minX, fminf(movedPos_.x, maxX));
-			float closestZ = fmaxf(minZ, fminf(movedPos_.z, maxZ));
+			float closestX =
+				fmaxf(
+					minX,
+					fminf(movedPos_.x, maxX));
+
+			float closestZ =
+				fmaxf(
+					minZ,
+					fminf(movedPos_.z, maxZ));
 
 			float diffX = movedPos_.x - closestX;
 			float diffZ = movedPos_.z - closestZ;
-			float distSq = (diffX * diffX) + (diffZ * diffZ);
+
+			float distSq =
+				(diffX * diffX) +
+				(diffZ * diffZ);
 
 			// 半径以内なら衝突
-			if (distSq < (pRadius_ * pRadius_)) {
+			if (distSq < pRadius_ * pRadius_)
+			{
+				// 立ち上がり判定
+				if (pTopY <= boxBottom && pStandTopY > boxBottom)
+				{
+					isStand_ = false;
 
-				if (pTopY <= boxBottom && pStandTopY > boxBottom) {
-					isStand_ = false; // 立ち上がりフラグを折る
-
-					// うつ伏せ（PRONE）の時は天板の下をスムーズに通り抜けさせたいので、
-					// これ以上横方向の押し出しなどの物理計算をさせずに、次の家具の判定へスキップする
-					if (IsProne()) continue;
+					if (IsProne())
+					{
+						continue;
+					}
 				}
 
-				// XYZのどの方向に押し出すべきか（めり込み量が一番少ない方向）を計算する
-
-				// 上下方向のめり込み量
-				float pushUp = boxTop - pBottomY;      // 上に押し上げる量
-				float pushDown = pTopY - boxBottom;      // 下に押し下げる量
+				float pushUp = boxTop - pBottomY;
+				float pushDown = pTopY - boxBottom;
 				float minYPush = fminf(pushUp, pushDown);
 
-				// 横方向のめり込み量（内部にいる場合を考慮）
 				float pushLeft = (movedPos_.x - minX) + pRadius_;
 				float pushRight = (maxX - movedPos_.x) + pRadius_;
 				float pushFront = (movedPos_.z - minZ) + pRadius_;
@@ -1141,50 +1300,82 @@ void Player::CollisionBox()
 				float minZPush = fminf(pushFront, pushBack);
 				float minXZPush = fminf(minXPush, minZPush);
 
-				// もし「縦（Y）のめり込み」の方が「横（XZ）のめり込み」より浅ければ、机の上に乗る（または頭をぶつける）
-				if (minYPush < minXZPush) {
-					if (pushUp < pushDown) {
-						// 机の上に乗る
+				if (minYPush < minXZPush)
+				{
+					if (pushUp < pushDown)
+					{
+						// 上に乗る
 						movedPos_.y += pushUp;
-						jumpPow_ = AsoUtility::VECTOR_ZERO; // ジャンプ力をリセット
 
-						// ジャンプ入力時間のリセットと着地モーション ---
+						jumpPow_ = AsoUtility::VECTOR_ZERO;
 						stepJump_ = 0.0f;
+
 						if (isJump_)
 						{
 							animationController_->Play(
-								(int)ANIM_TYPE::JUMP, false, 29.0f, 45.0f, false, true);
+								static_cast<int>(ANIM_TYPE::JUMP),
+								false,
+								29.0f,
+								45.0f,
+								false,
+								true);
 						}
-		
+
 						isJump_ = false;
 					}
-					else {
-						// 机の裏に頭をぶつける
+					else
+					{
+						// 下から頭をぶつける
 						movedPos_.y -= pushDown;
-						if (jumpPow_.y > 0.0f) jumpPow_.y = 0.0f; // 上昇を止める
+
+						if (jumpPow_.y > 0.0f)
+						{
+							jumpPow_.y = 0.0f;
+						}
+
 						isStand_ = false;
-					
 					}
 				}
-				else {
-					// 従来通りの横方向への押し出し
+				else
+				{
+					// 横方向の押し出し
 					float dist = sqrtf(distSq);
-					if (dist > 0.0001f) {
-						movedPos_.x = closestX + (diffX / dist) * pRadius_;
-						movedPos_.z = closestZ + (diffZ / dist) * pRadius_;
+
+					if (dist > 0.0001f)
+					{
+						movedPos_.x =
+							closestX +
+							(diffX / dist) * pRadius_;
+
+						movedPos_.z =
+							closestZ +
+							(diffZ / dist) * pRadius_;
 					}
-					else {
-						// 完全に中心が一致してしまった場合の押し出し
-						if (minXPush == pushLeft)       movedPos_.x -= pushLeft;
-						else if (minXPush == pushRight) movedPos_.x += pushRight;
-						else if (minZPush == pushFront) movedPos_.z -= pushFront;
-						else                            movedPos_.z += pushBack;
+					else
+					{
+						if (minXPush == pushLeft)
+						{
+							movedPos_.x -= pushLeft;
+						}
+						else if (minXPush == pushRight)
+						{
+							movedPos_.x += pushRight;
+						}
+						else if (minZPush == pushFront)
+						{
+							movedPos_.z -= pushFront;
+						}
+						else
+						{
+							movedPos_.z += pushBack;
+						}
 					}
 				}
 			}
 		}
 	}
 }
+
 
 void Player::CalcGravityPow(void)
 {
