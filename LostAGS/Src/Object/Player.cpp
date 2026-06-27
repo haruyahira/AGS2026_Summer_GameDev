@@ -36,7 +36,7 @@ Player::Player(void)
 	jumpPow_ = AsoUtility::VECTOR_ZERO;
 	isJump_ = false;
 	stepJump_ = 0.0f;
-	standHeight_ = 90.0f;
+	standHeight_ = 150.0f;
 
 	gravHitPosDown_ = AsoUtility::VECTOR_ZERO;
 	gravHitPosUp_ = AsoUtility::VECTOR_ZERO;
@@ -53,6 +53,11 @@ Player::Player(void)
 	footstepRange_ = 0.0f;
 	footstepTimer_ = 0.0f;
 	footstepInterval_ = 20.0f;
+
+
+	// 追加
+	isStand_ = true;
+
 }
 
 Player::~Player(void)
@@ -199,6 +204,34 @@ void Player::Draw(void)
 			GetColor(255, 255, 0),
 			FALSE);
 	}
+
+#ifdef _DEBUG
+	DrawFormatString(
+		20,
+		120,
+		GetColor(255, 100, 100),
+		"IsProne: %s  CanStand: %s",
+		IsProne() ? "TRUE" : "FALSE",
+		CheckCanStand() ? "TRUE" : "FALSE"
+	);
+
+	DrawFormatString(
+		20,
+		140,
+		GetColor(100, 255, 100),
+		"standTopY: %.2f  standHeight: %.2f",
+		transform_.pos.y + standHeight_,
+		standHeight_
+	);
+
+	DrawFormatString(
+		20,
+		200,
+		GetColor(100, 255, 255),
+		"HiddenUnderFurniture: %s",
+		IsHiddenUnderFurniture() ? "TRUE" : "FALSE"
+	);
+#endif
 #endif
 
 
@@ -426,15 +459,13 @@ void Player::UpdateCommon(void)
 {
 	auto& ins = InputManager::GetInstance();
 
-	// 通常・うつ伏せ切り替え (Cキー)
-	// 通常・うつ伏せ切り替え (Cキー)
-
-	bool isProneTrigger =
-	ins.IsTrgDown(KEY_INPUT_C) ||
-		ins.IsPadBtnTrgDown(
+	
+	// 通常・うつ伏せホールド
+	bool isPronePress =
+		ins.IsPress(KEY_INPUT_C) ||
+		ins.IsPadBtnNew(
 			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::R_STICK_PUSH); // 右スティック押し込み
-
+			InputManager::JOYPAD_BTN::R_STICK_PUSH);
 
 	// ダッシュ切り替え
 	if (ins.IsPadBtnTrgDown(
@@ -446,24 +477,7 @@ void Player::UpdateCommon(void)
 
 
 
-	if (isProneTrigger && !isAttacking_)
-
-	{
-		// ⭕ 起き上がれない時は「何もしない」ように明示的に分ける
-		if (IsProne())
-		{
-			if (isStand_)
-			{
-				ChangeState(STATE::PLAY); // 頭上が安全なときだけ立ち上がる
-			}
-			// 頭上が詰まっている（isStand_ == false）なら、Cキーを押しても無視して寝たままにする
-		}
-		else
-		{
-			ChangeState(STATE::PRONE); // 通常状態から寝るのはいつでも可能
-		}
-	}
-
+	
 	// 移動処理
 	ProcessMove();
 
@@ -485,6 +499,34 @@ void Player::UpdateCommon(void)
 
 	// 衝突判定
 	Collision();
+
+
+	// ---------------------------
+	// ホールド式しゃがみ制御
+	// ---------------------------
+	if (!isAttacking_)
+	{
+		if (isPronePress)
+		{
+			// 押している間は常にしゃがみ
+			if (!IsProne())
+			{
+				ChangeState(STATE::PRONE);
+			}
+		}
+		else
+		{
+			// 離したら立つ（立てる場合だけ）
+			if (IsProne())
+			{
+				if (isStand_ && CheckCanStand())
+				{
+					ChangeState(STATE::PLAY);
+				}
+			}
+
+		}
+	}
 
 	// 回転させる
 	transform_.quaRot = playerRotY_;
@@ -954,52 +996,96 @@ void Player::CollisionGravity(void)
 	// FPS補正
 	float dtScale = scnMng_.GetDeltaTime() * FPS_BASE;
 
-	// ジャンプ量を加算
-	movedPos_ = VAdd(movedPos_, VScale(jumpPow_, dtScale));
-
 	// 重力方向
 	VECTOR dirGravity = AsoUtility::DIR_D;
-
-	// 重力方向の反対
 	VECTOR dirUpGravity = AsoUtility::DIR_U;
 
-	// 重力の強さ
-	float gravityPow = Planet::DEFAULT_GRAVITY_POW;
+	// 重力移動前の位置
+	VECTOR beforeGravityPos = movedPos_;
 
-	float checkPow = 10.0f;
+	// 重力移動量
+	VECTOR gravityMove = VScale(jumpPow_, dtScale);
 
-	gravHitPosUp_ = VAdd(movedPos_, VScale(dirUpGravity, gravityPow));
-	gravHitPosUp_ = VAdd(gravHitPosUp_, VScale(dirUpGravity, checkPow * 2.0f));
-	gravHitPosDown_ = VAdd(movedPos_, VScale(dirGravity, checkPow));
+	// 重力移動後の位置
+	VECTOR afterGravityPos = VAdd(beforeGravityPos, gravityMove);
+
+	// とりあえず移動後位置を入れる
+	movedPos_ = afterGravityPos;
+
+	// 落下中かどうか
+	bool isFalling = VDot(dirGravity, jumpPow_) > 0.0f;
+
+	// 落下中でなければ、床着地判定はしない
+	if (!isFalling)
+	{
+		return;
+	}
+
+	// -----------------------------------------
+	// 地面チェック用の線
+	// 落下前より少し上から、落下後より十分下まで見る
+	// -----------------------------------------
+	const float CHECK_UP = 80.0f;
+	const float CHECK_DOWN = 120.0f;
+
+	VECTOR lineStart = VAdd(beforeGravityPos, VScale(dirUpGravity, CHECK_UP));
+	VECTOR lineEnd = VAdd(afterGravityPos, VScale(dirGravity, CHECK_DOWN));
+
+	bool isHitGround = false;
+	VECTOR nearestHitPos = AsoUtility::VECTOR_ZERO;
+
+	float nearestY = -999999.0f;
 
 	for (const auto c : colliders_)
 	{
-		auto hit = MV1CollCheck_Line(
-			c->modelId_, -1, gravHitPosUp_, gravHitPosDown_);
-
-		if (hit.HitFlag > 0 && VDot(dirGravity, jumpPow_) > 0.9f)
+		if (c == nullptr)
 		{
-			movedPos_ = VAdd(hit.HitPosition, VScale(dirUpGravity, 2.0f));
-
-			jumpPow_ = AsoUtility::VECTOR_ZERO;
-			stepJump_ = 0.0f;
-
-			if (isJump_)
-			{
-				animType_ = ANIM_TYPE::JUMP;
-				currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
-
-				animationController_->Play(
-					static_cast<int>(ANIM_TYPE::JUMP),
-					false,
-					29.0f,
-					45.0f,
-					false,
-					true);
-			}
-
-			isJump_ = false;
+			continue;
 		}
+
+		auto hit = MV1CollCheck_Line(
+			c->modelId_,
+			-1,
+			lineStart,
+			lineEnd);
+
+		if (hit.HitFlag > 0)
+		{
+			// 一番高い床を採用する
+			if (!isHitGround || hit.HitPosition.y > nearestY)
+			{
+				isHitGround = true;
+				nearestY = hit.HitPosition.y;
+				nearestHitPos = hit.HitPosition;
+			}
+		}
+	}
+
+	if (isHitGround)
+	{
+		// 地面の少し上に座標を補正
+		movedPos_ = VAdd(nearestHitPos, VScale(dirUpGravity, 2.0f));
+
+		// 落下速度リセット
+		jumpPow_ = AsoUtility::VECTOR_ZERO;
+		stepJump_ = 0.0f;
+
+		// 着地アニメーション
+		if (isJump_)
+		{
+			animType_ = ANIM_TYPE::JUMP;
+			currentAnimType_ = static_cast<int>(ANIM_TYPE::JUMP);
+
+			animationController_->Play(
+				static_cast<int>(ANIM_TYPE::JUMP),
+				false,
+				29.0f,
+				45.0f,
+				false,
+				true);
+		}
+
+		isJump_ = false;
 	}
 }
 
@@ -1063,6 +1149,11 @@ void Player::CollisionCapsule(void)
 
 void Player::CollisionBox()
 {
+
+	// 毎フレーム、基本は立てる状態に戻す
+	isStand_ = true;
+
+
 	if (furnitures_.empty())
 	{
 		return;
@@ -1126,25 +1217,44 @@ void Player::CollisionBox()
 
 			const float TOP_MARGIN = 10.0f;
 			const float BOTTOM_MARGIN = 10.0f;
-			const float UNDER_MARGIN = 3.0f;
+			const float UNDER_MARGIN = 10.0f;
 
 			// -------------------------------------------------
 			// 0. 机の下に潜っている判定
-			// うつ伏せ中で、実際の頭の高さが天板下面より低いなら、
-			// 天板とは横衝突させない
 			// -------------------------------------------------
-			if (IsProne() && pTopY <= obbBottomY - UNDER_MARGIN)
+
+			// 移動後の頭位置を作る
+			VECTOR currentHeadPos =
+				MV1GetFramePosition(transform_.modelId, headBoneFrame_);
+
+			VECTOR headLocal =
+				VSub(currentHeadPos, transform_.pos);
+
+			VECTOR movedHeadPos =
+				VAdd(movedPos_, headLocal);
+
+			VECTOR movedCenterPos =
+				VScale(VAdd(movedPos_, movedHeadPos), 0.5f);
+
+			// この家具の下にいるか
+			bool isUnderThisFurniture =
+				f->IsUnder(movedPos_) ||
+				f->IsUnder(movedHeadPos) ||
+				f->IsUnder(movedCenterPos);
+
+			if (IsProne() &&
+				isUnderThisFurniture &&
+				pTopY <= obbBottomY - UNDER_MARGIN)
 			{
-				// 立ったら頭がぶつかる高さなら、立ち上がり不可
-				if (pStandTopY > obbBottomY)
+				// 立ったら頭が机にぶつかるなら立てない
+				if (pStandTopY > obbBottomY - 10.0f)
 				{
 					isStand_ = false;
 				}
 
-				// このOBBは通過扱い
-				// ※脚OBBは下面が低いので、基本ここには入りにくく、脚には当たる
 				continue;
 			}
+
 
 			// -------------------------------------------------
 			// 1. 机の上に乗る判定
@@ -1374,6 +1484,7 @@ void Player::CollisionBox()
 			}
 		}
 	}
+
 }
 
 
@@ -1468,16 +1579,14 @@ void Player::SetFirstPerson(void)
 
 bool Player::IsHiddenUnderFurniture() const
 {
-	for (auto f : furnitures_)
+	// うつ伏せ中だけ隠れる
+	if (!IsProne())
 	{
-		if (f == nullptr) continue;
-
-		if (f->IsUnder(transform_.pos))
-		{
-			return true;
-		}
+		return false;
 	}
-	return false;
+
+	// 立てない場所なら隠れている扱い
+	return !const_cast<Player*>(this)->CheckCanStand();
 }
 
 VECTOR Player::GetAttackPos() const
@@ -1818,4 +1927,121 @@ void Player::UpdateFootstepSound()
 
 		snd.PlaySE(SoundManager::SE::WALK);
 	}
+}
+bool Player::CheckCanStand()
+{
+	if (furnitures_.empty())
+	{
+		return true;
+	}
+
+	const float SAFE_MARGIN = 15.0f;
+
+	VECTOR footPos = transform_.pos;
+
+	float pBottomY = transform_.pos.y;
+	float pTopY = transform_.pos.y + standHeight_;
+
+	float standTopY = pTopY;
+
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
+
+		// -----------------------------------------
+		// OBB Collider 判定
+		// -----------------------------------------
+		for (const auto& obb : f->GetOBBColliders())
+		{
+			float obbBottomY = obb.GetBottomY();
+
+			// 足元より低いものは机の脚などとして無視
+			if (obbBottomY <= transform_.pos.y + 30.0f)
+			{
+				continue;
+			}
+
+			// ResolveCollisionXZ は位置を書き換えるので、
+			// 判定用のコピーを使う
+			VECTOR testPos = footPos;
+
+			bool isXZHit = obb.ResolveCollisionXZ(
+				testPos,
+				pRadius_,
+				pBottomY,
+				pTopY
+			);
+
+			// XZ的に重なっていて、立った頭が天板下面を超えるなら立てない
+			if (isXZHit && standTopY > obbBottomY - SAFE_MARGIN)
+			{
+				return false;
+			}
+		}
+
+		// -----------------------------------------
+		// Box Collider 判定
+		// -----------------------------------------
+		for (const auto& box : f->GetColliders())
+		{
+			float boxBottomY = box.center.y - box.halfSize.y;
+
+			// 足元より低いものは無視
+			if (boxBottomY <= transform_.pos.y + 30.0f)
+			{
+				continue;
+			}
+
+			float minX = box.center.x - box.halfSize.x;
+			float maxX = box.center.x + box.halfSize.x;
+			float minZ = box.center.z - box.halfSize.z;
+			float maxZ = box.center.z + box.halfSize.z;
+
+			float closestX = fmaxf(minX, fminf(footPos.x, maxX));
+			float closestZ = fmaxf(minZ, fminf(footPos.z, maxZ));
+
+			float diffX = footPos.x - closestX;
+			float diffZ = footPos.z - closestZ;
+
+			float distSq = diffX * diffX + diffZ * diffZ;
+
+			bool isXZHit = distSq <= pRadius_ * pRadius_;
+
+			if (isXZHit && standTopY > boxBottomY - SAFE_MARGIN)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool Player::IsUnderFurnitureXZ() const
+{
+	VECTOR footPos = transform_.pos;
+	VECTOR headPos = MV1GetFramePosition(transform_.modelId, headBoneFrame_);
+
+	VECTOR centerPos = VScale(VAdd(footPos, headPos), 0.5f);
+
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
+
+		// 足元・頭・中間のどれかが机の下なら「下にいる」とする
+		if (f->IsUnder(footPos) ||
+			f->IsUnder(headPos) ||
+			f->IsUnder(centerPos))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

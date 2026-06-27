@@ -138,6 +138,10 @@ public:
 	VECTOR GetFootstepPos() const;
 	void UpdateFootstepSound();
 
+	bool CheckCanStand();
+
+	bool IsUnderFurnitureXZ() const;
+
 private:
 
 	void PlayAnimation(ANIM_TYPE animType, bool isLoop = true);
