@@ -53,7 +53,7 @@ Player::Player(void)
 	footstepRange_ = 0.0f;
 	footstepTimer_ = 0.0f;
 	footstepInterval_ = 20.0f;
-
+	wasFallingBeforeCollision_ = false;
 
 	// 追加
 	isStand_ = true;
@@ -204,34 +204,6 @@ void Player::Draw(void)
 			GetColor(255, 255, 0),
 			FALSE);
 	}
-
-#ifdef _DEBUG
-	DrawFormatString(
-		20,
-		120,
-		GetColor(255, 100, 100),
-		"IsProne: %s  CanStand: %s",
-		IsProne() ? "TRUE" : "FALSE",
-		CheckCanStand() ? "TRUE" : "FALSE"
-	);
-
-	DrawFormatString(
-		20,
-		140,
-		GetColor(100, 255, 100),
-		"standTopY: %.2f  standHeight: %.2f",
-		transform_.pos.y + standHeight_,
-		standHeight_
-	);
-
-	DrawFormatString(
-		20,
-		200,
-		GetColor(100, 255, 255),
-		"HiddenUnderFurniture: %s",
-		IsHiddenUnderFurniture() ? "TRUE" : "FALSE"
-	);
-#endif
 #endif
 
 
@@ -972,23 +944,24 @@ void Player::Rotate(void)
 
 void Player::Collision(void)
 {
-
 	// 現在座標を起点に移動後座標を決める
 	movedPos_ = VAdd(transform_.pos, movePow_);
 
-	// 重力と接地判定（先に地面の高さを決める）
+	// CollisionGravityでjumpPow_が0になる前に、落下中か記録しておく
+	wasFallingBeforeCollision_ =
+		VDot(AsoUtility::DIR_D, jumpPow_) > 0.001f;
+
+	// 重力と接地判定
 	CollisionGravity();
 
-	// 貫通防止ループ（壁と机の判定をセットで繰り返す）
+	// 貫通防止ループ
 	for (int i = 0; i < 3; i++)
 	{
-		CollisionCapsule(); // ステージとの判定
-		CollisionBox();     // 机との判定
+		CollisionCapsule();
+		CollisionBox();
 	}
 
-	// 移動
 	transform_.pos = movedPos_;
-
 }
 
 void Player::CollisionGravity(void)
@@ -1191,14 +1164,19 @@ void Player::CollisionBox()
 		// -----------------------------------------------------
 		// Wallなど、独自の当たり判定を持つ家具用
 		// -----------------------------------------------------
-		if (f->ResolveCollision(
-			movedPos_,
-			pRadius_,
-			pBottomY,
-			pStandTopY))
+
+		if(f->GetOBBColliders().empty())
 		{
-			continue;
+			if (f->ResolveCollision(
+				movedPos_,
+				pRadius_,
+				pBottomY,
+				pStandTopY))
+			{
+				continue;
+			}
 		}
+
 
 		// -----------------------------------------------------
 // OBB Collider 判定
@@ -1256,43 +1234,62 @@ void Player::CollisionBox()
 			}
 
 
+		
 			// -------------------------------------------------
-			// 1. 机の上に乗る判定
-			// 横から近づいただけでは乗らないように、
-			// 前フレームで上にいて、今回落ちてきた時だけ乗る
-			// -------------------------------------------------
-			bool isFallOnTop =
-				prevBottomY >= obbTopY - TOP_MARGIN &&
-				pBottomY <= obbTopY + TOP_MARGIN &&
-				jumpPow_.y <= 0.0f;
+            // 1. 机の上に乗る判定
+            // -------------------------------------------------
 
-			if (isFallOnTop)
-			{
-				if (obb.ResolveCollisionTop(
-					movedPos_,
+           // CollisionGravityでjumpPow_が0になる前の落下状態を見る
+			bool isFallingDown = wasFallingBeforeCollision_;
+
+			// 足が少し天板にめり込んでも拾えるようにする
+			const float LAND_TOP_MARGIN = 30.0f;
+			const float LAND_DEPTH = 80.0f;
+
+			// 前フレームでは天板より上付近、今フレームでは天板付近〜少し下
+			bool isTableTopHeight =
+				prevBottomY >= obbTopY - 5.0f &&
+				pBottomY <= obbTopY + LAND_TOP_MARGIN &&
+				pBottomY >= obbTopY - LAND_DEPTH;
+
+			// XZ判定
+			// IsUnderは机の下判定なので、Yだけ机の下に仮置きしてXZ判定として使う
+			VECTOR checkXZPos = movedPos_;
+
+			// ResolveCollisionXZ は座標を書き換えるので、必ずコピーで判定する
+			bool isOnTableXZ =
+				obb.ResolveCollisionXZ(
+					checkXZPos,
 					pRadius_,
-					pBottomY,
-					pTopY))
+					obbBottomY - 1000.0f,
+					obbTopY + 1000.0f
+				);
+
+
+
+			if (isFallingDown && isTableTopHeight && isOnTableXZ)
+			{
+				// 机の上に乗せる
+				movedPos_.y = obbTopY + 2.0f;
+
+				jumpPow_ = AsoUtility::VECTOR_ZERO;
+				stepJump_ = 0.0f;
+
+				if (isJump_)
 				{
-					jumpPow_ = AsoUtility::VECTOR_ZERO;
-					stepJump_ = 0.0f;
-
-					if (isJump_)
-					{
-						animationController_->Play(
-							static_cast<int>(ANIM_TYPE::JUMP),
-							false,
-							29.0f,
-							45.0f,
-							false,
-							true);
-					}
-
-					isJump_ = false;
-
-					isOBBHit = true;
-					break;
+					animationController_->Play(
+						static_cast<int>(ANIM_TYPE::JUMP),
+						false,
+						29.0f,
+						45.0f,
+						false,
+						true);
 				}
+
+				isJump_ = false;
+
+				isOBBHit = true;
+				break;
 			}
 
 			// -------------------------------------------------

@@ -19,6 +19,7 @@ public:
         RUN,
         ATTACK,
         HIT,
+        DISE,
     };
 
 public:

@@ -5,6 +5,8 @@
 #include "Manager/ResourceManager.h"
 #include "Manager/SceneManager.h"
 #include "Manager/SoundManager.h"
+#include "Utility/DebugConsole.h"
+#include "Utility/DebugMemory.h"
 #include "Application.h"
 
 //Application* Application::instance_ = nullptr;
@@ -67,7 +69,9 @@ void Application::Init(void)
 
 	// FPS
 	fpsController_ = std::make_unique<FpsController>(168.0f);
-
+	// デバックコンソールスタート
+	InitDebugConsole();
+	DebugLog("Application Init Start\n");
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 	isInitFail_ = false;
@@ -101,6 +105,8 @@ void Application::Run(void)
 	auto& inputManager = InputManager::GetInstance();
 	auto& sceneManager = SceneManager::GetInstance();
 
+	int debugLogFrame = 0;
+
 	// ゲームループ
 	while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
 	{
@@ -109,6 +115,16 @@ void Application::Run(void)
 		sceneManager.Update();
 
 		sceneManager.Draw();
+
+		// 画面にもメモリ表示
+		DrawDebugMemoryInfo();
+
+		// 約1秒ごとに別コンソールへログ
+		debugLogFrame++;
+		if (debugLogFrame % 60 == 0)
+		{
+			PrintDebugMemoryInfo("Running");
+		}
 
 		// FPS描画
 		fpsController_->Draw();
@@ -138,6 +154,11 @@ void Application::Destroy(void)
 	{
 		isReleaseFail_ = true;
 	}
+
+
+	// デバッグコンソール終了
+	ReleaseDebugConsole();
+
 
 }
 

@@ -1,5 +1,6 @@
 #include "EnemyManager.h"
 #include "EnemyNormal.h"
+#include "EnemyBase.h"
 #include "../Stage/Stage.h"
 
 EnemyManager::EnemyManager(void) {}
@@ -16,6 +17,8 @@ EnemyManager::~EnemyManager(void)
 
 void EnemyManager::Init(void)
 {
+	EnemyBase::ResetChasingEnemyCount();
+
 	// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
 	EnemyNormal* testEnemy = new EnemyNormal();
 	testEnemy->Init();
@@ -58,15 +61,15 @@ void EnemyManager::Init(void)
 		{ -4240.0f, -98.0f,  -1140.0f }, // 27
 		{ -3600.0f, -98.0f,  -1140.0f }, // 28
 		{ -3200.0f, -98.0f,  -920.0f }, // 29
-		{ -1900.0f, -98.0f,  -920.0f }, // 30
 
-
-		//{ -3600.0f, -98.0f,  900.0f }, // 29
-		//{ -3600.0f, -98.0f,  900.0f }, // 30
-		//{ -3600.0f, -98.0f,  900.0f }, // 31
-		//{ -3600.0f, -98.0f,  900.0f }, // 32
-		//{ -3600.0f, -98.0f,  900.0f }, // 33
-	
+		{ -3200.0f, -98.0f,  -250.0f }, // 30
+		{ -3200.0f, -98.0f,  740.0f }, // 31
+		{ -2610.0f, -98.0f,  -250.0f }, // 32
+		{ -2610.0f, -98.0f,  740.0f }, // 33
+		{ -2000.0f, -98.0f,  -250.0f }, // 34
+		{ -2000.0f, -98.0f,  740.0f }, // 35
+		{ -2610.0f, -98.0f,  -940.0f }, // 36
+		{ -2000.0f, -98.0f,  -940.0f }, // 37
 
 	};
 
@@ -102,16 +105,23 @@ void EnemyManager::Init(void)
 	{ 24, 25, 27, 28, 29 }, // 26
 	{ 24, 26, 28 }, // 27
 	{ 25, 26, 27, }, // 28
-	{ 26, 30 }, // 29
-	{ 29 }, // 30
+	{ 26, 30, 36 }, // 29
+	{ 29, 31, 32 }, // 30
+	{ 30 }, // 31
+	{ 30, 33, 36, 34 }, // 32
+	{ 32 }, // 33
+	{ 4, 32, 35, 37 }, // 34
+	{ 34 }, // 35
+	{ 26, 29, 32, 37 }, // 36
+	{ 26, 29, 36, 34 }, // 37
 
 	};
 
 
-	testEnemy->SetPatrolPoints(points);
+	/*testEnemy->SetPatrolPoints(points);
 	testEnemy->SetPatrolLinks(links);
 	testEnemy->SetPos(points[5]);
-	enemies_.push_back(testEnemy);
+	enemies_.push_back(testEnemy);*/
 
 
 	debugPatrolPoints_ = points;
@@ -125,17 +135,17 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	//for (int i = 0; i < 5; i++)
-	//{
-	//	EnemyNormal* enemy = new EnemyNormal();
+	for (int i = 0; i < 10; i++)
+	{
+		EnemyNormal* enemy = new EnemyNormal();
 
-	//	enemy->Init();
+		enemy->Init();
 
-	//	enemy->SetPatrolPoints(points);
-	//	enemy->SetPatrolLinks(links);
+		enemy->SetPatrolPoints(points);
+		enemy->SetPatrolLinks(links);
 
-	//	enemies_.push_back(enemy);
-	//}
+		enemies_.push_back(enemy);
+	}
 
 
 }

@@ -10,6 +10,8 @@
 #include "../../Manager/SceneManager.h"
 #include "EnemyBase.h"
 
+int EnemyBase::chasingEnemyCount_ = 0;
+
 EnemyBase::EnemyBase(void) : ActorBase()
 {
     speed_ = 1.0f;
@@ -49,6 +51,8 @@ EnemyBase::EnemyBase(void) : ActorBase()
     isHearingFootstep_ = false;
     hearingTimer_ = 0.0f;
     hearingDuration_ = 60.0f;
+    hasPlayedDetectSE_ = false;
+    wasSeeingPlayer_ = false;
 
     // 警戒状態
     isAlert_ = false;
@@ -73,7 +77,13 @@ EnemyBase::EnemyBase(void) : ActorBase()
 
 EnemyBase::~EnemyBase(void)
 {
-        HpManager::GetInstance().UnregisterHP(this);
+
+    if (isChasing_)
+    {
+        SetChasing(false);
+    }
+
+    HpManager::GetInstance().UnregisterHP(this);
 }
 
 void EnemyBase::Update(void)
@@ -83,18 +93,16 @@ void EnemyBase::Update(void)
 
 void EnemyBase::Update(Player* player)
 {
+    // 死亡チェック
     if (isDead_)
     {
         return;
     }
 
 #ifdef _DEBUG
-
     debugFootstepHearRange_ = GetCurrentFootstepHearRange();
     debugCanHearFootstep_ = false;
-
 #endif
-
 
     // 攻撃インターバル更新
     if (attackIntervalTimer_ > 0.0f)
@@ -103,7 +111,6 @@ void EnemyBase::Update(Player* player)
     }
 
     // 警戒タイマー更新
-
     if (isAlert_)
     {
         float dt =
@@ -117,7 +124,6 @@ void EnemyBase::Update(Player* player)
             alertTimer_ = 0.0f;
         }
     }
-
 
     // 攻撃していないならリセット
     if (player != nullptr &&
@@ -148,32 +154,38 @@ void EnemyBase::Update(Player* player)
         }
     }
 
-    // 視野判定
+    // プレイヤー状態取得
     bool canSeePlayer = IsPlayerInView(player);
+    bool inHearRange = CanHearPlayerFootstep(player);
 
-    // =========================
-    // BGM切り替え
-    // =========================
-
-    // 追跡開始した瞬間
-    if (canSeePlayer && !isChasing_)
-    {
-        SoundManager::GetInstance().PlayBGM(
-            SoundManager::BGM::CHASE);
-    }
-    // 見失った瞬間
-    if (!canSeePlayer && isChasing_)
-    {
-        SoundManager::GetInstance().PlayBGM(
-            SoundManager::BGM::GAME);
-    }
-
-
+    // 発見SE制御
     if (canSeePlayer)
     {
-        isChasing_ = true;
-        isHearingFootstep_ = false;
+        // まだ鳴らしてなくて、かつ追跡開始の瞬間
+        if (!hasPlayedDetectSE_ && !isChasing_)
+        {
+            SoundManager::GetInstance().PlaySE(
+                SoundManager::SE::DISE);
 
+            hasPlayedDetectSE_ = true;
+        }
+    }
+
+    // 足音範囲外に出たらリセット
+    if (!inHearRange)
+    {
+        hasPlayedDetectSE_ = false;
+    }
+
+    // --------------------------------------------------
+    // 追跡状態更新
+    // BGMは SetChasing() の中で一括管理する
+    // --------------------------------------------------
+    if (canSeePlayer)
+    {
+        SetChasing(true);
+
+        isHearingFootstep_ = false;
         wasChasing_ = true;
 
         StartAlert();
@@ -183,13 +195,10 @@ void EnemyBase::Update(Player* player)
             lastKnownPlayerPos_ = player->GetTransform().pos;
             lastKnownPlayerPos_.y = transform_.pos.y;
         }
-
-        // 見えている間は警戒を消さない
-        // 追跡中も、警戒タイマーは別で進む
     }
     else
     {
-        isChasing_ = false;
+        SetChasing(false);
 
         // 直前まで追跡していて、今見失った瞬間
         if (wasChasing_)
@@ -201,7 +210,6 @@ void EnemyBase::Update(Player* player)
 
             // 最後に見た場所を見る
             LookAtPosition(lastKnownPlayerPos_);
-
         }
 
         // 視界に入っていない時だけ足音を聞く
@@ -218,7 +226,6 @@ void EnemyBase::Update(Player* player)
     }
     else
     {
-
         // 視野内、近距離、インターバル終了なら攻撃
         if (isChasing_ &&
             IsPlayerInAttackRange(player) &&
@@ -232,15 +239,12 @@ void EnemyBase::Update(Player* player)
         }
         else if (isHearingFootstep_)
         {
-            // 足音を聞いた直後だけ、その方向を見る
             UpdateHearFootstep(player);
         }
         else
         {
-            // 警戒中でも巡回する
             UpdateWander(player);
         }
-
     }
 
     // アニメーション更新
@@ -255,7 +259,6 @@ void EnemyBase::Update(Player* player)
     // プレイヤーとの接触判定
     if (IsHitPlayer(player))
     {
-
 #ifdef _DEBUG
         //printfDx("Enemy Hit Player\n");
 #endif
@@ -263,7 +266,6 @@ void EnemyBase::Update(Player* player)
 
     transform_.Update();
 }
-
 void EnemyBase::Draw(void)
 {
     MV1DrawModel(transform_.modelId);
@@ -772,12 +774,14 @@ void EnemyBase::Damage(int damage)
 
     if (HpManager::GetInstance().IsDead(this))
     {
+
+        // 追跡中だった敵が死んだら追跡数を減らす
+        if (isChasing_)
+        {
+            SetChasing(false);
+        }
+
         isDead_ = true;
-
-
-#ifdef _DEBUG
-       // printfDx("Enemy Dead\n");
-#endif
     }
 }
 
@@ -1022,4 +1026,47 @@ int EnemyBase::GetHP(void) const
     }
 
     return hp->GetCurrent();
+}
+
+void EnemyBase::SetChasing(bool chasing)
+{
+    if (isChasing_ == chasing)
+    {
+        return;
+    }
+
+    isChasing_ = chasing;
+
+    if (isChasing_)
+    {
+        chasingEnemyCount_++;
+
+        // 追跡中の敵が1体目になった瞬間だけCHASEへ
+        if (chasingEnemyCount_ == 1)
+        {
+            SoundManager::GetInstance().PlayBGM(
+                SoundManager::BGM::CHASE);
+        }
+    }
+    else
+    {
+        chasingEnemyCount_--;
+
+        if (chasingEnemyCount_ < 0)
+        {
+            chasingEnemyCount_ = 0;
+        }
+
+        // 追跡中の敵が0体になったらGAMEへ戻す
+        if (chasingEnemyCount_ == 0)
+        {
+            SoundManager::GetInstance().PlayBGM(
+                SoundManager::BGM::GAME);
+        }
+    }
+}
+
+void EnemyBase::ResetChasingEnemyCount()
+{
+    chasingEnemyCount_ = 0;
 }

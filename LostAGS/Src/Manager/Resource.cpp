@@ -78,10 +78,38 @@ void Resource::Load(void)
 		break;
 
 	case Resource::TYPE::SOUND:
-		// サウンド
-		handleId_ = LoadSoundMem(path_.c_str());
-		break;
+	{
+		// BGMかどうかをパスで判定
+		bool isBgm =
+			path_.find("Bgm/") != std::string::npos ||
+			path_.find("BGM/") != std::string::npos ||
+			path_.find("bgm/") != std::string::npos;
 
+		if (isBgm)
+		{
+			// BGMはファイル再生方式
+			SetCreateSoundDataType(DX_SOUNDDATATYPE_FILE);
+		}
+		else
+		{
+			// SEはメモリ上に置く
+			SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMPRESS);
+		}
+
+		handleId_ = LoadSoundMem(path_.c_str());
+
+		// 次のロードに影響しないよう戻す
+		SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMPRESS);
+
+#ifdef _DEBUG
+		if (handleId_ == -1)
+		{
+			printfDx("Sound Load Failed : %s\n", path_.c_str());
+		}
+#endif
+
+		break;
+	}
 	case Resource::TYPE::EFFEKSEER:
 		handleId_ = LoadEffekseerEffect(path_.c_str());
 		break;

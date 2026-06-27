@@ -22,6 +22,7 @@ void SoundManager::Init()
 {
     auto& res = ResourceManager::GetInstance();
 
+    // BGM
     bgms_[BGM::GAME] =
         res.Load(ResourceManager::SRC::GAME_BGM).handleId_;
 
@@ -35,7 +36,7 @@ void SoundManager::Init()
         res.Load(ResourceManager::SRC::CLEAR_BGM).handleId_;
 
 
-
+    // SE
     ses_[SE::WALK] =
         res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
   
@@ -45,6 +46,8 @@ void SoundManager::Init()
         res.Load(ResourceManager::SRC::ATTACK_SE).handleId_;  
     ses_[SE::HIT] =
         res.Load(ResourceManager::SRC::HIT_SE).handleId_;
+    ses_[SE::DISE] =
+        res.Load(ResourceManager::SRC::DISC_SE).handleId_;
 }
 
 void SoundManager::PlayBGM(BGM bgm, bool loop)

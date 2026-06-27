@@ -2,6 +2,8 @@
 #include <memory>
 #include <assert.h>
 #include "../Application.h"
+#include "../Utility/DebugMemory.h"
+#include "../Utility/DebugConsole.h"
 #include "Resource.h"
 #include "ResourceManager.h"
 
@@ -9,11 +11,13 @@ ResourceManager* ResourceManager::instance_ = nullptr;
 
 void ResourceManager::CreateInstance(void)
 {
+
 	if (instance_ == nullptr)
 	{
 		instance_ = new ResourceManager();
+		instance_->Init();
 	}
-	instance_->Init();
+
 }
 
 ResourceManager& ResourceManager::GetInstance(void)
@@ -146,26 +150,35 @@ void ResourceManager::Init(void)
 
 	// Sound関連
 	// BGM
-	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.mp3");
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.wav");
 	resourcesMap_.emplace(SRC::GAME_BGM, res);	
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/TitleBgm.wav");
 	resourcesMap_.emplace(SRC::TITLE_BGM, res);
-	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.mp3");
+	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ChaseBgm.wav");
 	resourcesMap_.emplace(SRC::CHASE_BGM, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ClearBgm.mp3");
 	resourcesMap_.emplace(SRC::CLEAR_BGM, res);
+	//======
 	// SE
+	//======
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");
 	resourcesMap_.emplace(SRC::WALK_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Attack.mp3");
 	resourcesMap_.emplace(SRC::ATTACK_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Hit.mp3");
 	resourcesMap_.emplace(SRC::HIT_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/Discovery.wav");
+	resourcesMap_.emplace(SRC::DISC_SE, res);
+
 
 }
 
 void ResourceManager::Release(void)
 {
+#ifdef _DEBUG
+	PrintDebugMemoryInfo("Before ResourceManager Release");
+#endif
+
 	for (auto& p : loadedMap_)
 	{
 		if (p.second == nullptr)
@@ -179,23 +192,45 @@ void ResourceManager::Release(void)
 			continue;
 		}
 
+#ifdef _DEBUG
+		DebugLog(
+			"[RESOURCE RELEASE] type:%d handle:%d\n",
+			static_cast<int>(p.second->type_),
+			p.second->handleId_
+		);
+#endif
+
 		p.second->Release();
 	}
 
 	loadedMap_.clear();
+
+#ifdef _DEBUG
+	PrintDebugMemoryInfo("After ResourceManager Release");
+#endif
 }
 void ResourceManager::Destroy(void)
 {
+#ifdef _DEBUG
+	PrintDebugMemoryInfo("Before ResourceManager Destroy");
+#endif
+
 	Release();
+
 	for (auto& res : resourcesMap_)
 	{
 		res.second->Release();
-		/*delete res.second;*/
 	}
-	resourcesMap_.clear();
-	delete instance_;
-}
 
+	resourcesMap_.clear();
+
+	delete instance_;
+	instance_ = nullptr;
+
+#ifdef _DEBUG
+	PrintDebugMemoryInfo("After ResourceManager Destroy");
+#endif
+}
 const Resource& ResourceManager::Load(SRC src)
 {
 	Resource& res = _Load(src);
@@ -208,6 +243,7 @@ const Resource& ResourceManager::Load(SRC src)
 
 int ResourceManager::LoadModelDuplicate(SRC src)
 {
+
 	Resource& res = _Load(src);
 	if (res.type_ == Resource::TYPE::NONE)
 	{
@@ -217,7 +253,21 @@ int ResourceManager::LoadModelDuplicate(SRC src)
 	int duId = MV1DuplicateModel(res.handleId_);
 	res.duplicateModelIds_.push_back(duId);
 
+#ifdef _DEBUG
+	g_DebugMemory.modelDuplicateCount++;
+
+	DebugLog(
+		"[DUP MODEL] src:%d baseHandle:%d dupHandle:%d DupCount:%d Private:%d MB\n",
+		static_cast<int>(src),
+		res.handleId_,
+		duId,
+		g_DebugMemory.modelDuplicateCount,
+		GetPrivateMemoryMB()
+	);
+#endif
+
 	return duId;
+
 }
 
 ResourceManager::ResourceManager(void)
@@ -226,7 +276,6 @@ ResourceManager::ResourceManager(void)
 
 Resource& ResourceManager::_Load(SRC src)
 {
-
 	// ロード済みチェック
 	const auto& lPair = loadedMap_.find(src);
 	if (lPair != loadedMap_.end())
@@ -238,14 +287,58 @@ Resource& ResourceManager::_Load(SRC src)
 	const auto& rPair = resourcesMap_.find(src);
 	if (rPair == resourcesMap_.end())
 	{
-		// 登録されていない
+#ifdef _DEBUG
+		DebugLog(
+			"[LOAD ERROR] src:%d is not registered.\n",
+			static_cast<int>(src)
+		);
+#endif
 		return dummy_;
 	}
+
+#ifdef _DEBUG
+	int beforeMB = GetPrivateMemoryMB();
+#endif
 
 	// ロード処理
 	rPair->second->Load();
 
-	// 念のためコピーコンストラクタ
+#ifdef _DEBUG
+	int afterMB = GetPrivateMemoryMB();
+	int diffMB = afterMB - beforeMB;
+
+	Resource& loadedRes = *rPair->second;
+
+	switch (loadedRes.type_)
+	{
+	case Resource::TYPE::MODEL:
+		g_DebugMemory.modelCount++;
+		break;
+
+	case Resource::TYPE::IMG:
+		g_DebugMemory.graphCount++;
+		break;
+
+	case Resource::TYPE::SOUND:
+		g_DebugMemory.soundCount++;
+		break;
+
+	default:
+		break;
+	}
+
+	DebugLog(
+		"[LOAD RESOURCE] src:%d type:%d path:%s handle:%d diff:%d MB before:%d MB after:%d MB\n",
+		static_cast<int>(src),
+		static_cast<int>(loadedRes.type_),
+		loadedRes.GetPath().c_str(),
+		loadedRes.handleId_,
+		diffMB,
+		beforeMB,
+		afterMB
+	);
+#endif
+
 	loadedMap_.emplace(src, rPair->second.get());
 
 	return *rPair->second;

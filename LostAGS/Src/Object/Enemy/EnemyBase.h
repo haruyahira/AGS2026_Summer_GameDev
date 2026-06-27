@@ -25,7 +25,7 @@ public:
     bool IsDead(void) const;
 
     VECTOR GetPos(void) const;
-
+    static void ResetChasingEnemyCount();
 
 protected:
     // “G‚²‚Æ‚ÌŒÂ«
@@ -62,10 +62,12 @@ protected:
     void InitHP(int maxHp, float invincibleFrame = 20.0f);
     void Damage(int damage);
     int GetHP(void) const;
+  
 
 protected:
     std::unique_ptr<AnimationController> animationController_;
-
+    bool hasPlayedDetectSE_;
+    bool wasSeeingPlayer_;
     float speed_;
     float radius_;
     float groundY_;
@@ -104,6 +106,7 @@ protected:
     bool isHearingFootstep_;
     float hearingTimer_;
     float hearingDuration_;
+  
     VECTOR lastHeardPos_;
 
     // ‘«‰¹ŒŸ’m”ÍˆÍ
@@ -137,4 +140,10 @@ protected:
     VECTOR lastKnownPlayerPos_;
 
     bool isPlayerAttackHit_;
+
+    private:
+        static int chasingEnemyCount_;
+
+        void SetChasing(bool chasing);
+     
 };

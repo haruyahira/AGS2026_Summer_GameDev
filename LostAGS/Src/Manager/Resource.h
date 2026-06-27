@@ -55,5 +55,9 @@ public:
 
 	// ƒ‚ƒfƒ‹•¡»—p
 	std::vector<int> duplicateModelIds_;
+	const std::string& GetPath() const
+	{
+		return path_;
+	}
 
 };

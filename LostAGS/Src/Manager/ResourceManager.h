@@ -39,6 +39,7 @@ public:
 		RUN_SE,
 		ATTACK_SE,
 		HIT_SE,
+		DISC_SE,
 		GAME_BGM,
 		CHASE_BGM,
 		TITLE_BGM,

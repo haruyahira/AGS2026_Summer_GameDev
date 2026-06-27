@@ -170,47 +170,6 @@ void Stage::Update(void)
 
 
 }
-//void Stage::Draw(void)
-//{
-//	VECTOR cameraPos = GetCameraPosition();
-//	VECTOR cameraTarget = GetCameraTarget();
-//
-//	// 重要：描画直前の正しいカメラ方向でライトを更新
-//	UpdateFlashLightForShader(cameraPos, cameraTarget);
-//
-//	// RTに不透明物 + 半透明物 + 光を描く
-//	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
-//
-//	// 完成したRTを画面に出す
-//	DrawPostOutline();
-//
-//
-//	// =========================
-//	 // Stage外の3D描画用に状態を戻す
-//	 // =========================
-//	SetDrawScreen(DX_SCREEN_BACK);
-//
-//	SetCameraNearFar(1.0f, 10000.0f);
-//	SetupCamera_Perspective(DX_PI_F / 3.0f);
-//	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
-//
-//	SetUseZBuffer3D(TRUE);
-//	SetWriteZBuffer3D(TRUE);
-//	SetUseBackCulling(TRUE);
-//	SetUseLighting(TRUE);
-//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-//
-//	SetUseVertexShader(-1);
-//	SetUsePixelShader(-1);
-//
-//	SetUseTextureToShader(0, -1);
-//	SetUseTextureToShader(1, -1);
-//	SetUseTextureToShader(2, -1);
-//
-//
-//	// UIだけ最後
-//	DrawItemUI();
-//}
 void Stage::Draw(void)
 {
 	// SceneManager が設定している描画先を保存する
@@ -335,12 +294,39 @@ void Stage::MakeMainStage(void)
 		}
 	}
 
-
+	// 厨房の机
 	CreateFurniture({
 		ResourceManager::SRC::F_TABLE,
-		{ -1829.0f, -100.0f, 283.0f },
-		{ 0.5f, 0.5f, 0.5f },
+		{ -1790.0f, -100.0f, 390.0f },
+		{ 4.0f, 0.65f, 0.8f },
 		{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		});
+
+	CreateFurniture({
+	ResourceManager::SRC::F_TABLE,
+	{ -2400.0f, -100.0f, 390.0f },
+	{ 4.0f, 0.65f, 1.88f },
+	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		});
+
+	CreateFurniture({
+	ResourceManager::SRC::F_TABLE,
+	{ -3000.0f, -100.0f, 390.0f },
+	{ 4.0f, 0.65f, 0.8f },
+	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		});
+
+	CreateFurniture({
+    ResourceManager::SRC::F_TABLE,
+    { -2400.0f, -100.0f, -600.0f },
+    { 2.0f, 0.65f, 1.88f },
+    { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+		});
+	CreateFurniture({
+    ResourceManager::SRC::F_TABLE,
+    { -2900.0f, -100.0f, -600.0f },
+    { 2.0f, 0.65f, 1.88f },
+    { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 
 

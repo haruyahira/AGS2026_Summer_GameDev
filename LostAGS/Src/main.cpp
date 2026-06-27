@@ -2,6 +2,7 @@
 #include "Application.h"
 
 
+
 // NVIDIA GPU‚ðŽg‚¤
 extern "C"
 {

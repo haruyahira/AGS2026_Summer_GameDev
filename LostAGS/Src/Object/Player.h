@@ -270,6 +270,7 @@ private:
 
 	// ‚µ‚á‚ª‚İó‘Ô‚©
 	bool IsProne() const { return state_ == STATE::PRONE; }
+	bool wasFallingBeforeCollision_;
 
 	// ƒJƒƒ‰
 	void SetFirstPerson(void);

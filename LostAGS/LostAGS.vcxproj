@@ -141,6 +141,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Utility\DebugConsole.cpp" />
+    <ClCompile Include="Src\Utility\DebugMemory.cpp" />
     <ClCompile Include="Src\Object\Common\Hp\HpUI.cpp" />
     <ClCompile Include="Src\Manager\SoundManager.cpp" />
     <ClCompile Include="Src\Application.cpp" />
@@ -199,6 +201,8 @@
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Utility\DebugConsole.h" />
+    <ClInclude Include="Src\Utility\DebugMemory.h" />
     <ClInclude Include="Src\Object\Common\Hp\HpUI.h" />
     <ClInclude Include="Src\Manager\SoundManager.h" />
     <ClInclude Include="Src\Application.h" />
