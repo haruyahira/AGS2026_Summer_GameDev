@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Manager\SoundManager.cpp" />
     <ClCompile Include="Src\Object\Furniture\LightBlocker.cpp" />
     <ClCompile Include="Src\Shader\Light\LightEffect.cpp" />
     <ClCompile Include="Src\Shader\Light\LightMaterial.cpp" />
@@ -72,6 +73,7 @@
     <ClCompile Include="Src\Object\Furniture\StoneDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Manager\SoundManager.h" />
     <ClInclude Include="Src\Object\Furniture\LightBlocker.h" />
     <ClInclude Include="Src\Shader\Light\LightEffect.h" />
     <ClInclude Include="Src\Shader\Light\LightMaterial.h" />

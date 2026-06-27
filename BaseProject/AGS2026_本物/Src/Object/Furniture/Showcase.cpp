@@ -24,8 +24,10 @@ void Showcase::Draw(void) {
     // ƒ‚ƒfƒ‹•`‰æ
     MV1DrawModel(trans_.modelId);
 
+#ifdef _DEBUG
     // “–‚½‚è”»’è•\Ž¦
     for (const auto& box : colliders_) {
         box.DrawDebug(GetColor(255, 0, 0));
     }
+#endif
 }

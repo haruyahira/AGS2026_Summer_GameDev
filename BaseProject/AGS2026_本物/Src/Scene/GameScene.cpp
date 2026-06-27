@@ -3,6 +3,7 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/Camera.h"
 #include "../Manager/InputManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Object/Collider/Capsule.h"
 #include "../Object/Collider/Collider.h"
 #include "../Object/Common/Hp/HpManager.h"
@@ -26,6 +27,7 @@ GameScene::~GameScene(void)
 
 void GameScene::Init(void)
 {
+
 	// 3Dモデルを読み込む前に、ピクセル単位のライティングを有効にする
 	SetUsePixelLighting(TRUE);
 
@@ -54,10 +56,6 @@ void GameScene::Init(void)
 
 	enemyMng_->SetStage(stage_);
 
-	// スカイドーム
-	/*skyDome_ = new SkyDome(player_->GetTransform());
-	skyDome_->Init();*/
-
 	//SetUsePerPixelLighting(TRUE);
 
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
@@ -76,6 +74,39 @@ void GameScene::Init(void)
 	/*if (auto camera = camera_.lock()) {*/
 		camera->Update();
 	//}
+
+		SoundManager::GetInstance().Init();
+		SoundManager::GetInstance().LoadSE(
+			"Walk",
+			"Data/Sound/SE/Walk.mp3");
+		SoundManager::GetInstance().LoadSE(
+			"Run",
+			"Data/Sound/SE/Walk.mp3");
+		SoundManager::GetInstance().LoadSE(
+			"Disc",
+			"Data/Sound/SE/Discovery.wav");
+		// 攻撃SE
+		SoundManager::GetInstance().LoadSE(
+			"Hit",
+			"Data/Sound/SE/Hit.mp3");
+		SoundManager::GetInstance().LoadSE(
+			"Attack",
+			"Data/Sound/SE/Attack.mp3");
+		// BGM
+		SoundManager::GetInstance().LoadBGM(
+			"GameBgm",
+			"Data/Sound/BGM/GameBgm.mp3");
+		SoundManager::GetInstance().LoadBGM(
+			"ChaseBgm",
+			"Data/Sound/BGM/ChaseBgm.mp3");
+		
+	
+
+
+		SoundManager::GetInstance().SetSESpeed("Run", 1.3f);
+
+		SoundManager::GetInstance().PlayBGM("GameBgm");
+
 }
 
 void GameScene::Update(void)
@@ -103,6 +134,24 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 		return;
 	}
+
+	static bool wasChase = false;
+
+	bool isChase = enemyMng_->IsAnyEnemyChasing();
+
+	if (isChase && !wasChase)
+	{
+		SoundManager::GetInstance().StopAllBGM();
+		SoundManager::GetInstance().PlayBGM("ChaseBgm");
+	}
+
+	if (!isChase && wasChase)
+	{
+		SoundManager::GetInstance().StopAllBGM();
+		SoundManager::GetInstance().PlayBGM("GameBgm");
+	}
+
+	wasChase = isChase;
 
 
 }

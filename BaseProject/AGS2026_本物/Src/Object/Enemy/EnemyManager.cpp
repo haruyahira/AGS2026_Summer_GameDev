@@ -270,3 +270,20 @@ void EnemyManager::SetStage(Stage* stage)
 {
 	stage_ = stage;
 }
+
+bool EnemyManager::IsAnyEnemyChasing()
+{
+
+	for (auto enemy : enemies_)
+	{
+		if (enemy != nullptr &&
+			!enemy->IsDead() &&
+			enemy->IsChasing())
+		{
+			return true;
+		}
+	}
+
+	return false;
+
+}

@@ -30,6 +30,7 @@ void ResourceManager::Init(void)
 	static std::string PATH_IMG = Application::PATH_IMAGE;
 	static std::string PATH_MDL = Application::PATH_MODEL;
 	static std::string PATH_EFF = Application::PATH_EFFECT;
+	static std::string PATH_SND = Application::PATH_SOUND;
 
 	Resource* res;
 
@@ -143,6 +144,27 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "Tank/Barrel.mv1");
 	resourcesMap_.emplace(SRC::TANK_BARREL, res);
 
+	// SoundŠÖ˜A
+	// BGM
+	res = new RES(RES_T::SOUND, PATH_SND + "BGM/GameBgm.mp3");
+	resourcesMap_.emplace(SRC::GAME_BGM, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "BGM/TitleBgm.wav");
+	resourcesMap_.emplace(SRC::TITLE_BGM, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "BGM/ChaseBgm.mp3");
+	resourcesMap_.emplace(SRC::GAME_CHASE_BGM, res);
+	// SE
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/Walk.mp3");
+	resourcesMap_.emplace(SRC::WALK_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/Discovery.wav");
+	resourcesMap_.emplace(SRC::DISC_SE, res);
+	// UŒ‚
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/Hit.mp3");
+	resourcesMap_.emplace(SRC::HIT_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/Attack.mp3");
+	resourcesMap_.emplace(SRC::ATTACK_SE, res);
+	assert(resourcesMap_.size() > 0);
+
+	
 }
 
 void ResourceManager::Release(void)

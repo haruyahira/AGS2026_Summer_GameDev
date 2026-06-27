@@ -7,6 +7,7 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/ResourceManager.h"
 #include "../Manager/Camera.h"
+#include "../Manager/SoundManager.h"
 #include "Common/AnimationController.h"
 #include "Common/Hp/HpManager.h"
 #include "Collider/Capsule.h"
@@ -50,6 +51,11 @@ Player::Player(void)
 	isFootstepActive_ = false;
 	footstepRange_ = 0.0f;
 
+	footstepSETimer_ = 0.0f;
+
+	 attackTimer_ = 0.0f;
+	 attackDuration_ = 0.7f; // 攻撃全体の時間 秒
+	 isDashToggle_ = false;
 }
 
 Player::~Player(void)
@@ -105,6 +111,7 @@ void Player::Init(void)
 	//	MV1SetFrameVisible(transform_.modelId, headFrame_, FALSE);
 	//}
 
+	
 }
 
 void Player::Update(void)
@@ -596,6 +603,13 @@ void Player::ProcessMove(void)
 {
 	auto& ins = InputManager::GetInstance();
 
+	if (SceneManager::GetInstance().IsSceneChanging())
+	{
+		SoundManager::GetInstance().StopSE("Walk");
+		SoundManager::GetInstance().StopSE("Run");
+		return;
+	}
+
 	movePow_ = AsoUtility::VECTOR_ZERO;
 
 	Quaternion cameraRot =
@@ -669,12 +683,19 @@ void Player::ProcessMove(void)
 	bool isMove = !AsoUtility::EqualsVZero(dir);
 
 
+
+	if (ins.IsPadBtnTrgDown(
+		InputManager::JOYPAD_NO::PAD1,
+		InputManager::JOYPAD_BTN::L_STICK_PUSH))
+	{
+		isDashToggle_ = !isDashToggle_;
+	}
+
 	bool isRun =
 		ins.IsPress(KEY_INPUT_LSHIFT) ||
 		ins.IsPress(KEY_INPUT_RSHIFT) ||
-		ins.IsPadBtnNew(
-			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::L_STICK_PUSH);
+		isDashToggle_;
+
 
 
 	bool canMove = (isJump_ || IsEndLanding());
@@ -737,6 +758,40 @@ void Player::ProcessMove(void)
 				}
 			}
 		}
+	}
+
+	//--------------------------------------------------
+	// 足音SE
+	//--------------------------------------------------
+	if (isMove && IsEndLanding())
+	{
+		if (isRun)
+		{
+			// Walk止める
+			SoundManager::GetInstance().StopSE("Walk");
+
+			// Run再生
+			if (!SoundManager::GetInstance().IsPlayingSE("Run"))
+			{
+				SoundManager::GetInstance().PlaySELoop("Run");
+			}
+		}
+		else
+		{
+			// Run止める
+			SoundManager::GetInstance().StopSE("Run");
+
+			// Walk再生
+			if (!SoundManager::GetInstance().IsPlayingSE("Walk"))
+			{
+				SoundManager::GetInstance().PlaySELoop("Walk");
+			}
+		}
+	}
+	else
+	{
+		SoundManager::GetInstance().StopSE("Walk");
+		SoundManager::GetInstance().StopSE("Run");
 	}
 }
 
@@ -804,11 +859,76 @@ void Player::ProcessJump(void)
 
 }
 
+//void Player::ProcessAttack(void)
+//{
+//	auto& ins = InputManager::GetInstance();
+//
+//	// 攻撃開始
+//
+//	bool isAttackTrigger =
+//		ins.IsTrgMouseLeft() ||
+//		ins.IsPadBtnTrgDown(
+//			InputManager::JOYPAD_NO::PAD1,
+//			InputManager::JOYPAD_BTN::R_TRIGGER);
+//
+//
+//	if (!isAttacking_ && isAttackTrigger)
+//	{
+//		isAttacking_ = true;
+//
+//		attackTimer_ = 90.0f;
+//
+//		if (isRightAttack_)
+//		{
+//			animType_ = ANIM_TYPE::HIT_R;
+//			currentAnimType_ = static_cast<int>(ANIM_TYPE::HIT_R);
+//
+//			animationController_->Play(
+//				static_cast<int>(ANIM_TYPE::HIT_R),
+//				false);
+//		}
+//		else
+//		{
+//			animType_ = ANIM_TYPE::HIT_L;
+//			currentAnimType_ = static_cast<int>(ANIM_TYPE::HIT_L);
+//
+//			animationController_->Play(
+//				static_cast<int>(ANIM_TYPE::HIT_L),
+//				false);
+//		}
+//
+//		isRightAttack_ = !isRightAttack_;
+//	}
+//
+//	// 攻撃中
+//	if (isAttacking_)
+//	{
+//		attackTimer_ -= 1.0f;
+//
+//		if (attackTimer_ <= 0.0f)
+//		{
+//			isAttacking_ = false;
+//
+//			// 状態に応じて戻す
+//			if (IsProne())
+//			{
+//				// 攻撃から戻るため、一度 current をリセットして確実に再生
+//				currentAnimType_ = -1;
+//				PlayAnimation(ANIM_TYPE::PRONE_IDLE);
+//			}
+//			else
+//			{
+//				currentAnimType_ = -1;
+//				PlayAnimation(ANIM_TYPE::IDLE);
+//			}
+//		}
+//	}
+//}
 void Player::ProcessAttack(void)
 {
 	auto& ins = InputManager::GetInstance();
 
-	// 攻撃開始
+	float deltaTime = scnMng_.GetDeltaTime();
 
 	bool isAttackTrigger =
 		ins.IsTrgMouseLeft() ||
@@ -816,12 +936,16 @@ void Player::ProcessAttack(void)
 			InputManager::JOYPAD_NO::PAD1,
 			InputManager::JOYPAD_BTN::R_TRIGGER);
 
-
+	// 攻撃開始
 	if (!isAttacking_ && isAttackTrigger)
 	{
 		isAttacking_ = true;
 
-		attackTimer_ = 90.0f;
+		attackTimer_ = 0.0f;
+		isAttackHit_ = false;
+
+		// 攻撃を振った音
+		SoundManager::GetInstance().PlaySE("Attack");
 
 		if (isRightAttack_)
 		{
@@ -848,22 +972,36 @@ void Player::ProcessAttack(void)
 	// 攻撃中
 	if (isAttacking_)
 	{
-		attackTimer_ -= 1.0f;
+		attackTimer_ += deltaTime;
 
-		if (attackTimer_ <= 0.0f)
+		// 攻撃判定が出る時間
+		const float ATTACK_HIT_START = 0.15f;
+		const float ATTACK_HIT_END = 0.35f;
+
+		bool isHitTiming =
+			attackTimer_ >= ATTACK_HIT_START &&
+			attackTimer_ <= ATTACK_HIT_END;
+
+		if (isHitTiming)
+		{
+			// ここで敵やオブジェクトとの当たり判定をする
+			// 当たったら Hit SE を鳴らす
+		}
+
+		if (attackTimer_ >= attackDuration_)
 		{
 			isAttacking_ = false;
+			attackTimer_ = 0.0f;
+			isAttackHit_ = false;
 
-			// 状態に応じて戻す
+			currentAnimType_ = -1;
+
 			if (IsProne())
 			{
-				// 攻撃から戻るため、一度 current をリセットして確実に再生
-				currentAnimType_ = -1;
 				PlayAnimation(ANIM_TYPE::PRONE_IDLE);
 			}
 			else
 			{
-				currentAnimType_ = -1;
 				PlayAnimation(ANIM_TYPE::IDLE);
 			}
 		}
@@ -1552,4 +1690,44 @@ float Player::GetFootstepRange() const
 VECTOR Player::GetFootstepPos() const
 {
 	return transform_.pos;
+}
+bool Player::IsAttacking() const
+{
+	return isAttacking_;
+}
+
+bool Player::IsAttackHit() const
+{
+	return isAttackHit_;
+}
+
+bool Player::IsAttackHitTiming() const
+{
+	if (!isAttacking_)
+	{
+		return false;
+	}
+
+	const float ATTACK_HIT_START = 0.15f;
+	const float ATTACK_HIT_END = 0.35f;
+
+	return attackTimer_ >= ATTACK_HIT_START &&
+		attackTimer_ <= ATTACK_HIT_END;
+}
+
+void Player::OnAttackHit()
+{
+	if (!isAttacking_)
+	{
+		return;
+	}
+
+	if (isAttackHit_)
+	{
+		return;
+	}
+
+	isAttackHit_ = true;
+
+	SoundManager::GetInstance().PlaySE("Hit");
 }

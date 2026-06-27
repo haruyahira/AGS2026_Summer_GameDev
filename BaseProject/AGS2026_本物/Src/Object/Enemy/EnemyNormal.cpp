@@ -29,7 +29,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     isChasing_ = false;
 
     // 視野距離
-    viewRange_ = 600.0f;
+    viewRange_ = 800.0f;
 
     // 視野角：左右45度、合計90度
     viewHalfAngleRad_ = AsoUtility::Deg2RadF(45.0f);
@@ -55,7 +55,11 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     bodyHeight_ = 130.0f;
     bodyCenterOffsetY_ = 65.0f;
 
-    maxHp_ = 30;
+    // プレイヤー攻撃を受ける判定用
+    playerAttackHitRadius_ = 60.0f;
+
+	// HP
+    maxHp_ = 168;
     attackPower_ = 1;
 }
 

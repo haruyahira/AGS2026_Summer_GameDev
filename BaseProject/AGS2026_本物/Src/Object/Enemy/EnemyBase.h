@@ -25,7 +25,7 @@ public:
     bool IsDead(void) const;
 
     VECTOR GetPos(void) const;
-
+    bool IsChasing() const { return isChasing_; }
 
 protected:
     // “G‚²‚Æ‚ÌŒÂ«
@@ -90,7 +90,7 @@ protected:
 
     float attackRange_;
     float attackRadius_;
-
+    float playerAttackHitRadius_;
     int currentAnimType_;
 
 

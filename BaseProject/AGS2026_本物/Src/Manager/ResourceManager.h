@@ -56,6 +56,14 @@ public:
 		TANK_BODY,
 		TANK_BARREL,
 		TANK_WHEEL,
+
+		TITLE_BGM,
+		GAME_BGM,
+		GAME_CHASE_BGM,
+		WALK_SE,
+		DISC_SE,
+		HIT_SE,
+		ATTACK_SE,
 	};
 
 	// 明示的にインステンスを生成する

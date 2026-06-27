@@ -11,6 +11,7 @@
 #include "Camera.h"
 #include "ResourceManager.h"
 #include "InputManager.h"
+#include "SoundManager.h"
 #include "SceneManager.h"
 
 SceneManager* SceneManager::instance_ = nullptr;
@@ -60,7 +61,7 @@ void SceneManager::Init(void)
 #ifdef _DEBUG
 	DoChangeScene(SCENE_ID::GAME);
 #else
-	DoChangeScene(SCENE_ID::GAME);
+	DoChangeScene(SCENE_ID::TITLE);
 #endif
 
 }
@@ -251,6 +252,11 @@ void SceneManager::ResetDeltaTime(void)
 
 void SceneManager::DoChangeScene(SCENE_ID sceneId)
 {
+	SoundManager::GetInstance().StopAllBGM();
+	SoundManager::GetInstance().StopAllSE();
+
+	// í«â¡
+	InputManager::GetInstance().Reset();
 
 	// ÉäÉ\Å[ÉXÇÃâï˙
 	ResourceManager::GetInstance().Release();
@@ -420,4 +426,9 @@ bool SceneManager::IsGameClear(void) const
 	}
 
 	return true;
+}
+
+bool SceneManager::IsSceneChanging(void) const
+{
+	return isSceneChanging_;
 }

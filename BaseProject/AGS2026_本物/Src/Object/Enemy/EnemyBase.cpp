@@ -6,6 +6,7 @@
 #include "../Furniture/Furniture.h"
 #include "../Player.h"
 #include "../Common/Hp/HpManager.h"
+#include "../../Manager/SoundManager.h"
 #include "EnemyBase.h"
 
 EnemyBase::EnemyBase(void) : ActorBase()
@@ -28,6 +29,9 @@ EnemyBase::EnemyBase(void) : ActorBase()
 
     attackTimer_ = 0.0f;
     attackDuration_ = 45.0f;
+    // プレイヤーの攻撃を受ける判定用
+    playerAttackHitRadius_ = 50.0f;
+
 
     attackIntervalTimer_ = 0.0f;
     attackInterval_ = 90.0f;
@@ -52,12 +56,12 @@ EnemyBase::EnemyBase(void) : ActorBase()
     isAlert_ = false;
     alertTimer_ = 0.0f;
 
-    // 180F = 60FPS想定で約3秒
-    alertDuration_ = 300.0f;
+    // 警戒時間
+    alertDuration_ = 600.0f;
 
     // Enemy側の足音検知範囲
-    footstepHearRangeNormal_ = 250.0f;
-    footstepHearRangeAlert_ = 500.0f;
+    footstepHearRangeNormal_ = 450.0f;
+    footstepHearRangeAlert_ = 800.0f;
 
     lastHeardPos_ = VGet(0.0f, 0.0f, 0.0f);
     wasChasing_ = false;
@@ -114,14 +118,15 @@ void EnemyBase::Update(Player* player)
     // プレイヤーの攻撃を受けたか
     if (CheckPlayerAttack(player))
     {
+        Damage(16);
 
-        Damage(1);
+        // ヒットSEを鳴らす
+        player->OnAttackHit();
 
         if (isDead_)
         {
             return;
         }
-
     }
 
     // 視野判定
@@ -129,6 +134,18 @@ void EnemyBase::Update(Player* player)
 
     if (canSeePlayer)
     {
+
+        // 今見つけた瞬間だけ
+        if (!isChasing_)
+        {
+			// 見つけたSE再生
+            SoundManager::GetInstance().PlaySE("Disc");
+
+        }
+
+        // 追跡中も警戒状態維持
+        StartAlert();
+
         isChasing_ = true;
         isHearingFootstep_ = false;
 
@@ -361,15 +378,23 @@ bool EnemyBase::CheckPlayerAttack(Player* player)
         return false;
     }
 
+    if (!player->IsAttackHitTiming())
+    {
+        return false;
+    }
+
+    if (player->IsAttackHit())
+    {
+        return false;
+    }
+
     VECTOR attackPos = player->GetAttackPos();
 
     float attackRadius = 45.0f;
 
-    // 敵の円柱の下端・上端
     float bottomY = transform_.pos.y;
     float topY = transform_.pos.y + bodyHeight_;
 
-    // 攻撃位置のYを円柱の高さ範囲に丸める
     float closestY = attackPos.y;
 
     if (closestY < bottomY)
@@ -381,13 +406,11 @@ bool EnemyBase::CheckPlayerAttack(Player* player)
         closestY = topY;
     }
 
-    // XZ平面で敵中心から攻撃位置への差
     float diffX = attackPos.x - transform_.pos.x;
     float diffZ = attackPos.z - transform_.pos.z;
 
     float distXZ = sqrtf(diffX * diffX + diffZ * diffZ);
 
-    // 円柱側の最近点を求める
     VECTOR closestPoint = transform_.pos;
     closestPoint.y = closestY;
 
@@ -396,11 +419,10 @@ bool EnemyBase::CheckPlayerAttack(Player* player)
         float nx = diffX / distXZ;
         float nz = diffZ / distXZ;
 
-        closestPoint.x += nx * radius_;
-        closestPoint.z += nz * radius_;
+        closestPoint.x += nx * playerAttackHitRadius_;
+        closestPoint.z += nz * playerAttackHitRadius_;
     }
 
-    // 攻撃球中心と敵円柱表面の最近点の距離
     VECTOR diff = VSub(attackPos, closestPoint);
     float distSq = VDot(diff, diff);
 
@@ -733,6 +755,11 @@ void EnemyBase::Damage(int damage)
     {
         isDead_ = true;
 
+        isChasing_ = false;
+        wasChasing_ = false;
+        isAlert_ = false;
+        isHearingFootstep_ = false;
+
 
 #ifdef _DEBUG
        // printfDx("Enemy Dead\n");
@@ -953,4 +980,9 @@ float EnemyBase::GetCurrentFootstepHearRange(void) const
     }
 
     return footstepHearRangeNormal_;
+}
+
+bool EnemyBase::IsDead(void) const
+{
+    return isDead_;
 }

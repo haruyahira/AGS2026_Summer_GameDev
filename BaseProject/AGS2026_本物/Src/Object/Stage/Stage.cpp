@@ -832,7 +832,14 @@ void Stage::UpdateItemPickup(void)
 		return;
 	}
 
-	if (ins.IsTrgDown(KEY_INPUT_F))
+
+	bool isPickupTrigger =
+		ins.IsTrgDown(KEY_INPUT_F) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::LEFT); // □ボタン
+
+	if (isPickupTrigger)
 	{
 		itemCount_[typeIndex]++;
 
@@ -884,8 +891,25 @@ void Stage::UpdateStoneDeviceRegister(void)
 
 	auto& ins = InputManager::GetInstance();
 
-	// Eキー：リザルト画面へ
-	if (ins.IsTrgDown(KEY_INPUT_E))
+
+	// □ボタン：拾う・納品
+	bool isActionTrigger =
+		ins.IsTrgDown(KEY_INPUT_E) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::LEFT);
+
+	// ▲ボタン：脱出・リザルトへ
+	bool isEscapeTrigger =
+		ins.IsTrgDown(KEY_INPUT_F) ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::TOP);
+
+
+
+	// ▲：リザルト画面へ
+	if (isEscapeTrigger)
 	{
 		int stolenMoney = CalcStolenMoney();
 
@@ -900,12 +924,15 @@ void Stage::UpdateStoneDeviceRegister(void)
 		return;
 	}
 
-	if (ins.IsTrgDown(KEY_INPUT_F))
+
+	// □：拾う・納品
+	if (isActionTrigger)
 	{
 		if (HasAnyItem())
 		{
 			RegisterItemsToStoneDevice();
 		}
+
 	}
 }
 
@@ -1653,14 +1680,6 @@ void Stage::DrawPostOutline(void)
 		outlineRTDepth_ < 0)
 	{
 		DrawGraph(0, 0, outlineRTColor_, FALSE);
-
-		DrawFormatString(
-			20,
-			300,
-			GetColor(255, 0, 0),
-			"PostOutlinePS load failed : %d",
-			outlinePostPS_
-		);
 
 		return;
 	}

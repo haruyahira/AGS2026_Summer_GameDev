@@ -8,6 +8,7 @@ class Collider;
 class Capsule;
 class Furniture;
 
+
 class Player : public ActorBase
 {
 
@@ -109,10 +110,6 @@ public:
 	const std::vector<Furniture*>& GetFurnitures() const;
 	bool IsHiddenUnderFurniture() const;
 
-	bool IsAttacking() const
-	{
-		return isAttacking_;
-	}
 	VECTOR GetAttackPos() const;
 
 
@@ -133,9 +130,13 @@ public:
 	bool IsFootstepActive() const;
 	float GetFootstepRange() const;
 	VECTOR GetFootstepPos() const;
-
+	public:
+		bool IsAttackHitTiming() const;
+		void OnAttackHit();
+		bool IsAttacking() const;
+		bool IsAttackHit() const;
 private:
-
+	
 	void PlayAnimation(ANIM_TYPE animType, bool isLoop = true);
 
 	int currentAnimType_;
@@ -181,7 +182,7 @@ private:
 	// ジャンプの入力受付時間
 	float stepJump_;
 	float standHeight_;
-
+	bool isDashToggle_;
 	// 衝突判定に用いられるコライダ
 	std::vector<Collider*> colliders_;
 	std::vector<Furniture*> furnitures_;
@@ -209,7 +210,11 @@ private:
 	int SpineFrame_;
 	float pRadius_;
 	bool isRightAttack_ = true;
+	bool isAttacking_ = false;
 
+	float attackTimer_;
+	float attackDuration_; // 攻撃全体の時間 秒
+	bool isAttackHit_ = false;
 	// アニメーションの初期化
 	void InitAnimation(void);
 	// 当たり判定の初期化
@@ -221,9 +226,6 @@ private:
 	void ChangeStateNone(void);
 	void ChangeStatePlay(void);
 	void ChangeStateProne(void);
-
-	bool isAttacking_ = false;
-	float attackTimer_ = 0.0f;
 
 	float attackRange_ = 80.0f;
 	float attackAngleRad_;
@@ -273,6 +275,7 @@ private:
 	// 足音
 	bool isFootstepActive_;
 	float footstepRange_;
+	float footstepSETimer_ = 0.0f;
 
 	static constexpr float FOOTSTEP_RANGE_WALK = 180.0f;
 	static constexpr float FOOTSTEP_RANGE_RUN = 320.0f;

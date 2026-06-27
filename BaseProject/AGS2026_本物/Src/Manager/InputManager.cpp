@@ -1,4 +1,5 @@
 #include <DxLib.h>
+#include <cmath>
 #include "InputManager.h"
 
 InputManager* InputManager::instance_ = nullptr;
@@ -17,20 +18,33 @@ InputManager& InputManager::GetInstance(void)
 {
     if (instance_ == nullptr)
     {
-        InputManager::CreateInstance();
+        CreateInstance();
     }
 
     return *instance_;
 }
 
+void InputManager::Destroy(void)
+{
+    if (instance_ != nullptr)
+    {
+        instance_->keyInfos_.clear();
+        instance_->mouseInfos_.clear();
+
+        delete instance_;
+        instance_ = nullptr;
+    }
+}
+
 InputManager::InputManager(void)
 {
-    mouseInput_ = -1;
+    mouseInput_ = 0;
 
     mouseX_ = 0;
     mouseY_ = 0;
     mouseDiffX_ = 0;
     mouseDiffY_ = 0;
+
     isFixMouse_ = false;
 
     mousePos_.x = 0.0f;
@@ -57,6 +71,10 @@ InputManager::InputManager(void)
 
 void InputManager::Init(void)
 {
+    keyInfos_.clear();
+    mouseInfos_.clear();
+
+    // 基本キー
     Add(KEY_INPUT_SPACE);
     Add(KEY_INPUT_N);
     Add(KEY_INPUT_Z);
@@ -70,9 +88,9 @@ void InputManager::Init(void)
     Add(KEY_INPUT_A);
     Add(KEY_INPUT_S);
     Add(KEY_INPUT_D);
+
     Add(KEY_INPUT_R);
     Add(KEY_INPUT_T);
-
     Add(KEY_INPUT_C);
     Add(KEY_INPUT_F);
     Add(KEY_INPUT_E);
@@ -86,40 +104,44 @@ void InputManager::Init(void)
 
     Add(KEY_INPUT_1);
 
-    Add(MOUSE_INPUT_LEFT);
-    Add(MOUSE_INPUT_RIGHT);
+    // マウス
+    MouseInfo mouseInfo;
 
-    InputManager::MouseInfo info;
+    mouseInfo = MouseInfo();
+    mouseInfo.key = MOUSE_INPUT_LEFT;
+    mouseInfo.keyOld = false;
+    mouseInfo.keyNew = false;
+    mouseInfo.keyTrgDown = false;
+    mouseInfo.keyTrgUp = false;
+    mouseInfos_.emplace(mouseInfo.key, mouseInfo);
 
-    info = InputManager::MouseInfo();
-    info.key = MOUSE_INPUT_LEFT;
-    info.keyOld = false;
-    info.keyNew = false;
-    info.keyTrgDown = false;
-    info.keyTrgUp = false;
-    mouseInfos_.emplace(info.key, info);
+    mouseInfo = MouseInfo();
+    mouseInfo.key = MOUSE_INPUT_RIGHT;
+    mouseInfo.keyOld = false;
+    mouseInfo.keyNew = false;
+    mouseInfo.keyTrgDown = false;
+    mouseInfo.keyTrgUp = false;
+    mouseInfos_.emplace(mouseInfo.key, mouseInfo);
 
-    info = InputManager::MouseInfo();
-    info.key = MOUSE_INPUT_RIGHT;
-    info.keyOld = false;
-    info.keyNew = false;
-    info.keyTrgDown = false;
-    info.keyTrgUp = false;
-    mouseInfos_.emplace(info.key, info);
+    Reset();
 }
 
 void InputManager::Update(void)
 {
-    // キーボード検知
+    // キーボード更新
     for (auto& p : keyInfos_)
     {
         p.second.keyOld = p.second.keyNew;
         p.second.keyNew = CheckHitKey(p.second.key) != 0;
-        p.second.keyTrgDown = p.second.keyNew && !p.second.keyOld;
-        p.second.keyTrgUp = !p.second.keyNew && p.second.keyOld;
+
+        p.second.keyTrgDown =
+            p.second.keyNew && !p.second.keyOld;
+
+        p.second.keyTrgUp =
+            !p.second.keyNew && p.second.keyOld;
     }
 
-    // パッド情報更新
+    // パッド更新
     SetJPadInState(JOYPAD_NO::KEY_PAD1);
     SetJPadInState(JOYPAD_NO::PAD1);
     SetJPadInState(JOYPAD_NO::PAD2);
@@ -130,18 +152,9 @@ void InputManager::Update(void)
     UpdateMouse();
 }
 
-void InputManager::Destroy(void)
-{
-    keyInfos_.clear();
-    mouseInfos_.clear();
-
-    delete instance_;
-    instance_ = nullptr;
-}
-
 void InputManager::Add(int key)
 {
-    InputManager::Info info = InputManager::Info();
+    Info info = Info();
 
     info.key = key;
     info.keyOld = false;
@@ -155,6 +168,40 @@ void InputManager::Add(int key)
 void InputManager::Clear(void)
 {
     keyInfos_.clear();
+}
+
+void InputManager::Reset(void)
+{
+    // キーボード
+    for (auto& p : keyInfos_)
+    {
+        p.second.keyOld = false;
+        p.second.keyNew = false;
+        p.second.keyTrgDown = false;
+        p.second.keyTrgUp = false;
+    }
+
+    // マウス
+    for (auto& p : mouseInfos_)
+    {
+        p.second.keyOld = false;
+        p.second.keyNew = false;
+        p.second.keyTrgDown = false;
+        p.second.keyTrgUp = false;
+    }
+
+    // パッド
+    ZeroMemory(padInfos_, sizeof(padInfos_));
+
+    // マウス座標
+    mouseX_ = 0;
+    mouseY_ = 0;
+    mouseDiffX_ = 0;
+    mouseDiffY_ = 0;
+    mouseInput_ = 0;
+
+    mousePos_.x = 0.0f;
+    mousePos_.y = 0.0f;
 }
 
 bool InputManager::IsNew(int key) const
@@ -189,12 +236,12 @@ int InputManager::GetMouse(void) const
 
 bool InputManager::IsClickMouseLeft(void) const
 {
-    return mouseInput_ == MOUSE_INPUT_LEFT;
+    return (mouseInput_ & MOUSE_INPUT_LEFT) != 0;
 }
 
 bool InputManager::IsClickMouseRight(void) const
 {
-    return mouseInput_ == MOUSE_INPUT_RIGHT;
+    return (mouseInput_ & MOUSE_INPUT_RIGHT) != 0;
 }
 
 bool InputManager::IsTrgMouseLeft(void) const
@@ -205,6 +252,26 @@ bool InputManager::IsTrgMouseLeft(void) const
 bool InputManager::IsTrgMouseRight(void) const
 {
     return FindMouse(MOUSE_INPUT_RIGHT).keyTrgDown;
+}
+
+int InputManager::GetMouseDiffX(void) const
+{
+    return mouseDiffX_;
+}
+
+int InputManager::GetMouseDiffY(void) const
+{
+    return mouseDiffY_;
+}
+
+void InputManager::SetFixMouse(bool isFix)
+{
+    isFixMouse_ = isFix;
+}
+
+bool InputManager::IsFixMouse(void) const
+{
+    return isFixMouse_;
 }
 
 const InputManager::Info& InputManager::Find(int key) const
@@ -233,7 +300,7 @@ const InputManager::MouseInfo& InputManager::FindMouse(int key) const
 
 InputManager::JOYPAD_TYPE InputManager::GetJPadType(JOYPAD_NO no)
 {
-    return static_cast<InputManager::JOYPAD_TYPE>(
+    return static_cast<JOYPAD_TYPE>(
         GetJoypadType(static_cast<int>(no))
         );
 }
@@ -290,8 +357,8 @@ void InputManager::SetJPadInState(JOYPAD_NO jpNo)
 {
     int no = GetPadIndex(jpNo);
 
-    auto stateNew = GetJPadInputState(jpNo);
-    auto& stateNow = padInfos_[no];
+    JOYPAD_IN_STATE stateNew = GetJPadInputState(jpNo);
+    JOYPAD_IN_STATE& stateNow = padInfos_[no];
 
     int max = static_cast<int>(JOYPAD_BTN::MAX);
 
@@ -302,8 +369,9 @@ void InputManager::SetJPadInState(JOYPAD_NO jpNo)
 
         stateNow.IsOld[i] = stateNow.IsNew[i];
 
-        if (i == static_cast<int>(JOYPAD_BTN::R_TRIGGER) ||
-            i == static_cast<int>(JOYPAD_BTN::L_TRIGGER))
+        // L2/R2はアナログ値やボタン値の両方を想定して少ししきい値を持たせる
+        if (i == static_cast<int>(JOYPAD_BTN::L_TRIGGER) ||
+            i == static_cast<int>(JOYPAD_BTN::R_TRIGGER))
         {
             stateNow.IsNew[i] = stateNow.ButtonsNew[i] > 30;
         }
@@ -312,8 +380,11 @@ void InputManager::SetJPadInState(JOYPAD_NO jpNo)
             stateNow.IsNew[i] = stateNow.ButtonsNew[i] > 0;
         }
 
-        stateNow.IsTrgDown[i] = stateNow.IsNew[i] && !stateNow.IsOld[i];
-        stateNow.IsTrgUp[i] = !stateNow.IsNew[i] && stateNow.IsOld[i];
+        stateNow.IsTrgDown[i] =
+            stateNow.IsNew[i] && !stateNow.IsOld[i];
+
+        stateNow.IsTrgUp[i] =
+            !stateNow.IsNew[i] && stateNow.IsOld[i];
     }
 
     stateNow.AKeyLX = stateNew.AKeyLX;
@@ -330,8 +401,8 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     int inputType = static_cast<int>(no);
 
     // =====================================================
-    // Xbox系は必ずXInputを最優先
-    // LT / RT は DirectInput ではなく XInput の専用メンバで取る
+    // XInput対応
+    // Xboxコントローラーなど
     // =====================================================
     XINPUT_STATE x;
     ZeroMemory(&x, sizeof(x));
@@ -340,19 +411,19 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     {
         int idx;
 
-        //   Y
-        // X   B
-        //   A
-
+        // Y
         idx = static_cast<int>(JOYPAD_BTN::TOP);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_Y];
 
+        // X
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_X];
 
+        // B
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_B];
 
+        // A
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_A];
 
@@ -364,11 +435,11 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
         ret.ButtonsNew[idx] = x.RightTrigger;
 
-        // 左スティック押し込み
+        // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_LEFT_THUMB];
 
-        // 右スティック押し込み
+        // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
         ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_RIGHT_THUMB];
 
@@ -384,47 +455,106 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     }
 
     // =====================================================
-    // XInputで取れない場合だけDirectInput
-    // ここではLT/RTは扱わない
-    // DirectInputではLT/RTが同じZ軸扱いになることがあり誤反応するため
+    // DirectInput対応
+    // PS5コントローラー / PS4コントローラーなど
     // =====================================================
-    auto type = GetJPadType(no);
+    JOYPAD_TYPE type = GetJPadType(no);
 
     switch (type)
     {
-    case InputManager::JOYPAD_TYPE::DUAL_SENSE:
+    case JOYPAD_TYPE::DUAL_SENSE:
     {
-        auto d = GetJPadDInputState(no);
+        DINPUT_JOYSTATE d = GetJPadDInputState(no);
         int idx;
 
+        // PS5 DualSense
+        // ▲
         idx = static_cast<int>(JOYPAD_BTN::TOP);
         ret.ButtonsNew[idx] = d.Buttons[3];
 
+        // □
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
         ret.ButtonsNew[idx] = d.Buttons[0];
 
+        // ○
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
         ret.ButtonsNew[idx] = d.Buttons[2];
 
+        // ×
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
         ret.ButtonsNew[idx] = d.Buttons[1];
 
-        // DirectInput側ではLT/RTは0にする
+        // L2
+        // 環境によっては Buttons[6] に入る
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[6];
 
+        // R2
+        // 環境によっては Buttons[7] に入る
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
-        ret.ButtonsNew[idx] = 0;
+        ret.ButtonsNew[idx] = d.Buttons[7];
 
+        // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
         ret.ButtonsNew[idx] = d.Buttons[10];
 
+        // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
         ret.ButtonsNew[idx] = d.Buttons[11];
 
+        // 左スティック
         ret.AKeyLX = d.X;
         ret.AKeyLY = d.Y;
 
+        // 右スティック
+        ret.AKeyRX = d.Z;
+        ret.AKeyRY = d.Rz;
+    }
+    break;
+
+    case JOYPAD_TYPE::DUAL_SHOCK_4:
+    {
+        DINPUT_JOYSTATE d = GetJPadDInputState(no);
+        int idx;
+
+        // PS4 DualShock
+        // ▲
+        idx = static_cast<int>(JOYPAD_BTN::TOP);
+        ret.ButtonsNew[idx] = d.Buttons[3];
+
+        // □
+        idx = static_cast<int>(JOYPAD_BTN::LEFT);
+        ret.ButtonsNew[idx] = d.Buttons[0];
+
+        // ○
+        idx = static_cast<int>(JOYPAD_BTN::RIGHT);
+        ret.ButtonsNew[idx] = d.Buttons[2];
+
+        // ×
+        idx = static_cast<int>(JOYPAD_BTN::DOWN);
+        ret.ButtonsNew[idx] = d.Buttons[1];
+
+        // L2
+        idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
+        ret.ButtonsNew[idx] = d.Buttons[6];
+
+        // R2
+        idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
+        ret.ButtonsNew[idx] = d.Buttons[7];
+
+        // L3
+        idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
+        ret.ButtonsNew[idx] = d.Buttons[10];
+
+        // R3
+        idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
+        ret.ButtonsNew[idx] = d.Buttons[11];
+
+        // 左スティック
+        ret.AKeyLX = d.X;
+        ret.AKeyLY = d.Y;
+
+        // 右スティック
         ret.AKeyRX = d.Z;
         ret.AKeyRY = d.Rz;
     }
@@ -432,9 +562,10 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
 
     default:
     {
-        auto d = GetJPadDInputState(no);
+        DINPUT_JOYSTATE d = GetJPadDInputState(no);
         int idx;
 
+        // 汎用DirectInput
         idx = static_cast<int>(JOYPAD_BTN::TOP);
         ret.ButtonsNew[idx] = d.Buttons[3];
 
@@ -447,9 +578,7 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
         ret.ButtonsNew[idx] = d.Buttons[0];
 
-        // 重要：
-        // DirectInput側ではLT/RTをZ軸から作らない
-        // LTでRTも反応する原因になるため
+        // 汎用ではL2/R2は誤反応防止で基本0
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
         ret.ButtonsNew[idx] = 0;
 
@@ -474,7 +603,7 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     return ret;
 }
 
-void InputManager::UpdateMouse()
+void InputManager::UpdateMouse(void)
 {
     int oldX = mouseX_;
     int oldY = mouseY_;
@@ -489,12 +618,12 @@ void InputManager::UpdateMouse()
         mouseDiffX_ = mouseX_ - centerX;
         mouseDiffY_ = mouseY_ - centerY;
 
-        if (abs(mouseDiffX_) <= 1)
+        if (std::abs(mouseDiffX_) <= 1)
         {
             mouseDiffX_ = 0;
         }
 
-        if (abs(mouseDiffY_) <= 1)
+        if (std::abs(mouseDiffY_) <= 1)
         {
             mouseDiffY_ = 0;
         }
@@ -519,9 +648,15 @@ void InputManager::UpdateMouse()
     for (auto& pair : mouseInfos_)
     {
         pair.second.keyOld = pair.second.keyNew;
-        pair.second.keyNew = (currentInput & pair.second.key) != 0;
-        pair.second.keyTrgDown = pair.second.keyNew && !pair.second.keyOld;
-        pair.second.keyTrgUp = !pair.second.keyNew && pair.second.keyOld;
+
+        pair.second.keyNew =
+            (currentInput & pair.second.key) != 0;
+
+        pair.second.keyTrgDown =
+            pair.second.keyNew && !pair.second.keyOld;
+
+        pair.second.keyTrgUp =
+            !pair.second.keyNew && pair.second.keyOld;
     }
 }
 

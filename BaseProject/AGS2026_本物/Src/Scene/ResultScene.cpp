@@ -3,6 +3,7 @@
 #include "ResultScene.h"
 #include "../Manager/SceneManager.h"
 #include "../Manager/InputManager.h"
+#include "../Manager/SoundManager.h"
 
 ResultScene::ResultScene(void)
 {

@@ -16,6 +16,7 @@ public:
 	void Update(Player* player);
 	void Draw(void);
 	void SetStage(Stage* stage);
+	bool IsAnyEnemyChasing();
 
 private:
 	std::vector<EnemyBase*> enemies_; // “G‚ğ‚Ü‚Æ‚ß‚ÄŠÇ—‚·‚é”z—ñ

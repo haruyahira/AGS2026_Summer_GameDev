@@ -6,6 +6,7 @@
 #include "../Manager/SceneManager.h"
 #include "../Manager/ResourceManager.h"
 #include "../Manager/InputManager.h"
+#include "../Manager/SoundManager.h"
 #include "../Manager/Camera.h"
 #include "TitleScene.h"
 
@@ -65,15 +66,11 @@ void TitleScene::Init(void)
 		    Color::WHITE
 			});
 	}
-
-	bgm_ = LoadSoundMem("Data/Bgm/TitleBgm.wav");
-
-	ChangeVolumeSoundMem(180, bgm_);
-
-	// 3. ループ再生を開始
-	if (bgm_ != -1) {
-		PlaySoundMem(bgm_, DX_PLAYTYPE_LOOP);
-	}
+	SoundManager::GetInstance().Init();
+	SoundManager::GetInstance().LoadBGM(
+		"TitleBgm",
+		"Data/Sound/BGM/TitleBgm.wav");
+	SoundManager::GetInstance().PlayBGM("TitleBgm");
 
 	// 定点カメラ
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIXED_POINT);

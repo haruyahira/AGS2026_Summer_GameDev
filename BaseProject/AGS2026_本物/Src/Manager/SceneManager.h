@@ -71,7 +71,7 @@ public:
 
 	bool IsGameClear(void) const;
 
-
+	bool IsSceneChanging(void) const;
 
 private:
 
@@ -126,5 +126,5 @@ private:
 
 	int targetMoney_ = 100000;     // –Ú•W‹àŠz
 	bool isPlayerDeadOnce_ = false; // ˆê‰ñ‚Å‚àŽ€‚ñ‚¾‚©
-
+	
 };
