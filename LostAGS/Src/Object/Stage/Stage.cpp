@@ -298,34 +298,34 @@ void Stage::MakeMainStage(void)
 	CreateFurniture({
 		ResourceManager::SRC::F_TABLE,
 		{ -1790.0f, -100.0f, 390.0f },
-		{ 4.0f, 0.65f, 0.8f },
+		{ 4.0f, 0.6f, 0.8f },
 		{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 
 	CreateFurniture({
 	ResourceManager::SRC::F_TABLE,
 	{ -2400.0f, -100.0f, 390.0f },
-	{ 4.0f, 0.65f, 1.88f },
+	{ 4.0f, 0.6f, 1.88f },
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 
 	CreateFurniture({
 	ResourceManager::SRC::F_TABLE,
 	{ -3000.0f, -100.0f, 390.0f },
-	{ 4.0f, 0.65f, 0.8f },
+	{ 4.0f, 0.6f, 0.8f },
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 
 	CreateFurniture({
     ResourceManager::SRC::F_TABLE,
     { -2400.0f, -100.0f, -600.0f },
-    { 2.0f, 0.65f, 1.88f },
+    { 2.0f, 0.6f, 1.88f },
     { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 	CreateFurniture({
     ResourceManager::SRC::F_TABLE,
     { -2900.0f, -100.0f, -600.0f },
-    { 2.0f, 0.65f, 1.88f },
+    { 2.0f, 0.6f, 1.88f },
     { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 

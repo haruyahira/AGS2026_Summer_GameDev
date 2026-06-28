@@ -19,6 +19,7 @@ public:
 	~GameScene(void);
 
 	void Init(void) override;
+	void OnLoaded() override;
 	void Update(void) override;
 	void Draw(void) override;
 	void DrawPostEffect(int mainScreen);
@@ -40,5 +41,11 @@ private:
 
 	// ポストエフェクト
 	std::unique_ptr<PostEffect> postEffect_;
+
+
+	bool isHideEnemyAtStart_;
+	int hideEnemyStartTime_;
+	static constexpr int HIDE_ENEMY_TIME = 500; // 0.5秒
+
 	
 };

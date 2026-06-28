@@ -114,6 +114,8 @@ private:
 	// シーン遷移
 	void DoChangeScene(SCENE_ID sceneId);
 
+	void BeginSceneLoad(void);
+
 	// フェード
 	void Fade(void);
 
@@ -130,5 +132,17 @@ private:
 
 	int targetMoney_ = 100000;     // 目標金額
 	bool isPlayerDeadOnce_ = false; // 一回でも死んだか
+
+
+	bool isNowLoading_;
+
+	void StartAsyncChangeScene(SCENE_ID sceneId);
+	void DrawLoadingScreen(void);
+
+	int loadingStartTime_;
+	bool isLoadingStarted_;
+	bool isLoadingDrawn_;
+	static constexpr int LOADING_MIN_TIME = 1680; // ミリ秒 1000 = 1秒
+
 
 };

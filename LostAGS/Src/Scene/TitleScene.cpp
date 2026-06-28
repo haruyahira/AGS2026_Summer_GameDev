@@ -45,9 +45,7 @@ void TitleScene::Init(void)
 	// 選択肢の当たり判定用矩形を初期化
 	InitSelect();
 
-	// レッサーパンダの画像サイズを取得
-	GetGraphSize(imgTitleRedpanda_, &imgPandaX_, &imgPandaY_);
-	imgPandaX_/= CENTER_DIVIDER;
+	
 
 	fontHandle_ = CreateFontToHandle("ＭＳ Ｐゴシック", 64, 3, DX_FONTTYPE_ANTIALIASING_8X8);
 	
@@ -61,6 +59,15 @@ void TitleScene::Init(void)
 		    Color::WHITE
 			});
 	}
+	
+}
+
+void TitleScene::OnLoaded(void)
+{
+	// レッサーパンダの画像サイズを取得
+	GetGraphSize(imgTitleRedpanda_, &imgPandaX_, &imgPandaY_);
+	imgPandaX_ /= CENTER_DIVIDER;
+
 	auto& snd = SoundManager::GetInstance();
 
 	snd.SetBGMVolume(180);

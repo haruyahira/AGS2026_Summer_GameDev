@@ -21,6 +21,11 @@ public:
 	// 描画処理
 	virtual void Draw(void) = 0;
 
+
+	// 非同期ロード完了後に呼ばれる
+	virtual void OnLoaded() {}
+
+
 protected:
 
 	// リソース管理

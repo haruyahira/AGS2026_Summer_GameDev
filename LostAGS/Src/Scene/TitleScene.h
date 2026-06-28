@@ -26,6 +26,7 @@ public:
 	~TitleScene(void);
 
 	void Init(void) override;
+	void OnLoaded() override;
 	void Update(void) override;
 	void Draw(void) override;
 

@@ -19,6 +19,11 @@ GameScene::GameScene(void)
 {
 	player_ = nullptr;
 	stage_ = nullptr;
+
+
+	isHideEnemyAtStart_ = true;
+	hideEnemyStartTime_ = 0;
+
 }
 
 GameScene::~GameScene(void)
@@ -29,24 +34,35 @@ GameScene::~GameScene(void)
 
 void GameScene::Init(void)
 {
-	// 3Dモデルを読み込む前に、ピクセル単位のライティングを有効にする
-	SetUsePixelLighting(TRUE);
+	ResourceManager& res = ResourceManager::GetInstance();
 
-	// 全体を照らす光を極限まで暗くする
-	SetLightDifColor(GetColorF(0.12f, 0.12f, 0.18f, 0.0f)); // 拡散光
-	SetLightAmbColor(GetColorF(0.15f, 0.15f, 0.15f, 0.0f)); // 環境光
+	res.Load(ResourceManager::SRC::PLAYER);
+	res.Load(ResourceManager::SRC::ENEMYNORMAL);
+	res.Load(ResourceManager::SRC::FLOOR);
+	res.Load(ResourceManager::SRC::F_TABLE);
+	res.Load(ResourceManager::SRC::CEILING_LIGHT);
+	res.Load(ResourceManager::SRC::WALL);
+	res.Load(ResourceManager::SRC::F_F);
+	res.Load(ResourceManager::SRC::F_G);
+	res.Load(ResourceManager::SRC::LAPTOP);
+	res.Load(ResourceManager::SRC::GAME_BGM);
 
-	SetFogEnable(TRUE); // フォグを有効にする
-	SetFogColor(5, 5, 15);
-	SetFogStartEnd(0.0f, 1000.0f);
-	SetLightEnable(FALSE); // デフォルトライトを無効にする
+	// ここでは Stage::Init() や LoadModelDuplicate はしない
+}
+void GameScene::OnLoaded(void)
+{
+	// ポストエフェクト
+	postEffect_ = std::make_unique<PostEffect>();
+	postEffect_->Init(
+		Application::SCREEN_SIZE_X,
+		Application::adjustedSizeY_,
+		Application::PATH_SHADER);
+
+	postEffect_->Select({ PostEffect::TYPE::HORROR });
+
 	// プレイヤー
 	player_ = new Player();
 	player_->Init();
-
-	// 敵
-	enemyMng_ = std::make_unique<EnemyManager>();
-	enemyMng_->Init();
 
 	// ステージ
 	stage_ = new Stage(player_);
@@ -55,47 +71,26 @@ void GameScene::Init(void)
 	// ステージの初期設定
 	stage_->ChangeStage(NAME::FIRST_STAGE);
 
+	// 敵
+	enemyMng_ = std::make_unique<EnemyManager>();
+	enemyMng_->Init();
 	enemyMng_->SetStage(stage_);
 
-	// スカイドーム
-	/*skyDome_ = new SkyDome(player_->GetTransform());
-	skyDome_->Init();*/
-
-	//SetUsePerPixelLighting(TRUE);
-
-
-	// ポストエフェクト
-	postEffect_ = std::make_unique<PostEffect>();
-
-	postEffect_->Init(
-		Application::SCREEN_SIZE_X,
-		Application::adjustedSizeY_,
-		Application::PATH_SHADER);
-
-	postEffect_->Select({ PostEffect::TYPE::HORROR });
-
+	// カメラ
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
-	
-	// 初期視点設定
-#ifdef _DEBUG
 	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
-#else
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
-#endif
-
 
 	player_->Update();
-	//std::weak_ptr<Camera> camera_ = SceneManager::GetInstance().GetCamera();
-	Camera* camera = SceneManager::GetInstance().GetCamera();
-	/*if (auto camera = camera_.lock()) {*/
-		camera->Update();
-	//}
-	// Sound
+	SceneManager::GetInstance().GetCamera()->Update();
+
+	// BGM
 	auto& snd = SoundManager::GetInstance();
-
 	snd.SetBGMVolume(180);
-
 	snd.PlayBGM(SoundManager::BGM::GAME, true);
+
+	// 開始直後だけ敵を非表示
+	hideEnemyStartTime_ = GetNowCount();
+	isHideEnemyAtStart_ = true;
 }
 
 void GameScene::Update(void)
@@ -119,7 +114,15 @@ void GameScene::Update(void)
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
 	}
 
-	
+
+	if (isHideEnemyAtStart_)
+	{
+		if (GetNowCount() - hideEnemyStartTime_ >= HIDE_ENEMY_TIME)
+		{
+			isHideEnemyAtStart_ = false;
+		}
+	}
+
 
 	HpManager::GetInstance().Update();
 
@@ -151,20 +154,20 @@ void GameScene::Update(void)
 
 void GameScene::Draw(void)
 {
+	if (stage_ == nullptr || player_ == nullptr || enemyMng_ == nullptr)
+	{
+		return;
+	}
 
-	// ステージの描画
 	stage_->Draw();
 
-	// プレイヤーの描画
 	player_->Draw();
-	
-	// 敵の描画
-	enemyMng_->Draw();
 
-	//int mainScreen = SceneManager::GetInstance().GetMainScreen();
-
-	//// ポストエフェクト描画
-	//postEffect_->Draw(mainScreen);
+	// 開始直後は敵を描かない
+	if (!isHideEnemyAtStart_)
+	{
+		enemyMng_->Draw();
+	}
 }
 
 void GameScene::DrawPostEffect(int mainScreen)
