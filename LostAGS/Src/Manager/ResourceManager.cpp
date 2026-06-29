@@ -77,6 +77,10 @@ void ResourceManager::Init(void)
 	// ロッカー
 	resourcesMap_.emplace(SRC::LOCKER,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Locker.mv1"));	
+	// 冷凍庫
+	resourcesMap_.emplace(SRC::FREEZER,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Freezer.mv1"));	
+
 	// 床
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
 	resourcesMap_.emplace(SRC::FLOOR, res);
@@ -86,6 +90,7 @@ void ResourceManager::Init(void)
 	// 壁
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);
+	// ショーケース
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_frame.mv1");
 	resourcesMap_.emplace(SRC::F_F, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_grasu.mv1");
@@ -93,6 +98,8 @@ void ResourceManager::Init(void)
 	// ゴール地点、納品所
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/ReturnPoint.mv1");
 	resourcesMap_.emplace(SRC::RETURN_POINT, res);
+
+	// アイテム------------------------------------------------------------
 	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Laptop.mv1");
 	resourcesMap_.emplace(SRC::LAPTOP, res);
 

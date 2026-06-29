@@ -21,6 +21,7 @@
 #include "../Furniture/StoneDevice.h"
 #include "../Furniture/BookShelf.h"
 #include "../Furniture/Locker.h"
+#include "../Furniture/Freezer.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
 
@@ -552,10 +553,10 @@ void Stage::MakeMainStage(void)
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// ロッカー
-	for (int i = 0; i < 11; i++)
+	// ロッカー--------------------------------------------
+	for (int i = 0; i < 13; i++)
 	{
-		float posX = -2700.0f + (i * -58.0f);
+		float posX = -2680.0f + (i * -58.0f);
 
 		CreateFurniture({
 		ResourceManager::SRC::LOCKER,
@@ -564,6 +565,27 @@ void Stage::MakeMainStage(void)
 		{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
 		});
 	}
+
+	for (int i = 0; i < 20; i++)
+	{
+		float posX = -2280.0f + (i * -58.0f);
+
+		CreateFurniture({
+		ResourceManager::SRC::LOCKER,
+		{ posX, -100.0f, 1350.0f },
+		{ 0.95f, 1.0f, 1.0f },
+		{0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+			});
+	}
+	//-----------------------------------------------------------
+
+	// 冷凍庫
+	CreateFurniture({
+		ResourceManager::SRC::FREEZER,
+		{ -3415.0f, -96.0f, -295.0f },
+		{ 0.054f, 0.057f, 0.12f },
+		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		});
 
 	// 天井
 	CreateFurniture({
@@ -760,6 +782,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	else if (data.modelSrc == ResourceManager::SRC::LOCKER)
 	{
 		f = new Locker(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::FREEZER)
+	{
+		f = new Freezer(&trans);
 	}
 
 	if (f == nullptr)

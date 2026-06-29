@@ -1,23 +1,23 @@
-#include "BookShelf.h"
+#include "Freezer.h"
 #include "../../Manager/InputManager.h"
 
 // コンストラクタ
-BookShelf::BookShelf(const Transform* trans)
+Freezer::Freezer(const Transform* trans)
     : Furniture(NAME::BOOKSLF, trans) {
 }
 
 // 初期化
-void BookShelf::Init() {
+void Freezer::Init() {
     colliders_.clear();
 
 
 }
 
 // 更新
-void BookShelf::Update(void) {
+void Freezer::Update(void) {
 }
 
-void BookShelf::Draw(void)
+void Freezer::Draw(void)
 {
     trans_.Update();
 

@@ -33,6 +33,7 @@ public:
 		F_F,
 		BOOKSLF,
 		LOCKER,
+		FREEZER,
 
 
 		RETURN_POINT,
