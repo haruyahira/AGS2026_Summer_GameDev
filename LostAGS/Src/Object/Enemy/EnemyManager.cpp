@@ -123,30 +123,26 @@ void EnemyManager::Init(void)
 	testEnemy->SetPos(points[5]);
 	enemies_.push_back(testEnemy);*/
 
-
 	debugPatrolPoints_ = points;
 	debugPatrolLinks_ = links;
 	
-
-
 	//enemy2->SetPatrolPoints(points);
 	//enemy2->SetPatrolLinks(links);
 	//enemy2->SetPos(points[4]);
 	//enemies_.push_back(enemy2);
 
 
-	for (int i = 0; i < 10; i++)
-	{
-		EnemyNormal* enemy = new EnemyNormal();
+	//for (int i = 0; i < 100; i++)
+	//{
+	//	EnemyNormal* enemy = new EnemyNormal();
 
-		enemy->Init();
+	//	enemy->Init();
 
-		enemy->SetPatrolPoints(points);
-		enemy->SetPatrolLinks(links);
+	//	enemy->SetPatrolPoints(points);
+	//	enemy->SetPatrolLinks(links);
 
-		enemies_.push_back(enemy);
-	}
-
+	//	enemies_.push_back(enemy);
+	//}
 
 }
 

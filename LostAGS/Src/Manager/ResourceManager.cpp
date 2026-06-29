@@ -70,6 +70,10 @@ void ResourceManager::Init(void)
 	// ä˜
 	resourcesMap_.emplace(SRC::F_TABLE,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/F_Table.mv1"));
+	
+	// ñ{íI
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1");
+	resourcesMap_.emplace(SRC::BOOKSLF, res);
 
 	// è∞
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
@@ -124,31 +128,10 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/FlatPlanet01.mv1");
 	resourcesMap_.emplace(SRC::FLAT_PLANET_01, res);
 
-	// ïΩíRÇ»òfêØ02
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/FlatPlanet02.mv1");
-	resourcesMap_.emplace(SRC::FLAT_PLANET_02, res);
 
-	// ç≈å„ÇÃòfêØ
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/LastPlanet.mv1");
-	resourcesMap_.emplace(SRC::LAST_PLANET, res);
-
-	// ì¡ï Ç»òfêØ
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/RoadPlanet.mv1");
-	resourcesMap_.emplace(SRC::SPECIAL_PLANET, res);
-
-	// ë´âå
-	res = new RES(RES_T::EFFEKSEER, PATH_EFF + "Smoke/Smoke.efkefc");
-	resourcesMap_.emplace(SRC::FOOT_SMOKE, res);
-
-	// É^ÉìÉN
-	res = new RES(RES_T::MODEL, PATH_MDL + "Tank/Body.mv1");
-	resourcesMap_.emplace(SRC::TANK_BODY, res);
-	res = new RES(RES_T::MODEL, PATH_MDL + "Tank/Wheel.mv1");
-	resourcesMap_.emplace(SRC::TANK_WHEEL, res);
-	res = new RES(RES_T::MODEL, PATH_MDL + "Tank/Barrel.mv1");
-	resourcesMap_.emplace(SRC::TANK_BARREL, res);
-
+	//============
 	// Soundä÷òA
+	//============
 	// BGM
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/GameBgm.wav");
 	resourcesMap_.emplace(SRC::GAME_BGM, res);	
@@ -158,9 +141,7 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::CHASE_BGM, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Bgm/ClearBgm.mp3");
 	resourcesMap_.emplace(SRC::CLEAR_BGM, res);
-	//======
 	// SE
-	//======
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");
 	resourcesMap_.emplace(SRC::WALK_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Attack.mp3");

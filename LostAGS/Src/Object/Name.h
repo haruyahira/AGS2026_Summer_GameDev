@@ -12,4 +12,5 @@ enum class NAME
     WALL, // 壁
     SHOWCASE, // ショーケース
     CEILING,
+    BOOKSLF,
 };

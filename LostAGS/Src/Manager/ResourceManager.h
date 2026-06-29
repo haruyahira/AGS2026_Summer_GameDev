@@ -31,6 +31,7 @@ public:
 		CEILING_LIGHT,
 		F_G,
 		F_F,
+		BOOKSLF,
 		RETURN_POINT,
 		LAPTOP,
 

@@ -19,6 +19,7 @@
 #include "../Furniture/Showcase.h"
 #include "../Furniture/Ceiling.h"
 #include "../Furniture/StoneDevice.h"
+#include "../Furniture/BookShelf.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
 
@@ -288,47 +289,40 @@ void Stage::MakeMainStage(void)
 				{ 0.0f, 0.0f, 0.0f }
 				});
 
-			// 机の上をノートPCの出現候補にする
-			// 高さが合わない場合は -55.0f を調整してください
-			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
+			// 机の上をノートPCの出現候補
+			//itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
 		}
 	}
 
-	// 厨房の机
-	CreateFurniture({
-		ResourceManager::SRC::F_TABLE,
-		{ -1790.0f, -100.0f, 390.0f },
-		{ 4.0f, 0.6f, 0.8f },
-		{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-		});
+	// 厨房の机-------------------------------------
 
-	CreateFurniture({
-	ResourceManager::SRC::F_TABLE,
-	{ -2400.0f, -100.0f, 390.0f },
-	{ 4.0f, 0.6f, 1.88f },
-	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-		});
+	struct TableData {
+		VECTOR pos;
+		VECTOR scale;
+	};
 
-	CreateFurniture({
-	ResourceManager::SRC::F_TABLE,
-	{ -3000.0f, -100.0f, 390.0f },
-	{ 4.0f, 0.6f, 0.8f },
-	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-		});
+	TableData tables[] = {
+		{{-1790.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}},
+		{{-2400.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 1.88f}},
+		{{-3000.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}},
+		{{-2400.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}},
+		{{-2900.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}},
+	};
 
-	CreateFurniture({
-    ResourceManager::SRC::F_TABLE,
-    { -2400.0f, -100.0f, -600.0f },
-    { 2.0f, 0.6f, 1.88f },
-    { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-		});
-	CreateFurniture({
-    ResourceManager::SRC::F_TABLE,
-    { -2900.0f, -100.0f, -600.0f },
-    { 2.0f, 0.6f, 1.88f },
-    { 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
-		});
+	for (auto& t : tables)
+	{
+		CreateFurniture({
+			ResourceManager::SRC::F_TABLE,
+            Vector3(t.pos.x, t.pos.y, t.pos.z),
+	        Vector3(t.scale.x, t.scale.y, t.scale.z),
+			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+			});
 
+		// 机の上にスポーンポイント追加
+		itemSpawnPoints_.push_back(VGet(t.pos.x, -23.0f, t.pos.z));
+	}
+
+	//-------------------------------------------
 
 
 	// 壁一覧
@@ -549,6 +543,14 @@ void Stage::MakeMainStage(void)
 		CreateFurniture(wallData);
 	}
 
+	// 本棚
+	CreateFurniture({
+	ResourceManager::SRC::BOOKSLF,
+	{ -1300.0f, -100.0f, 600.0f },
+	{ 100.0f, 100.5f, 100.0f },
+	{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f }
+		});
+
 	// 天井
 	CreateFurniture({
 		ResourceManager::SRC::FLOOR,
@@ -736,6 +738,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	else if (data.modelSrc == ResourceManager::SRC::F_G)
 	{
 		f = new Showcase(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::BOOKSLF)
+	{
+		f = new Bookshelf(&trans);
 	}
 
 	if (f == nullptr)
