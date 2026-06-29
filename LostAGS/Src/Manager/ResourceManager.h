@@ -32,6 +32,9 @@ public:
 		F_G,
 		F_F,
 		BOOKSLF,
+		LOCKER,
+
+
 		RETURN_POINT,
 		LAPTOP,
 

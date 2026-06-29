@@ -82,8 +82,8 @@ void SceneManager::Init(void)
 	Init3D();
 	// èâä˙ÉVÅ[ÉìÇÃê›íË
 #ifdef _DEBUG
-	sceneId_ = SCENE_ID::TITLE;
-	DoChangeScene(SCENE_ID::TITLE);
+	sceneId_ = SCENE_ID::GAME;
+	DoChangeScene(SCENE_ID::GAME);
 #else
 	sceneId_ = SCENE_ID::NONE;
 	waitSceneId_ = SCENE_ID::TITLE;

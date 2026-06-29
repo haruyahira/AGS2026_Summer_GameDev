@@ -20,6 +20,7 @@
 #include "../Furniture/Ceiling.h"
 #include "../Furniture/StoneDevice.h"
 #include "../Furniture/BookShelf.h"
+#include "../Furniture/Locker.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
 
@@ -290,7 +291,7 @@ void Stage::MakeMainStage(void)
 				});
 
 			// 机の上をノートPCの出現候補
-			//itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
+			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
 		}
 	}
 
@@ -546,10 +547,23 @@ void Stage::MakeMainStage(void)
 	// 本棚
 	CreateFurniture({
 	ResourceManager::SRC::BOOKSLF,
-	{ -1300.0f, -100.0f, 600.0f },
-	{ 100.0f, 100.5f, 100.0f },
-	{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f }
+	{ -1445.0f, -100.0f, 340.0f },
+	{ 0.95f, 0.5f, 1.0f },
+	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
+
+	// ロッカー
+	for (int i = 0; i < 11; i++)
+	{
+		float posX = -2700.0f + (i * -58.0f);
+
+		CreateFurniture({
+		ResourceManager::SRC::LOCKER,
+		{ posX, -100.0f, 1050.0f },
+		{ 0.95f, 1.0f, 1.0f },
+		{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+		});
+	}
 
 	// 天井
 	CreateFurniture({
@@ -741,7 +755,11 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	}
 	else if (data.modelSrc == ResourceManager::SRC::BOOKSLF)
 	{
-		f = new Bookshelf(&trans);
+		f = new BookShelf(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::LOCKER)
+	{
+		f = new Locker(&trans);
 	}
 
 	if (f == nullptr)

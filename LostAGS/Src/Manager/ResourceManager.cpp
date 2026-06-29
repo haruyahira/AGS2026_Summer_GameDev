@@ -72,9 +72,11 @@ void ResourceManager::Init(void)
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/F_Table.mv1"));
 	
 	// 本棚
-	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1");
-	resourcesMap_.emplace(SRC::BOOKSLF, res);
-
+	resourcesMap_.emplace(SRC::BOOKSLF,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1"));
+	// ロッカー
+	resourcesMap_.emplace(SRC::LOCKER,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Locker.mv1"));	
 	// 床
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/floor.mv1");
 	resourcesMap_.emplace(SRC::FLOOR, res);

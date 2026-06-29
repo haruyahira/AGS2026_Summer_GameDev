@@ -13,4 +13,5 @@ enum class NAME
     SHOWCASE, // ショーケース
     CEILING,
     BOOKSLF,
+    LOCKER,
 };

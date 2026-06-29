@@ -17,15 +17,20 @@ void BookShelf::Init() {
 void BookShelf::Update(void) {
 }
 
-// 描画
-void BookShelf::Draw(void) {
+void BookShelf::Draw(void)
+{
     trans_.Update();
+
+    // 本棚の中心位置をデバッグ表示
+    DrawSphere3D(
+        trans_.pos,
+        30.0f,
+        16,
+        GetColor(255, 0, 0),
+        GetColor(255, 0, 0),
+        TRUE
+    );
 
     // モデル描画
     MV1DrawModel(trans_.modelId);
-
-    // 当たり判定表示
-    for (const auto& box : colliders_) {
-        box.DrawDebug(GetColor(255, 0, 0));
-    }
 }

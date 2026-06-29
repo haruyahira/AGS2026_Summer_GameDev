@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\Locker.cpp" />
     <ClCompile Include="Src\Object\Furniture\BookShelf.cpp" />
     <ClCompile Include="Src\Utility\DebugConsole.cpp" />
     <ClCompile Include="Src\Utility\DebugMemory.cpp" />
@@ -202,6 +203,7 @@
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\Locker.h" />
     <ClInclude Include="Src\Object\Furniture\BookShelf.h" />
     <ClInclude Include="Src\Utility\DebugConsole.h" />
     <ClInclude Include="Src\Utility\DebugMemory.h" />
