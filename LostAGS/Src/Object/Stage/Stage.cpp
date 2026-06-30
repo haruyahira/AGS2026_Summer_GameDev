@@ -548,8 +548,8 @@ void Stage::MakeMainStage(void)
 	// –{’I
 	CreateFurniture({
 	ResourceManager::SRC::BOOKSLF,
-	{ -1445.0f, -100.0f, 340.0f },
-	{ 0.95f, 0.5f, 1.0f },
+	{ -1445.0f, -100.0f, 330.0f },
+	{ 0.93f, 0.5f, 1.0f },
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
