@@ -22,6 +22,7 @@ public:
 	void OnLoaded() override;
 	void Update(void) override;
 	void Draw(void) override;
+	void DrawUI(void);
 	void DrawPostEffect(int mainScreen);
 
 

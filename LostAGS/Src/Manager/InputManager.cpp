@@ -79,6 +79,7 @@ void InputManager::Init(void)
 
     Add(KEY_INPUT_RSHIFT);
     Add(KEY_INPUT_LSHIFT);
+    Add(KEY_INPUT_TAB);
 
     Add(KEY_INPUT_BACKSLASH);
     Add(KEY_INPUT_LALT);
@@ -91,6 +92,7 @@ void InputManager::Init(void)
 
     Add(MOUSE_INPUT_LEFT);
     Add(MOUSE_INPUT_RIGHT);
+    
 
     InputManager::MouseInfo info;
 

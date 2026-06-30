@@ -170,6 +170,15 @@ void GameScene::Draw(void)
 	}
 }
 
+void GameScene::DrawUI(void) 
+{
+	if (stage_ != nullptr)
+	{
+		stage_->DrawUI();
+	}
+}
+
+
 void GameScene::DrawPostEffect(int mainScreen)
 {
 	if (postEffect_ == nullptr)

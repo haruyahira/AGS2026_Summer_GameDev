@@ -232,7 +232,12 @@ void SceneManager::Draw(void)
 
 		if (gameScene != nullptr)
 		{
+			// まずポストエフェクト後のゲーム画面を描く
 			gameScene->DrawPostEffect(mainScrenn_);
+
+			// その後にUIを描く
+			// これでUIはポストエフェクトに巻き込まれない
+			gameScene->DrawUI();
 		}
 		else
 		{

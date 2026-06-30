@@ -1,4 +1,4 @@
-#include <vector>
+ï»¿#include <vector>
 #include <map>
 #include <DxLib.h>
 #include <set>
@@ -36,6 +36,12 @@ Stage::Stage(Player* player)
 
 	lookingItemIndex_ = -1;
 	isItemMax_ = false;
+	// ãƒŸãƒ‹ãƒãƒƒãƒ—
+	miniMapScreen_ = -1;
+	isMiniMapVisible_ = false;
+	
+
+
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
@@ -47,14 +53,14 @@ Stage::Stage(Player* player)
 
 Stage::~Stage(void)
 {
-	// ˜f¯
+	// æƒ‘æ˜Ÿ
 	for (auto pair : stages_)
 	{
 		delete pair.second;
 	}
 	stages_.clear();
 
-	// ‰Æ‹ï
+	// å®¶å…·
 	for (auto f : furnitures_)
 	{
 		delete f;
@@ -84,6 +90,14 @@ Stage::~Stage(void)
 		delete l;
 	}
 
+	// ãƒŸãƒ‹ãƒãƒƒãƒ—
+	if (miniMapScreen_ != -1)
+	{
+		DeleteGraph(miniMapScreen_);
+		miniMapScreen_ = -1;
+	}
+
+
 	ceilingLights_.clear();
 	ReleasePostOutline();
 	lightEffect_.Release();
@@ -93,34 +107,39 @@ void Stage::Init(void)
 {
 	SRand(GetNowCount());
 
-	// HLSLƒ‰ƒCƒg—p
+	// HLSLãƒ©ã‚¤ãƒˆç”¨
 	bool isLightEffectOk = lightEffect_.Init(
 		"Data/Shader/Light3DVS.cso",
 		"Data/Shader/Light3DPS.cso"
 	);
 
-	// ƒ|ƒXƒgƒGƒtƒFƒNƒg—ÖŠsü—p
+	// ãƒã‚¹ãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆè¼ªéƒ­ç·šç”¨
 	InitPostOutline();
 
 	CreateBeamGraph();
-	// ƒXƒe[ƒW
+
+	//	ãƒŸãƒ‹ãƒãƒƒãƒ—
+	miniMapScreen_ = MakeScreen(512, 512, TRUE);
+
+	// ã‚¹ãƒ†ãƒ¼ã‚¸
 	MakeMainStage();
 
 	stoneDevice_ = new StoneDevice(player_);
 	stoneDevice_->Init();
 
 	step_ = -1.0f;
+
 }
 
 void Stage::Update(void)
 {
-	// ˜f¯
+	// æƒ‘æ˜Ÿ
 	for (const auto& s : stages_)
 	{
 		s.second->Update();
 	}
 
-	// ‰Æ‹ï
+	// å®¶å…·
 	for (auto f : furnitures_)
 	{
 		f->Update();
@@ -147,6 +166,11 @@ void Stage::Update(void)
 
 	UpdateItemPickup();
 	UpdateStoneDeviceRegister();
+
+
+	// è¿½åŠ ï¼šTABã‚’æŠ¼ã—ã¦ã„ã‚‹é–“ãƒŸãƒ‹ãƒãƒƒãƒ—è¡¨ç¤º
+	isMiniMapVisible_ = CheckHitKey(KEY_INPUT_TAB);
+
 
 	if (player_ != nullptr)
 	{
@@ -175,26 +199,26 @@ void Stage::Update(void)
 }
 void Stage::Draw(void)
 {
-	// SceneManager ‚ªİ’è‚µ‚Ä‚¢‚é•`‰ææ‚ğ•Û‘¶‚·‚é
-	// ’Êí‚Í mainScrenn_ ‚ª“ü‚Á‚Ä‚¢‚é
+	// SceneManager ãŒè¨­å®šã—ã¦ã„ã‚‹æç”»å…ˆã‚’ä¿å­˜ã™ã‚‹
+	// é€šå¸¸ã¯ mainScrenn_ ãŒå…¥ã£ã¦ã„ã‚‹
 	int oldScreen = GetDrawScreen();
 
 	VECTOR cameraPos = GetCameraPosition();
 	VECTOR cameraTarget = GetCameraTarget();
 
-	// •`‰æ’¼‘O‚Ì³‚µ‚¢ƒJƒƒ‰•ûŒü‚Åƒ‰ƒCƒg‚ğXV
+	// æç”»ç›´å‰ã®æ­£ã—ã„ã‚«ãƒ¡ãƒ©æ–¹å‘ã§ãƒ©ã‚¤ãƒˆã‚’æ›´æ–°
 	UpdateFlashLightForShader(cameraPos, cameraTarget);
 
-	// ƒXƒe[ƒWê—pRT‚ÉA
-	// •s“§–¾•¨A”¼“§–¾•¨Aƒ‰ƒCƒgA—ÖŠsü—pî•ñ‚ğ•`‰æ
+	// ã‚¹ãƒ†ãƒ¼ã‚¸å°‚ç”¨RTã«ã€
+	// ä¸é€æ˜ç‰©ã€åŠé€æ˜ç‰©ã€ãƒ©ã‚¤ãƒˆã€è¼ªéƒ­ç·šç”¨æƒ…å ±ã‚’æç”»
 	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
 
-	// Š®¬‚µ‚½ƒAƒEƒgƒ‰ƒCƒ“•t‚«ƒXƒe[ƒW‰æ‘œ‚ğA
-	// Œ³‚Ì•`‰ææ‚É•`‚­
+	// å®Œæˆã—ãŸã‚¢ã‚¦ãƒˆãƒ©ã‚¤ãƒ³ä»˜ãã‚¹ãƒ†ãƒ¼ã‚¸ç”»åƒã‚’ã€
+	// å…ƒã®æç”»å…ˆã«æã
 	DrawPostOutline(oldScreen);
 
 	// =========================
-	// StageŠO‚Ì3D•`‰æ—p‚Éó‘Ô‚ğ–ß‚·
+	// Stageå¤–ã®3Dæç”»ç”¨ã«çŠ¶æ…‹ã‚’æˆ»ã™
 	// =========================
 
 	SetDrawScreen(oldScreen);
@@ -217,9 +241,21 @@ void Stage::Draw(void)
 	SetUseTextureToShader(1, -1);
 	SetUseTextureToShader(2, -1);
 
-	// UI‚¾‚¯ÅŒã
-	DrawItemUI();
 }
+
+
+void Stage::DrawUI(void) const
+{
+	DrawItemUI();
+	DrawInventoryUI();
+
+	if (isMiniMapVisible_)
+	{
+		DrawMiniMap();
+	}
+}
+
+
 void Stage::ChangeStage(NAME type)
 {
 	activeName_ = type;
@@ -244,10 +280,10 @@ Planet* Stage::GetPlanet(NAME type)
 
 void Stage::MakeMainStage(void)
 {
-	// ƒAƒCƒeƒ€Œó•â’n“_‚ğ‰Šú‰»
+	// ã‚¢ã‚¤ãƒ†ãƒ å€™è£œåœ°ç‚¹ã‚’åˆæœŸåŒ–
 	itemSpawnPoints_.clear();
 
-	// Å‰‚ÌƒXƒe[ƒW
+	// æœ€åˆã®ã‚¹ãƒ†ãƒ¼ã‚¸
 	//------------------------------------------------------------------------------
 	Transform planetTrans;
 	planetTrans.SetModel(resMng_.LoadModelDuplicate(ResourceManager::SRC::FLOOR));
@@ -264,7 +300,7 @@ void Stage::MakeMainStage(void)
 	stages_.emplace(name, stage);
 	//------------------------------------------------------------------------------
 
-	// Š÷----------------------------------------------------------------------------
+	// æœº----------------------------------------------------------------------------
 	std::set<int> skipX = { 1, 2 };
 	std::set<int> skipZ = { 2, 3, 6, 7 };
 
@@ -292,12 +328,12 @@ void Stage::MakeMainStage(void)
 				{ 0.0f, 0.0f, 0.0f }
 				});
 
-			// Š÷‚Ìã‚ğƒm[ƒgPC‚ÌoŒ»Œó•â
+			// æœºã®ä¸Šã‚’ãƒãƒ¼ãƒˆPCã®å‡ºç¾å€™è£œ
 			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
 		}
 	}
 
-	// ~–[‚ÌŠ÷
+	// å¨æˆ¿ã®æœº
 
 	struct TableData {
 		VECTOR pos;
@@ -321,26 +357,26 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 			});
 
-		// Š÷‚Ìã‚ÉƒXƒ|[ƒ“ƒ|ƒCƒ“ƒg’Ç‰Á
+		// æœºã®ä¸Šã«ã‚¹ãƒãƒ¼ãƒ³ãƒã‚¤ãƒ³ãƒˆè¿½åŠ 
 		itemSpawnPoints_.push_back(VGet(t.pos.x, -23.0f, t.pos.z));
 	}
 
-	// ‹xŒeº‚ÌŠ÷
+	// ä¼‘æ†©å®¤ã®æœº
 
 	//-------------------------------------------
 
 
-	// •Çˆê——
+	// å£ä¸€è¦§
 	std::vector<FurnitureData> wallDatas =
 	{
-		// ³–Ê•Ç
+		// æ­£é¢å£
 		{
 			ResourceManager::SRC::WALL,
 			{ 88.0f, -100.0f, -290.0f },
 			{ 5.0f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		},
-		// ‡A³–Ê¶•Ç
+		// â‘¡æ­£é¢å·¦å£
 		{
 			ResourceManager::SRC::WALL,
 			{ -1500.0f, -100.0f, -805.0f },
@@ -348,9 +384,9 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 
-		// ‡A³–Ê‰E•Ç
-		// -x ‰œ‚Éi
-		// -z ¶‚Éi
+		// â‘¡æ­£é¢å³å£
+		// -x å¥¥ã«é€²
+		// -z å·¦ã«é€²
 		{
 			ResourceManager::SRC::WALL,
 			{ -1500.0f, -100.0f, 330.0f },
@@ -358,21 +394,21 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 
-		// ‡B³–Ê‰E•Ç
+		// â‘¢æ­£é¢å³å£
 		{
 			ResourceManager::SRC::WALL,
 			{ -1700.0f, -100.0f, 330.0f },
 			{ 2.2f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ‡B³–Ê¶•ÇiHŠíó‚¯æ‚èêŠ‚Ì‰E‚Ì•Çj
+		// â‘¢æ­£é¢å·¦å£ï¼ˆé£Ÿå™¨å—ã‘å–ã‚Šå ´æ‰€ã®å³ã®å£ï¼‰
 	{
 		ResourceManager::SRC::WALL,
 		{ -1700.0f, -100.0f, -610.0f },
 		{ 0.9f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 	},
-		// ‡B³–Ê¶•ÇiHŠíó‚¯æ‚èêŠj
+		// â‘¢æ­£é¢å·¦å£ï¼ˆé£Ÿå™¨å—ã‘å–ã‚Šå ´æ‰€ï¼‰
 	{
 		ResourceManager::SRC::WALL,
 		{ -1700.0f, -330.0f, -1020.0f },
@@ -381,35 +417,35 @@ void Stage::MakeMainStage(void)
 	},
 		
 
-		// ³–Ê•Çi’…‘Ö‚¦º‚Ì•Çj
+		// æ­£é¢å£ï¼ˆç€æ›¿ãˆå®¤ã®å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -3430.0f, -100.0f, 1200.0f },
 			{ 0.9f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ³–Ê•Çi‹xŒeº‚Ì•Çj
+		// æ­£é¢å£ï¼ˆä¼‘æ†©å®¤ã®å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -2100.0f, -100.0f, 1200.0f },
 			{ 0.9f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ³–Ê•Çiƒpƒ\ƒRƒ“º‚Ì¶•Çj
+		// æ­£é¢å£ï¼ˆãƒ‘ã‚½ã‚³ãƒ³å®¤ã®å·¦å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -1400.0f, -100.0f, 1350.0f },
 			{ 0.25f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ³–Ê•Çiƒpƒ\ƒRƒ“º‚Ì‰E•Çj
+		// æ­£é¢å£ï¼ˆãƒ‘ã‚½ã‚³ãƒ³å®¤ã®å³å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -1400.0f, -100.0f, 950.0f },
 			{ 0.65f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
-		// ³–Ê•Çiƒpƒ\ƒRƒ“º‚ÌŒã‚ë•Çj
+		// æ­£é¢å£ï¼ˆãƒ‘ã‚½ã‚³ãƒ³å®¤ã®å¾Œã‚å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -270.0f, -100.0f, 1200.0f },
@@ -418,14 +454,14 @@ void Stage::MakeMainStage(void)
 		},
 	
 		
-		// ‡Dˆê”ÔŒã‚ë‰E‚Ì•Ç
+		// â‘¤ä¸€ç•ªå¾Œã‚å³ã®å£
 	{
 		ResourceManager::SRC::WALL,
 		{ -4300.0f, -100.0f, 370.0f },
 		{ 5.5f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 	},
-		// ‡D³–Ê¶•Çi~–[”à‚Ì¶‚Ì•Çj
+		// â‘¤æ­£é¢å·¦å£ï¼ˆå¨æˆ¿æ‰‰ã®å·¦ã®å£ï¼‰
 	{
 		ResourceManager::SRC::WALL,
 		{ -4300.0f, -100.0f, -1120.0f },
@@ -434,21 +470,21 @@ void Stage::MakeMainStage(void)
 	},
 
 
-		// ¶‚Ì•Ç
+		// å·¦ã®å£
 		{
 			ResourceManager::SRC::WALL,
 			{ -1000.0f, -100.0f, -1200.0f },
 			{ 15.0f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ‰E‚Ì•Ç
+		// å³ã®å£
 		{
 			ResourceManager::SRC::WALL,
 			{ -680.0f, -100.0f, 800.0f },
 			{ 3.7f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
 		},
-		// ‡A‰E‚Ì•Ç(~–[‚Ì‰E•Çj
+		// â‘¡å³ã®å£(å¨æˆ¿ã®å³å£ï¼‰
 		{
 		ResourceManager::SRC::WALL,
 		{ -2565.0f, -100.0f, 829.0f },
@@ -458,28 +494,28 @@ void Stage::MakeMainStage(void)
 
 
 
-		// ‰E‰E‚Ì•Çi”é–§‚Ì•”‰®‚Ì¶•Çj
+		// å³å³ã®å£ï¼ˆç§˜å¯†ã®éƒ¨å±‹ã®å·¦å£ï¼‰
 		{
 		ResourceManager::SRC::WALL,
 		{ -400.0f, -100.0f, 1000.0f },
 		{ 0.8f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ‰E‰E‚Ì•Çi”é–§‚Ì•”‰®‚Ì‰E•Çj
+		// å³å³ã®å£ï¼ˆç§˜å¯†ã®éƒ¨å±‹ã®å³å£ï¼‰
 		{
 		ResourceManager::SRC::WALL,
 		{ -1140.0f, -100.0f, 1000.0f },
 		{ 1.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ‡A‰E‰E‚Ì•Ç
+		// â‘¡å³å³ã®å£
 		{
 		ResourceManager::SRC::WALL,
 		{ -2060.0f, -100.0f, 1000.0f },
 		{ 1.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ‡B‰E‰E‚Ì•Ç
+		// â‘¢å³å³ã®å£
 		{
 		ResourceManager::SRC::WALL,
 		{ -3030.0f, -100.0f, 1000.0f },
@@ -488,7 +524,7 @@ void Stage::MakeMainStage(void)
 		},
 
 
-		// ˆê”Ô‰E‚Ì•Ç
+		// ä¸€ç•ªå³ã®å£
 		{
 		ResourceManager::SRC::WALL,
 		{ -1500.0f, -100.0f, 1400.0f },
@@ -496,29 +532,29 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
 
-		// —â‘ ŒÉA—â“€ŒÉŠÖ˜A‚Ì•Ç
-		//‰E
+		// å†·è”µåº«ã€å†·å‡åº«é–¢é€£ã®å£
+		//å³
 		{
 			ResourceManager::SRC::WALL,
 			{ -3668.5f, -100.0f, -140.0f },
 			{ 1.15f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ¶
+		// å·¦
 		{
 			ResourceManager::SRC::WALL,
 			{ -3668.5f, -100.0f, -450.0f },
 			{ 1.15f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// Œã‚ë
+		// å¾Œã‚
 		{
 			ResourceManager::SRC::WALL,
 			{ -3937.0f, -100.0f, -295.0f },
 			{ 0.775f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
 		},
-		// ‡C³–Ê¶•Çi~–[‚Ì—â‘ ŒÉ‚Ì¶‚Ì•Çj
+		// â‘£æ­£é¢å·¦å£ï¼ˆå¨æˆ¿ã®å†·è”µåº«ã®å·¦ã®å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -3430.0f, -100.0f, -633.0f },
@@ -526,7 +562,7 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 
-		// ‡C³–Ê‰E•Çi~–[‚Ì—â‘ ŒÉ‚Ì‰E‚Ì•Çj
+		// â‘£æ­£é¢å³å£ï¼ˆå¨æˆ¿ã®å†·è”µåº«ã®å³ã®å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -3430.0f, -100.0f, 329.0f },
@@ -534,7 +570,7 @@ void Stage::MakeMainStage(void)
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 
-			// ‡C³–Ê¶•Çi~–[”à‚Ì¶‚Ì•Çj
+			// â‘£æ­£é¢å·¦å£ï¼ˆå¨æˆ¿æ‰‰ã®å·¦ã®å£ï¼‰
 		{
 			ResourceManager::SRC::WALL,
 			{ -3430.0f, -100.0f, -1092.0f },
@@ -548,7 +584,7 @@ void Stage::MakeMainStage(void)
 		CreateFurniture(wallData);
 	}
 
-	// –{’I
+	// æœ¬æ£š
 	CreateFurniture({
 	ResourceManager::SRC::BOOKSLF,
 	{ -1445.0f, -100.0f, 330.0f },
@@ -556,7 +592,7 @@ void Stage::MakeMainStage(void)
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// ƒƒbƒJ[--------------------------------------------
+	// ãƒ­ãƒƒã‚«ãƒ¼--------------------------------------------
 	for (int i = 0; i < 13; i++)
 	{
 		float posX = -2680.0f + (i * -58.0f);
@@ -582,7 +618,7 @@ void Stage::MakeMainStage(void)
 	}
 	//-----------------------------------------------------------
 
-	// —â“€ŒÉ
+	// å†·å‡åº«
 	CreateFurniture({
 		ResourceManager::SRC::FREEZER,
 		{ -3415.0f, -96.0f, -295.0f },
@@ -590,7 +626,7 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// “Vˆä
+	// å¤©äº•
 	CreateFurniture({
 		ResourceManager::SRC::FLOOR,
 		{ 10.0f, 250.0f, 10.0f },
@@ -598,7 +634,7 @@ void Stage::MakeMainStage(void)
 		{ AsoUtility::Deg2RadF(180.0f), 0.0f, 0.0f }
 		});
 
-	// ƒP[ƒLƒVƒ‡[ƒP[ƒX–{‘Ì
+	// ã‚±ãƒ¼ã‚­ã‚·ãƒ§ãƒ¼ã‚±ãƒ¼ã‚¹æœ¬ä½“
 	CreateFurniture({
 		ResourceManager::SRC::F_F,
 		{ -1200.0f, -100.0f, -800.0f },
@@ -606,7 +642,7 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// ƒP[ƒLƒVƒ‡[ƒP[ƒXƒKƒ‰ƒX
+	// ã‚±ãƒ¼ã‚­ã‚·ãƒ§ãƒ¼ã‚±ãƒ¼ã‚¹ã‚¬ãƒ©ã‚¹
 	CreateFurniture({
 		ResourceManager::SRC::F_G,
 		{ -1200.0f, -100.0f, -800.0f },
@@ -614,11 +650,11 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// ƒm[ƒgPC‚ğŒó•â’n“_‚©‚ç10ŒÂƒ‰ƒ“ƒ_ƒ€¶¬
+	// ãƒãƒ¼ãƒˆPCã‚’å€™è£œåœ°ç‚¹ã‹ã‚‰10å€‹ãƒ©ãƒ³ãƒ€ãƒ ç”Ÿæˆ
 	CreateRandomLaptopItemsFromSpawnPoints(3);
 
 
-	// “Vˆäƒ‰ƒCƒg
+	// å¤©äº•ãƒ©ã‚¤ãƒˆ
 	std::vector<FurnitureData> lightDatas =
 	{
 
@@ -647,7 +683,7 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, 0.0f, 0.0f }
 	},
 
-		// ˜L‰º
+		// å»Šä¸‹
 	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -1610.0f, 250.0f, -775.0f },
@@ -666,7 +702,7 @@ void Stage::MakeMainStage(void)
 		{ 0.1f, 0.08f, 0.1f },
 		{ 0.0f, 0.0f, 0.0f }
 	},
-		// ˜L‰ºoŒû
+		// å»Šä¸‹å‡ºå£
 	{
 		ResourceManager::SRC::CEILING_LIGHT,
 		{ -3200.0f, 250.0f,  900.0f },
@@ -707,7 +743,7 @@ void Stage::MakeMainStage(void)
 	}
 	};
 
-	// ~–[
+	// å¨æˆ¿
 	for (int j = 0; j < 4; j++)
 	{
 		for (int i = 0; i < 4; i++)
@@ -798,7 +834,7 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	f->Init();
 
-	// •Ç‚ğƒ‰ƒCƒgÕ•Á—p‚É©“®“o˜^
+	// å£ã‚’ãƒ©ã‚¤ãƒˆé®è”½ç”¨ã«è‡ªå‹•ç™»éŒ²
 
 	LightBlocker* blocker =
 		dynamic_cast<LightBlocker*>(f);
@@ -920,11 +956,16 @@ void Stage::UpdateItemPickup(void)
 	Item::TYPE type = item->GetType();
 	int typeIndex = (int)type;
 
-	if (GetTotalItemCount() >= MAX_ITEM_COUNT)
+
+	int usedSlotCount = GetUsedInventorySlotCount();
+	int itemSlotSize = GetItemSlotSize(type);
+
+	if (usedSlotCount + itemSlotSize > MAX_ITEM_COUNT)
 	{
 		isItemMax_ = true;
 		return;
 	}
+
 
 	if (
 		ins.IsTrgDown(KEY_INPUT_F) ||
@@ -936,7 +977,7 @@ void Stage::UpdateItemPickup(void)
 	{
 		itemCount_[typeIndex]++;
 
-		// ¡‰ñ‚ÌƒvƒŒƒC’†‚É“‚ñ‚¾ƒAƒCƒeƒ€‚Æ‚µ‚Ä‹L˜^
+		// ä»Šå›ã®ãƒ—ãƒ¬ã‚¤ä¸­ã«ç›—ã‚“ã ã‚¢ã‚¤ãƒ†ãƒ ã¨ã—ã¦è¨˜éŒ²
 		stolenItemCount_[typeIndex]++;
 
 		item->Pickup();
@@ -984,7 +1025,7 @@ void Stage::UpdateStoneDeviceRegister(void)
 
 	auto& ins = InputManager::GetInstance();
 
-	// EƒL[FƒŠƒUƒ‹ƒg‰æ–Ê‚Ö
+	// Eã‚­ãƒ¼ï¼šãƒªã‚¶ãƒ«ãƒˆç”»é¢ã¸
 	if (
 		ins.IsTrgDown(KEY_INPUT_E) ||
 		ins.IsPadBtnTrgDown(
@@ -999,7 +1040,7 @@ void Stage::UpdateStoneDeviceRegister(void)
 		return;
 	}
 
-	// ƒAƒCƒeƒ€‚ğŒ©‚Ä‚¢‚é‚ÍF“o˜^‚¾‚¯~‚ß‚é
+	// ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¦‹ã¦ã„ã‚‹æ™‚ã¯Fç™»éŒ²ã ã‘æ­¢ã‚ã‚‹
 	if (lookingItemIndex_ != -1)
 	{
 		return;
@@ -1034,7 +1075,7 @@ void Stage::DrawItemUI(void) const
 				DrawString(
 					20,
 					130,
-					"‚±‚êˆÈãƒAƒCƒeƒ€‚ğ‚Ä‚Ü‚¹‚ñ",
+					"ã“ã‚Œä»¥ä¸Šã‚¢ã‚¤ãƒ†ãƒ ã‚’æŒã¦ã¾ã›ã‚“",
 					GetColor(255, 80, 80)
 				);
 			}
@@ -1044,7 +1085,7 @@ void Stage::DrawItemUI(void) const
 					20,
 					130,
 					GetColor(255, 255, 255),
-					"F E‚¤F%s",
+					"F æ‹¾ã†ï¼š%s",
 					item->GetName()
 				);
 			}
@@ -1058,33 +1099,34 @@ void Stage::DrawItemUI(void) const
 		x,
 		y,
 		GetColor(255, 255, 255),
-		"ŠƒAƒCƒeƒ€ ‡ŒvF%d / %d",
-		GetTotalItemCount(),
+		"ã‚¤ãƒ³ãƒ™ãƒ³ãƒˆãƒªï¼š%d / %d",
+		GetUsedInventorySlotCount(),
 		MAX_ITEM_COUNT
+
 	);
 
 	y += 25;
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
-		const char* name = "•s–¾";
+		const char* name = "ä¸æ˜";
 
 		switch ((Item::TYPE)i)
 		{
 		case Item::TYPE::LAPTOP:
-			name = "ƒm[ƒgPC";
+			name = "ãƒãƒ¼ãƒˆPC";
 			break;
 		case Item::TYPE::BATTERY:
-			name = "ƒoƒbƒeƒŠ[";
+			name = "ãƒãƒƒãƒ†ãƒªãƒ¼";
 			break;
 		case Item::TYPE::KEY:
-			name = "Œ®";
+			name = "éµ";
 			break;
 		case Item::TYPE::MEDICINE:
-			name = "–ò";
+			name = "è–¬";
 			break;
 		default:
-			name = "•s–¾";
+			name = "ä¸æ˜";
 			break;
 		}
 
@@ -1092,7 +1134,7 @@ void Stage::DrawItemUI(void) const
 			x,
 			y,
 			GetColor(255, 255, 255),
-			"%sF%d",
+			"%sï¼š%d",
 			name,
 			itemCount_[i]
 		);
@@ -1105,7 +1147,7 @@ void Stage::DrawItemUI(void) const
 	DrawString(
 		x,
 		y,
-		"“o˜^Ï‚İƒAƒCƒeƒ€",
+		"ç™»éŒ²æ¸ˆã¿ã‚¢ã‚¤ãƒ†ãƒ ",
 		GetColor(100, 255, 255)
 	);
 
@@ -1113,24 +1155,24 @@ void Stage::DrawItemUI(void) const
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
-		const char* name = "•s–¾";
+		const char* name = "ä¸æ˜";
 
 		switch ((Item::TYPE)i)
 		{
 		case Item::TYPE::LAPTOP:
-			name = "ƒm[ƒgPC";
+			name = "ãƒãƒ¼ãƒˆPC";
 			break;
 		case Item::TYPE::BATTERY:
-			name = "ƒoƒbƒeƒŠ[";
+			name = "ãƒãƒƒãƒ†ãƒªãƒ¼";
 			break;
 		case Item::TYPE::KEY:
-			name = "Œ®";
+			name = "éµ";
 			break;
 		case Item::TYPE::MEDICINE:
-			name = "–ò";
+			name = "è–¬";
 			break;
 		default:
-			name = "•s–¾";
+			name = "ä¸æ˜";
 			break;
 		}
 
@@ -1138,7 +1180,7 @@ void Stage::DrawItemUI(void) const
 			x,
 			y,
 			GetColor(100, 255, 255),
-			"%sF%d",
+			"%sï¼š%d",
 			name,
 			registeredItemCount_[i]
 		);
@@ -1155,7 +1197,7 @@ void Stage::DrawItemUI(void) const
 				DrawString(
 					20,
 					80,
-					"FƒL[‚ÅƒAƒCƒeƒ€“o˜^ / EƒL[‚Å’Eo",
+					"Fã‚­ãƒ¼ã§ã‚¢ã‚¤ãƒ†ãƒ ç™»éŒ² / Eã‚­ãƒ¼ã§è„±å‡º",
 					GetColor(255, 255, 255)
 				);
 			}
@@ -1164,7 +1206,7 @@ void Stage::DrawItemUI(void) const
 				DrawString(
 					20,
 					80,
-					"“o˜^‚Å‚«‚éƒAƒCƒeƒ€‚ª‚ ‚è‚Ü‚¹‚ñ / EƒL[‚Å’Eo",
+					"ç™»éŒ²ã§ãã‚‹ã‚¢ã‚¤ãƒ†ãƒ ãŒã‚ã‚Šã¾ã›ã‚“ / Eã‚­ãƒ¼ã§è„±å‡º",
 					GetColor(180, 180, 180)
 				);
 			}
@@ -1189,8 +1231,8 @@ int Stage::GetItemPrice(Item::TYPE type) const
 	switch (type)
 	{
 	case Item::TYPE::LAPTOP:
-		// int‚ÌãŒÀ‚ğ’´‚¦‚È‚¢’l‚É‚µ‚Ä‚¢‚Ü‚·
-		// 300‰­‰~‚È‚Ç‚ğˆµ‚¢‚½‚¢ê‡‚ÍA‹àŠzŒn‚ğlong long‚É‚µ‚Ä‚­‚¾‚³‚¢
+		// intã®ä¸Šé™ã‚’è¶…ãˆãªã„å€¤ã«ã—ã¦ã„ã¾ã™
+		// 300å„„å††ãªã©ã‚’æ‰±ã„ãŸã„å ´åˆã¯ã€é‡‘é¡ç³»ã‚’long longã«ã—ã¦ãã ã•ã„
 		return 30000;
 
 	case Item::TYPE::BATTERY:
@@ -1322,14 +1364,14 @@ void Stage::DrawOneCeilingLightBeam(const VECTOR& lightPos)
 		lightPos.z
 	);
 
-	// Œõ‚Ì•
+	// å…‰ã®å¹…
 	float topWidth = 25.0f;
 	float bottomWidth = 260.0f;
 
-	// ƒJƒƒ‰ˆÊ’u
+	// ã‚«ãƒ¡ãƒ©ä½ç½®
 	VECTOR cameraPos = GetCameraPosition();
 
-	// ƒJƒƒ‰•ûŒü‚ÉŒü‚­‰¡•ûŒüƒxƒNƒgƒ‹‚ğì‚é
+	// ã‚«ãƒ¡ãƒ©æ–¹å‘ã«å‘ãæ¨ªæ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’ä½œã‚‹
 	VECTOR toCamera = VSub(cameraPos, bottom);
 	toCamera.y = 0.0f;
 
@@ -1340,7 +1382,7 @@ void Stage::DrawOneCeilingLightBeam(const VECTOR& lightPos)
 
 	toCamera = VNorm(toCamera);
 
-	// ‰¡•ûŒü
+	// æ¨ªæ–¹å‘
 	VECTOR right = VGet(
 		toCamera.z,
 		0.0f,
@@ -1391,7 +1433,7 @@ void Stage::DrawOneCeilingLightBeam(const VECTOR& lightPos)
 	SetWriteZBuffer3D(FALSE);
 	SetUseBackCulling(FALSE);
 
-	// ‰ÁZ‡¬B‚±‚±‚Í‚©‚È‚è”–‚ß‚ÅOK
+	// åŠ ç®—åˆæˆã€‚ã“ã“ã¯ã‹ãªã‚Šè–„ã‚ã§OK
 	SetDrawBlendMode(DX_BLENDMODE_ADD, 55);
 
 	DrawPrimitive3D(
@@ -1402,7 +1444,7 @@ void Stage::DrawOneCeilingLightBeam(const VECTOR& lightPos)
 		TRUE
 	);
 
-	// °‚ÌŒõ‚¾‚Ü‚è
+	// åºŠã®å…‰ã ã¾ã‚Š
 	SetDrawBlendMode(DX_BLENDMODE_ADD, 10);
 
 
@@ -1437,14 +1479,14 @@ void Stage::CreateBeamGraph(void)
 	{
 		float v = (float)y / (float)(h - 1);
 
-		// ã‰º‚ğ”–‚­‚·‚é
+		// ä¸Šä¸‹ã‚’è–„ãã™ã‚‹
 		float vertical = sinf(v * DX_PI_F);
 
 		for (int x = 0; x < w; x++)
 		{
 			float u = (float)x / (float)(w - 1);
 
-			// ’†‰›‚ª”Z‚­A¶‰E‚ª”–‚¢
+			// ä¸­å¤®ãŒæ¿ƒãã€å·¦å³ãŒè–„ã„
 			float center = 1.0f - fabsf(u - 0.5f) * 2.0f;
 
 			if (center < 0.0f)
@@ -1452,7 +1494,7 @@ void Stage::CreateBeamGraph(void)
 				center = 0.0f;
 			}
 
-			// ‚Ó‚í‚Á‚Æ‚³‚¹‚é
+			// ãµã‚ã£ã¨ã•ã›ã‚‹
 			center = powf(center, 2.2f);
 
 			float alphaRate = center * vertical;
@@ -1539,27 +1581,27 @@ void Stage::CreateKitchenLight(const Stage::FurnitureData& data)
 
 	ceilingLights_.push_back(light);
 
-	// ~–[—pƒ‰ƒCƒg
-	// ”’‚Á‚Û‚­AL‚­A­‚µ‹­‚ß
+	// å¨æˆ¿ç”¨ãƒ©ã‚¤ãƒˆ
+	// ç™½ã£ã½ãã€åºƒãã€å°‘ã—å¼·ã‚
 	lightEffect_.GetLightManager().AddLight(
 		VGet(data.pos.x, data.pos.y, data.pos.z),
 
-		// FFŒuŒõ“”‚Á‚Û‚¢”’
+		// è‰²ï¼šè›å…‰ç¯ã£ã½ã„ç™½
 		VGet(0.50f, 0.52f, 0.58f),
 
-		// ^‰º
+		// çœŸä¸‹
 		VGet(0.0f, -1.0f, 0.0f),
 
-		// “Í‚­‹——£
+		// å±Šãè·é›¢
 		800.0f,
 
-		// ’†S‚Ì–¾‚é‚¢”ÍˆÍ
+		// ä¸­å¿ƒã®æ˜ã‚‹ã„ç¯„å›²
 		DX_PI_F / 3.2f,
 
-		// ŠO‘¤‚Ü‚Å‚©‚È‚èL‚­
+		// å¤–å´ã¾ã§ã‹ãªã‚Šåºƒã
 		DX_PI_F / 3.0f,
 
-		// •Ç‚ÅÕ‚é
+		// å£ã§é®ã‚‹
 		true
 	);
 
@@ -1623,7 +1665,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetDrawScreen(outlineRTColor_);
 	ClearDrawScreen();
 
-	// RT‚É•`‚­‚àA•Û‘¶‚µ‚½ƒvƒŒƒCƒ„[ƒJƒƒ‰‚ğg‚¤
+	// RTã«æãæ™‚ã‚‚ã€ä¿å­˜ã—ãŸãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚«ãƒ¡ãƒ©ã‚’ä½¿ã†
 	SetCameraNearFar(1.0f, 10000.0f);
 	SetupCamera_Perspective(DX_PI_F / 3.0f);
 	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
@@ -1671,15 +1713,15 @@ void Stage::DrawOpaqueSceneForOutline(
 
 	lightEffect_.End();
 
-	// MRT‰ğœ
+	// MRTè§£é™¤
 	SetRenderTargetToShader(1, -1);
 	SetRenderTargetToShader(2, -1);
 
 	// =================================
-	// ‚±‚±‚©‚ç‚ÍRTColor‚É’Êí•`‰æ‚·‚é
+	// ã“ã“ã‹ã‚‰ã¯RTColorã«é€šå¸¸æç”»ã™ã‚‹
 	// =================================
 
-	// “Vˆäƒ‰ƒCƒg–{‘Ì
+	// å¤©äº•ãƒ©ã‚¤ãƒˆæœ¬ä½“
 	SetDrawBright(255, 235, 190);
 
 	for (auto l : ceilingLights_)
@@ -1693,7 +1735,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetDrawBright(255, 255, 255);
 
 	// =========================
-	// ƒKƒ‰ƒX‰Æ‹ï ”¼“§–¾•`‰æ
+	// ã‚¬ãƒ©ã‚¹å®¶å…· åŠé€æ˜æç”»
 	// =========================
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(FALSE);
@@ -1733,12 +1775,12 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetWriteZBuffer3D(TRUE);
 
 	// =========================
-	// “Vˆäƒ‰ƒCƒg‚ÌŒõ‚Ì’Œ
+	// å¤©äº•ãƒ©ã‚¤ãƒˆã®å…‰ã®æŸ±
 	// =========================
 	DrawCeilingLightBeams();
 
 	// =========================
-	// “Vˆäƒ‰ƒCƒg”­Œõ
+	// å¤©äº•ãƒ©ã‚¤ãƒˆç™ºå…‰
 	// =========================
 	for (auto l : ceilingLights_)
 	{
@@ -1749,7 +1791,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	}
 
 	// =========================
-	// RT•`‰æŒã‚Ìó‘ÔƒŠƒZƒbƒg
+	// RTæç”»å¾Œã®çŠ¶æ…‹ãƒªã‚»ãƒƒãƒˆ
 	// =========================
 	SetRenderTargetToShader(1, -1);
 	SetRenderTargetToShader(2, -1);
@@ -1776,9 +1818,9 @@ void Stage::DrawPostOutline(int outputScreen)
 		return;
 	}
 
-	// d—vF
-	// DX_SCREEN_BACK‚É’¼Ú•`‚©‚È‚¢B
-	// SceneManager‚ªw’è‚µ‚Ä‚¢‚½•`‰ææ‚É•`‚­B
+	// é‡è¦ï¼š
+	// DX_SCREEN_BACKã«ç›´æ¥æã‹ãªã„ã€‚
+	// SceneManagerãŒæŒ‡å®šã—ã¦ã„ãŸæç”»å…ˆã«æãã€‚
 	SetDrawScreen(outputScreen);
 
 	if (outlinePostPS_ < 0 ||
@@ -1792,7 +1834,7 @@ void Stage::DrawPostOutline(int outputScreen)
 	int w, h;
 	GetDrawScreenSize(&w, &h);
 
-	// 2Dƒ|ƒŠƒSƒ“•`‰æ—p‚Ìó‘Ô‚É‚·‚é
+	// 2Dãƒãƒªã‚´ãƒ³æç”»ç”¨ã®çŠ¶æ…‹ã«ã™ã‚‹
 	SetUseZBuffer3D(FALSE);
 	SetWriteZBuffer3D(FALSE);
 	SetUseBackCulling(FALSE);
@@ -1816,7 +1858,7 @@ void Stage::DrawPostOutline(int outputScreen)
 		v[i].spc = GetColorU8(0, 0, 0, 0);
 	}
 
-	// 1–‡–Ú‚ÌOŠpŒ`
+	// 1æšç›®ã®ä¸‰è§’å½¢
 	v[0].pos = VGet(0.0f, 0.0f, 0.0f);
 	v[0].u = 0.0f;
 	v[0].v = 0.0f;
@@ -1835,7 +1877,7 @@ void Stage::DrawPostOutline(int outputScreen)
 	v[2].su = 1.0f;
 	v[2].sv = 1.0f;
 
-	// 2–‡–Ú‚ÌOŠpŒ`
+	// 2æšç›®ã®ä¸‰è§’å½¢
 	v[3].pos = VGet(0.0f, 0.0f, 0.0f);
 	v[3].u = 0.0f;
 	v[3].v = 0.0f;
@@ -1866,7 +1908,7 @@ void Stage::DrawPostOutline(int outputScreen)
 
 	SetUsePixelShader(-1);
 
-	// ó‘Ô‚ğ–ß‚·
+	// çŠ¶æ…‹ã‚’æˆ»ã™
 	SetUseLighting(TRUE);
 	SetUseBackCulling(TRUE);
 	SetUseZBuffer3D(TRUE);
@@ -1883,7 +1925,7 @@ void Stage::DrawPostOutline(int outputScreen)
 //
 //	SetDrawScreen(DX_SCREEN_BACK);
 //
-//	// RT‚ğ‚»‚Ì‚Ü‚Ü•`‰æ
+//	// RTã‚’ãã®ã¾ã¾æç”»
 //	DrawGraph(0, 0, outlineRTColor_, FALSE);
 //}
 void Stage::UpdateFlashLightForShader(
@@ -1896,7 +1938,7 @@ void Stage::UpdateFlashLightForShader(
 		return;
 	}
 
-	// ‹“_ˆÊ’u‚àƒJƒƒ‰ˆÊ’u‚É‚µ‚½•û‚ª©‘R
+	// è¦–ç‚¹ä½ç½®ã‚‚ã‚«ãƒ¡ãƒ©ä½ç½®ã«ã—ãŸæ–¹ãŒè‡ªç„¶
 	lightEffect_.GetLightManager().SetViewPoint(cameraPos);
 
 	if (!player_->IsFlashLightOn())
@@ -1917,9 +1959,9 @@ void Stage::UpdateFlashLightForShader(
 	}
 
 	lightEffect_.GetLightManager().SetFlashLight(
-		player_->GetFlashLightPos(),        // ƒ‰ƒCƒgˆÊ’u‚ÍèŒ³
-		VGet(0.95f, 0.90f, 0.70f),          // F
-		dir,                                // ƒJƒƒ‰‚ÌŒü‚«
+		player_->GetFlashLightPos(),        // ãƒ©ã‚¤ãƒˆä½ç½®ã¯æ‰‹å…ƒ
+		VGet(0.95f, 0.90f, 0.70f),          // è‰²
+		dir,                                // ã‚«ãƒ¡ãƒ©ã®å‘ã
 		1200.0f,
 		DX_PI_F / 16.0f,
 		DX_PI_F / 5.0f
@@ -1952,4 +1994,570 @@ bool Stage::IsLineBlocked(const VECTOR& from, const VECTOR& to) const
 	}
 
 	return false;
+}
+
+void Stage::DrawInventoryUI(void) const
+{
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	const int slotCount = MAX_ITEM_COUNT;
+
+	const int slotW = 120;
+	const int slotH = 60;
+	const int slotMargin = 12;
+
+	const int totalW =
+		slotW * slotCount + slotMargin * (slotCount - 1);
+
+	const int startX = screenW / 2 - totalW / 2;
+	const int startY = screenH - slotH - 25;
+
+	// ã¾ãšç©ºã®4ãƒã‚¹ã‚’æã
+	for (int i = 0; i < slotCount; i++)
+	{
+		int x = startX + i * (slotW + slotMargin);
+		int y = startY;
+
+		DrawBox(
+			x,
+			y,
+			x + slotW,
+			y + slotH,
+			GetColor(15, 15, 20),
+			TRUE
+		);
+
+		DrawBox(
+			x,
+			y,
+			x + slotW,
+			y + slotH,
+			GetColor(100, 100, 100),
+			FALSE
+		);
+	}
+
+	int slotIndex = 0;
+
+	// æ‰€æŒã‚¢ã‚¤ãƒ†ãƒ ã‚’é †ç•ªã«è¡¨ç¤º
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+
+		for (int count = 0; count < itemCount_[i]; count++)
+		{
+			int slotSize = GetItemSlotSize(type);
+
+			if (slotIndex >= slotCount)
+			{
+				return;
+			}
+
+			if (slotIndex + slotSize > slotCount)
+			{
+				slotSize = slotCount - slotIndex;
+			}
+
+			const char* name = "ä¸æ˜";
+
+			switch (type)
+			{
+			case Item::TYPE::LAPTOP:
+				name = "ãƒãƒ¼ãƒˆPC";
+				break;
+
+			case Item::TYPE::BATTERY:
+				name = "ãƒãƒƒãƒ†ãƒªãƒ¼";
+				break;
+
+			case Item::TYPE::KEY:
+				name = "éµ";
+				break;
+
+			case Item::TYPE::MEDICINE:
+				name = "è–¬";
+				break;
+
+			default:
+				name = "ä¸æ˜";
+				break;
+			}
+
+			int x = startX + slotIndex * (slotW + slotMargin);
+			int y = startY;
+
+			int itemW =
+				slotW * slotSize + slotMargin * (slotSize - 1);
+
+			// ã‚¢ã‚¤ãƒ†ãƒ èƒŒæ™¯
+			DrawBox(
+				x,
+				y,
+				x + itemW,
+				y + slotH,
+				GetColor(35, 35, 55),
+				TRUE
+			);
+
+			// ã‚¢ã‚¤ãƒ†ãƒ æ 
+			DrawBox(
+				x,
+				y,
+				x + itemW,
+				y + slotH,
+				GetColor(255, 255, 255),
+				FALSE
+			);
+
+			// ã‚¢ã‚¤ãƒ†ãƒ åã‚’ä¸­å¤®å¯„ã›ã£ã½ãè¡¨ç¤º
+			int textX = x + itemW / 2 - 40;
+			int textY = y + 20;
+
+			DrawString(
+				textX,
+				textY,
+				name,
+				GetColor(255, 255, 255)
+			);
+
+			// ä½•ãƒã‚¹ä½¿ã£ã¦ã„ã‚‹ã‹å°ã•ãè¡¨ç¤º
+			DrawFormatString(
+				x + itemW - 55,
+				y + slotH - 20,
+				GetColor(180, 180, 180),
+				"%dãƒã‚¹",
+				slotSize
+			);
+
+			slotIndex += slotSize;
+		}
+	}
+}
+
+int Stage::GetItemSlotSize(Item::TYPE type) const
+{
+	switch (type)
+	{
+	case Item::TYPE::LAPTOP:
+		return 3;
+
+	case Item::TYPE::BATTERY:
+		return 1;
+
+	case Item::TYPE::KEY:
+		return 1;
+
+	case Item::TYPE::MEDICINE:
+		return 1;
+
+	default:
+		return 1;
+	}
+}
+
+int Stage::GetUsedInventorySlotCount(void) const
+{
+	int total = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+
+		total += itemCount_[i] * GetItemSlotSize(type);
+	}
+
+	return total;
+}
+
+void Stage::DrawMiniMap(void) const
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	const int mapSize = 460;
+
+	const int mapX = screenW / 2 - mapSize / 2;
+	const int mapY = screenH / 2 - mapSize / 2;
+
+	// =========================
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ â†’ ãƒŸãƒ‹ãƒãƒƒãƒ—åº§æ¨™
+	// =========================
+	const float mapCenterX = -2200.0f;
+	const float mapCenterZ = 100.0f;
+	const float orthoSize = 6000.0f;
+
+	const float scale = (float)mapSize / orthoSize;
+
+	auto WorldToMapX = [&](float worldX) -> int
+		{
+			return mapX + mapSize / 2 + (int)((worldX - mapCenterX) * scale);
+		};
+
+	auto WorldToMapY = [&](float worldZ) -> int
+		{
+			// +Zæ–¹å‘ã‚’ãƒãƒƒãƒ—ä¸Šæ–¹å‘ã«ã™ã‚‹
+			return mapY + mapSize / 2 - (int)((worldZ - mapCenterZ) * scale);
+		};
+
+	// =========================
+	// åºŠã‚¨ãƒªã‚¢ã‚’æã
+	// =========================
+	auto DrawGreenRoom = [&](float x1, float z1, float x2, float z2)
+		{
+			int mx1 = WorldToMapX(x1);
+			int my1 = WorldToMapY(z1);
+			int mx2 = WorldToMapX(x2);
+			int my2 = WorldToMapY(z2);
+
+			int left = mx1;
+			int right = mx2;
+			int top = my1;
+			int bottom = my2;
+
+			if (left > right)
+			{
+				int temp = left;
+				left = right;
+				right = temp;
+			}
+
+			if (top > bottom)
+			{
+				int temp = top;
+				top = bottom;
+				bottom = temp;
+			}
+
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+
+			DrawBox(
+				left,
+				top,
+				right,
+				bottom,
+				GetColor(20, 120, 20),
+				TRUE
+			);
+
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 70);
+
+			DrawBox(
+				left + 4,
+				top + 4,
+				right - 4,
+				bottom - 4,
+				GetColor(70, 255, 70),
+				TRUE
+			);
+
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+			DrawBox(
+				left,
+				top,
+				right,
+				bottom,
+				GetColor(120, 255, 80),
+				FALSE
+			);
+		};
+
+	// =========================
+	// è‡ªç”±ãªç·šã‚’æã
+	// =========================
+	auto DrawMapLine = [&](float x1, float z1, float x2, float z2)
+		{
+			int mx1 = WorldToMapX(x1);
+			int my1 = WorldToMapY(z1);
+			int mx2 = WorldToMapX(x2);
+			int my2 = WorldToMapY(z2);
+
+			// å£ã®å½±
+			DrawLine(
+				mx1 + 2,
+				my1 + 2,
+				mx2 + 2,
+				my2 + 2,
+				GetColor(0, 50, 0),
+				7
+			);
+
+			// å£ã®ç™ºå…‰ã£ã½ã„å¤–å´
+			SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
+
+			DrawLine(
+				mx1,
+				my1,
+				mx2,
+				my2,
+				GetColor(80, 255, 80),
+				9
+			);
+
+			SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+			// å£æœ¬ä½“
+			DrawLine(
+				mx1,
+				my1,
+				mx2,
+				my2,
+				GetColor(200, 255, 120),
+				4
+			);
+		};
+
+	// =========================
+	// æ¨ªç·šï¼šXæ–¹å‘ã«ä¼¸ã³ã‚‹å£
+	// startX : é–‹å§‹X
+	// z      : Zä½ç½®
+	// length : Xæ–¹å‘ã®é•·ã•
+	// =========================
+	auto DrawHWall = [&](float startX, float z, float length)
+		{
+			DrawMapLine(
+				startX,
+				z,
+				startX + length,
+				z
+			);
+		};
+
+	// =========================
+	// ç¸¦ç·šï¼šZæ–¹å‘ã«ä¼¸ã³ã‚‹å£
+	// x      : Xä½ç½®
+	// startZ : é–‹å§‹Z
+	// length : Zæ–¹å‘ã®é•·ã•
+	// =========================
+	auto DrawVWall = [&](float x, float startZ, float length)
+		{
+			DrawMapLine(
+				x,
+				startZ,
+				x,
+				startZ + length
+			);
+		};
+
+	// =========================
+	// ãƒãƒƒãƒ—å…¨ä½“èƒŒæ™¯
+	// =========================
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 235);
+
+	DrawBox(
+		mapX - 18,
+		mapY - 42,
+		mapX + mapSize + 18,
+		mapY + mapSize + 18,
+		GetColor(0, 0, 0),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// ã‚¿ã‚¤ãƒˆãƒ«èƒŒæ™¯
+	DrawBox(
+		mapX - 18,
+		mapY - 42,
+		mapX + mapSize + 18,
+		mapY - 4,
+		GetColor(10, 25, 10),
+		TRUE
+	);
+
+	DrawString(
+		mapX,
+		mapY - 32,
+		"MINI MAP",
+		GetColor(180, 255, 180)
+	);
+
+	// ãƒãƒƒãƒ—å†…èƒŒæ™¯
+	DrawBox(
+		mapX,
+		mapY,
+		mapX + mapSize,
+		mapY + mapSize,
+		GetColor(5, 20, 5),
+		TRUE
+	);
+
+	// =========================
+	// åºŠã‚¨ãƒªã‚¢
+	// =========================
+
+	
+
+	// =========================
+	// ã“ã“ã‹ã‚‰æ‰‹å‹•ã§å£ã‚’æ›¸ã
+	// é€šã‚Œã‚‹å ´æ‰€ã¯æ›¸ã‹ãªã„
+	// =========================
+	// 
+	// å¨æˆ¿ã¨å®¢å¸­ã®é–“ã®é€šè·¯ã®å£
+	// ï¼ˆå®¢å¸­å´ï¼‰
+	DrawVWall(-1500.0f, -1170.0f, 770.0f);// å·¦
+	DrawVWall(-1500.0f, -170.0f, 1000.0f);// å³
+	// ï¼ˆå¨æˆ¿å´ï¼‰
+	
+	//-----------------------------------------
+	// å³å´ã®ã‚¨ãƒªã‚¢
+	//-----------------------------------------
+	
+	DrawHWall(-2450.0f, 1000.0f, 780.0f);
+
+	// ---- å¤–å‘¨ ----
+	DrawHWall(-4300.0f, -1200.0f, 4400.0f);
+	DrawVWall(-4300.0f, -1200.0f, 2600.0f);
+	DrawHWall(-4300.0f, 1400.0f, 4400.0f);
+	DrawVWall(100.0f, -1200.0f, 2600.0f);
+
+
+
+	// =========================
+	// ãƒãƒƒãƒ—å¤–æ 
+	// =========================
+	DrawBox(
+		mapX,
+		mapY,
+		mapX + mapSize,
+		mapY + mapSize,
+		GetColor(120, 255, 80),
+		FALSE
+	);
+
+	DrawBox(
+		mapX + 3,
+		mapY + 3,
+		mapX + mapSize - 3,
+		mapY + mapSize - 3,
+		GetColor(40, 120, 40),
+		FALSE
+	);
+
+	// =========================
+	// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ä½ç½®
+	// =========================
+	VECTOR playerPos = player_->GetPos();
+
+	int px = WorldToMapX(playerPos.x);
+	int py = WorldToMapY(playerPos.z);
+
+	if (px < mapX) px = mapX;
+	if (px > mapX + mapSize) px = mapX + mapSize;
+	if (py < mapY) py = mapY;
+	if (py > mapY + mapSize) py = mapY + mapSize;
+
+	float t = GetNowCount() / 1000.0f;
+	float blink = (sinf(t * 8.0f) + 1.0f) * 0.5f;
+
+	int alpha = 90 + (int)(blink * 140.0f);
+	int radius = 8 + (int)(blink * 6.0f);
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+	DrawCircle(
+		px,
+		py,
+		radius + 10,
+		GetColor(255, 0, 0),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	DrawCircle(
+		px,
+		py,
+		radius,
+		GetColor(255, 0, 0),
+		TRUE
+	);
+
+	DrawCircle(
+		px,
+		py,
+		3,
+		GetColor(255, 255, 255),
+		TRUE
+	);
+
+	DrawCircle(
+		px,
+		py,
+		radius,
+		GetColor(255, 255, 255),
+		FALSE
+	);
+
+	// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å‘ã
+	VECTOR forward = player_->GetForward();
+	forward.y = 0.0f;
+
+	if (VSize(forward) > 0.001f)
+	{
+		forward = VNorm(forward);
+
+		int dirX = (int)(forward.x * 28.0f);
+		int dirY = (int)(-forward.z * 28.0f);
+
+		DrawLine(
+			px,
+			py,
+			px + dirX,
+			py + dirY,
+			GetColor(255, 80, 80),
+			3
+		);
+	}
+
+	// =========================
+	// èª¬æ˜
+	// =========================
+	int legendY = mapY + mapSize + 8;
+
+	DrawCircle(
+		mapX + 12,
+		legendY + 8,
+		5,
+		GetColor(255, 0, 0),
+		TRUE
+	);
+
+	DrawString(
+		mapX + 25,
+		legendY,
+		"Player",
+		GetColor(230, 230, 230)
+	);
+
+	DrawLine(
+		mapX + 105,
+		legendY + 8,
+		mapX + 145,
+		legendY + 8,
+		GetColor(200, 255, 120),
+		4
+	);
+
+	DrawString(
+		mapX + 155,
+		legendY,
+		"Wall",
+		GetColor(230, 230, 230)
+	);
+
+	DrawString(
+		mapX + mapSize - 150,
+		legendY,
+		"TABã‚’é›¢ã™ã¨é–‰ã˜ã¾ã™",
+		GetColor(200, 200, 200)
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }

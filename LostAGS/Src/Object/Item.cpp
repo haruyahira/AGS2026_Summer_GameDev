@@ -98,7 +98,7 @@ bool Item::IsInPlayerView(const VECTOR& playerPos, const VECTOR& playerForward) 
 
     VECTOR toItem = VSub(transform_.pos, playerPos);
 
-    // ‚‚³·‚ğ–³‹‚µ‚½‚¢‚È‚çY‚ğ0‚É‚·‚é
+    // ‚‚³·‚ğ–³‹
     toItem.y = 0.0f;
 
     float distance = VSize(toItem);
@@ -108,29 +108,13 @@ bool Item::IsInPlayerView(const VECTOR& playerPos, const VECTOR& playerForward) 
         return false;
     }
 
-    if (distance < 1.0f)
-    {
-        return true;
-    }
-
-    VECTOR dirToItem = VNorm(toItem);
-
-    VECTOR forward = playerForward;
-    forward.y = 0.0f;
-
-    if (VSize(forward) < 0.001f)
-    {
-        return false;
-    }
-
-    forward = VNorm(forward);
-
-    float dot = VDot(forward, dirToItem);
-
-    return dot > viewDot_;
+    // ‹——£“à‚È‚çE‚¦‚é
+    return true;
 }
+
 
 void Item::Pickup()
 {
     isActive_ = false;
 }
+

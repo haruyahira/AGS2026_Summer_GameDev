@@ -47,6 +47,8 @@ public:
     void Update(void);
     void Draw(void);
 
+    void DrawUI(void) const;
+
     // ステージ変更
     void ChangeStage(NAME type);
 
@@ -58,6 +60,12 @@ public:
     void DrawDepthMaskForExternal3D(void);
 
     bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
+
+    void DrawInventoryUI(void) const;
+
+    int GetItemSlotSize(Item::TYPE type) const;
+
+    int GetUsedInventorySlotCount(void) const;
 
 private:
 
@@ -102,7 +110,7 @@ private:
     int registeredItemCount_[(int)Item::TYPE::MAX];
     int stolenItemCount_[(int)Item::TYPE::MAX];
 
-    static constexpr int MAX_ITEM_COUNT = 3;
+    static constexpr int MAX_ITEM_COUNT = 4;
 
     int lookingItemIndex_;
     bool isItemMax_;
@@ -177,4 +185,21 @@ private:
     // 重要：
     // DX_SCREEN_BACKに直接描かないため、出力先を受け取る
     void DrawPostOutline(int outputScreen);
+
+    // ミニマップ
+    int miniMapScreen_;
+    bool isMiniMapVisible_;
+
+    void DrawMiniMap(void) const;
+    void DrawMiniMapScene(void) const;
+
+    struct MiniMapRect
+    {
+        int left;
+        int top;
+        int right;
+        int bottom;
+    };
+
+    std::vector<MiniMapRect> floorRects;
 };
