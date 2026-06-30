@@ -264,6 +264,7 @@ void Stage::MakeMainStage(void)
 	stages_.emplace(name, stage);
 	//------------------------------------------------------------------------------
 
+	// Š÷----------------------------------------------------------------------------
 	std::set<int> skipX = { 1, 2 };
 	std::set<int> skipZ = { 2, 3, 6, 7 };
 
@@ -296,7 +297,7 @@ void Stage::MakeMainStage(void)
 		}
 	}
 
-	// ~–[‚ÌŠ÷-------------------------------------
+	// ~–[‚ÌŠ÷
 
 	struct TableData {
 		VECTOR pos;
@@ -323,6 +324,8 @@ void Stage::MakeMainStage(void)
 		// Š÷‚Ìã‚ÉƒXƒ|[ƒ“ƒ|ƒCƒ“ƒg’Ç‰Á
 		itemSpawnPoints_.push_back(VGet(t.pos.x, -23.0f, t.pos.z));
 	}
+
+	// ‹xŒeº‚ÌŠ÷
 
 	//-------------------------------------------
 
