@@ -224,7 +224,7 @@ void Stage::Draw(void)
 
 	SetDrawScreen(oldScreen);
 
-	SetCameraNearFar(1.0f, 10000.0f);
+	SetCameraNearFar(10.0f, 7000);
 	SetupCamera_Perspective(DX_PI_F / 3.0f);
 	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
 
@@ -1708,7 +1708,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	ClearDrawScreen();
 
 	// RTに描く時も、保存したプレイヤーカメラを使う
-	SetCameraNearFar(1.0f, 10000.0f);
+	SetCameraNearFar(10.0f, 7000.0f);
 	SetupCamera_Perspective(DX_PI_F / 3.0f);
 	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
 
