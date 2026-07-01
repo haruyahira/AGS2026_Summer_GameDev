@@ -13,7 +13,7 @@ public:
     enum class TYPE
     {
         LAPTOP,     // ノートPC
-        BATTERY,    // バッテリー
+        WATCH,    // 腕時計
         KEY,        // 鍵
         MEDICINE,   // 薬
 

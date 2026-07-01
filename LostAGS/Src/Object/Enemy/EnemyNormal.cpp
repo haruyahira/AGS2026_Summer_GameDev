@@ -62,6 +62,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
 
 EnemyNormal::~EnemyNormal(void)
 {
+
 }
 
 void EnemyNormal::Init(void)

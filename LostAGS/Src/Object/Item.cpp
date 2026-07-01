@@ -14,6 +14,12 @@ Item::Item()
 
 Item::~Item()
 {
+
+    if (transform_.modelId != -1)
+    {
+        ResourceManager::GetInstance().DeleteDuplicateModel(transform_.modelId);
+    }
+
 }
 
 void Item::Init(TYPE type, ResourceManager::SRC modelSrc, VECTOR pos, VECTOR scl)
@@ -70,8 +76,8 @@ const char* Item::GetName() const
     case TYPE::LAPTOP:
         return "ノートPC";
 
-    case TYPE::BATTERY:
-        return "バッテリー";
+    case TYPE::WATCH:
+        return "腕時計";
 
     case TYPE::KEY:
         return "鍵";

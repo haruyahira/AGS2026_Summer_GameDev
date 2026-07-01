@@ -10,7 +10,7 @@ public:
 	SceneBase(void);
 
 	// デストラクタ
-	virtual ~SceneBase(void) = 0;
+	virtual ~SceneBase(void) {}
 
 	// 初期化処理
 	virtual void Init(void) = 0;

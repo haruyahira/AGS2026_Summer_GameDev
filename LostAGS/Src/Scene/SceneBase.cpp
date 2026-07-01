@@ -5,10 +5,6 @@ SceneBase::SceneBase(void) : resMng_(ResourceManager::GetInstance())
 {
 }
 
-SceneBase::~SceneBase()
-{
-}
-
 void SceneBase::Init(void)
 {
 }

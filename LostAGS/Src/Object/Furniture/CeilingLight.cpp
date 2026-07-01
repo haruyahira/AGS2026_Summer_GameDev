@@ -1,4 +1,5 @@
 #include "CeilingLight.h"
+#include "../../Manager/ResourceManager.h"
 #include <DxLib.h>
 #include <math.h>
 
@@ -11,6 +12,11 @@ CeilingLight::CeilingLight(
 
 CeilingLight::~CeilingLight()
 {
+
+    if (trans_->modelId != -1)
+    {
+        ResourceManager::GetInstance().DeleteDuplicateModel(trans_->modelId);
+    }
 }
 
 void CeilingLight::Init()

@@ -53,6 +53,7 @@ Stage::Stage(Player* player)
 
 Stage::~Stage(void)
 {
+	printf("[Stage Destructor] called\n");
 	// 惑星
 	for (auto pair : stages_)
 	{
@@ -282,6 +283,7 @@ void Stage::MakeMainStage(void)
 {
 	// アイテム候補地点を初期化
 	itemSpawnPoints_.clear();
+	watchSpawnPoints_.clear();
 
 	// 最初のステージ
 	//------------------------------------------------------------------------------
@@ -330,6 +332,7 @@ void Stage::MakeMainStage(void)
 
 			// 机の上をノートPCの出現候補
 			itemSpawnPoints_.push_back(VGet(posX, -23.0f, posZ));
+			watchSpawnPoints_.push_back(VGet(posX, -23.0f, posZ)); // 腕時計
 		}
 	}
 
@@ -338,14 +341,17 @@ void Stage::MakeMainStage(void)
 	struct TableData {
 		VECTOR pos;
 		VECTOR scale;
+		float rotY;
 	};
 
 	TableData tables[] = {
-		{{-1790.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}},
-		{{-2400.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 1.88f}},
-		{{-3000.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}},
-		{{-2400.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}},
-		{{-2900.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}},
+		{{-1790.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}, 90.0f},
+		{{-2400.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 1.88f}, 90.0f},
+		{{-3000.0f, -100.0f,  390.0f}, {4.0f, 0.6f, 0.8f}, 90.0f},
+		{{-2400.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}, 90.0f},
+		{{-2900.0f, -100.0f, -600.0f}, {2.0f, 0.6f, 1.88f}, 90.0f},
+		{{-1920.0f, -100.0f, 1180.0f}, {1.2f, 0.5f, 1.0f}, 0.0f}, // 休憩室
+		{{-1175.0f, -100.0f, 1320.0f}, {2.0f, 0.5f, 0.6f}, 0.0f}, // 店長室
 	};
 
 	for (auto& t : tables)
@@ -354,11 +360,8 @@ void Stage::MakeMainStage(void)
 			ResourceManager::SRC::F_TABLE,
             Vector3(t.pos.x, t.pos.y, t.pos.z),
 	        Vector3(t.scale.x, t.scale.y, t.scale.z),
-			{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f }
+			Vector3{ 0.0f, AsoUtility::Deg2RadF(t.rotY), 0.0f }
 			});
-
-		// 机の上にスポーンポイント追加
-		itemSpawnPoints_.push_back(VGet(t.pos.x, -23.0f, t.pos.z));
 	}
 
 	// 休憩室の机
@@ -603,6 +606,10 @@ void Stage::MakeMainStage(void)
 		{ 0.95f, 1.0f, 1.0f },
 		{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
 		});
+
+		// ロッカー周辺を腕時計の出現候補にする
+		watchSpawnPoints_.push_back(VGet(posX, -35.0f, 1010.0f));
+
 	}
 
 	for (int i = 0; i < 20; i++)
@@ -615,7 +622,14 @@ void Stage::MakeMainStage(void)
 		{ 0.95f, 1.0f, 1.0f },
 		{0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 			});
+
+
+		// ロッカー周辺を腕時計の出現候補にする
+		watchSpawnPoints_.push_back(VGet(posX, -35.0f, 1010.0f));
+
 	}
+
+
 	//-----------------------------------------------------------
 
 	// 冷凍庫
@@ -650,8 +664,9 @@ void Stage::MakeMainStage(void)
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	// ノートPCを候補地点から10個ランダム生成
-	CreateRandomLaptopItemsFromSpawnPoints(3);
+	// アイテムランダム生成
+	CreateRandomLaptopItemsFromSpawnPoints(1); // ノートPC
+	CreateRandomWatchItemsFromSpawnPoints(2); // 腕時計
 
 
 	// 天井ライト
@@ -908,6 +923,35 @@ void Stage::CreateRandomLaptopItemsFromSpawnPoints(int count)
 	}
 }
 
+void Stage::CreateRandomWatchItemsFromSpawnPoints(int count)
+{
+	if (watchSpawnPoints_.empty())
+	{
+		return;
+	}
+
+	if (count > (int)watchSpawnPoints_.size())
+	{
+		count = (int)watchSpawnPoints_.size();
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		int randIndex = i + GetRand((int)watchSpawnPoints_.size() - 1 - i);
+
+		VECTOR temp = watchSpawnPoints_[i];
+		watchSpawnPoints_[i] = watchSpawnPoints_[randIndex];
+		watchSpawnPoints_[randIndex] = temp;
+
+		CreateItem(
+			Item::TYPE::WATCH,
+			ResourceManager::SRC::WATCH,
+			watchSpawnPoints_[i],
+			VGet(0.05f, 0.05f, 0.05f)
+		);
+	}
+}
+
 int Stage::FindLookingItem(void)
 {
 	if (player_ == nullptr)
@@ -1116,8 +1160,8 @@ void Stage::DrawItemUI(void) const
 		case Item::TYPE::LAPTOP:
 			name = "ノートPC";
 			break;
-		case Item::TYPE::BATTERY:
-			name = "バッテリー";
+		case Item::TYPE::WATCH:
+			name = "腕時計";
 			break;
 		case Item::TYPE::KEY:
 			name = "鍵";
@@ -1162,8 +1206,8 @@ void Stage::DrawItemUI(void) const
 		case Item::TYPE::LAPTOP:
 			name = "ノートPC";
 			break;
-		case Item::TYPE::BATTERY:
-			name = "バッテリー";
+		case Item::TYPE::WATCH:
+			name = "腕時計";
 			break;
 		case Item::TYPE::KEY:
 			name = "鍵";
@@ -1231,12 +1275,10 @@ int Stage::GetItemPrice(Item::TYPE type) const
 	switch (type)
 	{
 	case Item::TYPE::LAPTOP:
-		// intの上限を超えない値にしています
-		// 300億円などを扱いたい場合は、金額系をlong longにしてください
-		return 30000;
+		return 168000;
 
-	case Item::TYPE::BATTERY:
-		return 5000;
+	case Item::TYPE::WATCH:
+		return 37800;
 
 	case Item::TYPE::KEY:
 		return 10000;
@@ -2067,8 +2109,8 @@ void Stage::DrawInventoryUI(void) const
 				name = "ノートPC";
 				break;
 
-			case Item::TYPE::BATTERY:
-				name = "バッテリー";
+			case Item::TYPE::WATCH:
+				name = "腕時計";
 				break;
 
 			case Item::TYPE::KEY:
@@ -2142,7 +2184,7 @@ int Stage::GetItemSlotSize(Item::TYPE type) const
 	case Item::TYPE::LAPTOP:
 		return 3;
 
-	case Item::TYPE::BATTERY:
+	case Item::TYPE::WATCH:
 		return 1;
 
 	case Item::TYPE::KEY:

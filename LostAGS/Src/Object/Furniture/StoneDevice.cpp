@@ -17,6 +17,7 @@ StoneDevice::StoneDevice(Player* player)
 
 StoneDevice::~StoneDevice(void)
 {
+    ResourceManager::GetInstance().DeleteDuplicateModel(transform_.modelId);
 }
 
 void StoneDevice::Init(void)

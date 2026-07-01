@@ -9,6 +9,16 @@ Furniture::Furniture(NAME name, const Transform* trans)
         : name_(name), trans_(*trans) {
     }
 
+Furniture::~Furniture()
+{
+
+    if (trans_.modelId != -1)
+    {
+        ResourceManager::GetInstance().DeleteDuplicateModel(trans_.modelId);
+    }
+
+}
+
     void Furniture::Init() {
         // •K—v‚È‚ç‰Šú‰»ˆ—
     }

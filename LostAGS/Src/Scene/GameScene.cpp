@@ -28,8 +28,27 @@ GameScene::GameScene(void)
 
 GameScene::~GameScene(void)
 {
-	delete player_;
-	delete stage_;
+	printf("[GameScene Destructor] called\n");
+
+	// 敵マネージャーを先に解放
+	enemyMng_.reset();
+
+	// ステージを解放
+	if (stage_ != nullptr)
+	{
+		delete stage_;
+		stage_ = nullptr;
+	}
+
+	// プレイヤーを解放
+	if (player_ != nullptr)
+	{
+		delete player_;
+		player_ = nullptr;
+	}
+
+	// ポストエフェクト解放
+	postEffect_.reset();
 }
 
 void GameScene::Init(void)
@@ -51,6 +70,8 @@ void GameScene::Init(void)
 }
 void GameScene::OnLoaded(void)
 {
+
+	if (player_ != nullptr || stage_ != nullptr) return;
 	// ポストエフェクト
 	postEffect_ = std::make_unique<PostEffect>();
 	postEffect_->Init(

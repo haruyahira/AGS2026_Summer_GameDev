@@ -84,6 +84,10 @@ EnemyBase::~EnemyBase(void)
     }
 
     HpManager::GetInstance().UnregisterHP(this);
+
+
+
+
 }
 
 void EnemyBase::Update(void)

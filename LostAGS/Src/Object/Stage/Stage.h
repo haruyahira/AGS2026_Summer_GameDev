@@ -57,7 +57,7 @@ public:
 
     void CreateFurniture(const FurnitureData& data);
     void CreateCeilingLight(const FurnitureData& data);
-    void DrawDepthMaskForExternal3D(void);
+ 
 
     bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
 
@@ -117,6 +117,7 @@ private:
 
     // アイテム出現候補地点
     std::vector<VECTOR> itemSpawnPoints_;
+    std::vector<VECTOR> watchSpawnPoints_;
 
     void CreateItem(
         Item::TYPE type,
@@ -124,8 +125,9 @@ private:
         VECTOR pos,
         VECTOR scl
     );
-
+    // ランダムにアイテムを出現
     void CreateRandomLaptopItemsFromSpawnPoints(int count);
+    void CreateRandomWatchItemsFromSpawnPoints(int count);
 
     int FindLookingItem(void);
     void UpdateItemPickup(void);

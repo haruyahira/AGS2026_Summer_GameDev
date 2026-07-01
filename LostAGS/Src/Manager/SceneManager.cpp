@@ -81,11 +81,10 @@ void SceneManager::Init(void)
 	// 3D用の設定
 	Init3D();
 	// 初期シーンの設定
-#ifdef _DEBUG
-	sceneId_ = SCENE_ID::GAME;
-	DoChangeScene(SCENE_ID::GAME);
-#else
 	sceneId_ = SCENE_ID::NONE;
+#ifdef _DEBUG
+	waitSceneId_ = SCENE_ID::GAME;
+#else
 	waitSceneId_ = SCENE_ID::TITLE;
 #endif
 
@@ -293,18 +292,20 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 	// 全サウンド停止
 	SoundManager::GetInstance().StopAllSound();
 
-	// リソースの解放
-	ResourceManager::GetInstance().Release();
-
-	// シーンIDを変更
-	sceneId_ = sceneId;
-
 	// 現在のシーンを解放
 	if (scene_ != nullptr)
 	{
 		delete scene_;
 		scene_ = nullptr;
 	}
+
+	// リソースの解放
+	ResourceManager::GetInstance().Release();
+
+	// シーンIDを変更
+	sceneId_ = sceneId;
+
+	
 
 	// 新しいシーンを作成
 	switch (sceneId_)
@@ -374,13 +375,17 @@ void SceneManager::ResetDeltaTime(void)
 void SceneManager::StartAsyncChangeScene(SCENE_ID sceneId)
 {
 	SoundManager::GetInstance().StopAllSound();
-	ResourceManager::GetInstance().Release();
+
 
 	if (scene_ != nullptr)
 	{
 		delete scene_;
 		scene_ = nullptr;
 	}
+
+	ResourceManager::GetInstance().Release();
+
+	
 
 	sceneId_ = sceneId;
 

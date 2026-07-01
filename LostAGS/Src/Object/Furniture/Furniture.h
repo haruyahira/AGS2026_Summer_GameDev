@@ -13,6 +13,8 @@ public:
     // コンストラクタで必要な情報を全部もらう
     Furniture(NAME name, const Transform* trans);
 
+    virtual ~Furniture();
+
     virtual  void Init(void);
 
     virtual void Update(void);

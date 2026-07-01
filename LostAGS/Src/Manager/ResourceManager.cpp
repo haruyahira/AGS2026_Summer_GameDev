@@ -100,8 +100,10 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::RETURN_POINT, res);
 
 	// アイテム------------------------------------------------------------
-	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Laptop.mv1");
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Laptop.mv1"); // ノートPC
 	resourcesMap_.emplace(SRC::LAPTOP, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Watch.mv1"); // 腕時計
+	resourcesMap_.emplace(SRC::WATCH, res);
 
 
 
@@ -332,4 +334,26 @@ Resource& ResourceManager::_Load(SRC src)
 	loadedMap_.emplace(src, rPair->second.get());
 
 	return *rPair->second;
+}
+
+void ResourceManager::DeleteDuplicateModel(int& handle)
+{
+	if (handle != -1)
+	{
+		MV1DeleteModel(handle);
+		handle = -1;
+
+#ifdef _DEBUG
+		if (g_DebugMemory.modelDuplicateCount > 0)
+		{
+			g_DebugMemory.modelDuplicateCount--;
+		}
+
+		DebugLog(
+			"[DELETE DUP MODEL] DupCount:%d Private:%d MB\n",
+			g_DebugMemory.modelDuplicateCount,
+			GetPrivateMemoryMB()
+		);
+#endif
+	}
 }

@@ -38,6 +38,7 @@ public:
 
 		RETURN_POINT,
 		LAPTOP,
+		WATCH,
 
 		// Sound
 		WALK_SE,
@@ -95,6 +96,9 @@ public:
 	// リソースの複製ロード(モデル用)
 	int LoadModelDuplicate(SRC src);
 
+	void DeleteDuplicateModel(int& handle);
+
+
 private:
 
 	// 静的インスタンス
@@ -117,5 +121,6 @@ private:
 
 	// 内部ロード
 	Resource& _Load(SRC src);
+
 
 };

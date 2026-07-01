@@ -19,11 +19,11 @@ void EnemyManager::Init(void)
 {
 	EnemyBase::ResetChasingEnemyCount();
 
-	// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
-	EnemyNormal* testEnemy = new EnemyNormal();
-	testEnemy->Init();
-	EnemyNormal* enemy2 = new EnemyNormal();
-	enemy2->Init();
+	//// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
+	//EnemyNormal* testEnemy = new EnemyNormal();
+	//testEnemy->Init();
+	//EnemyNormal* enemy2 = new EnemyNormal();
+	//enemy2->Init();
 
 
 

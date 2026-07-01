@@ -45,7 +45,7 @@ Player::Player(void)
 
 	capsule_ = nullptr;
 
-	maxHp_ = 100;
+	maxHp_ = 10;
 	isDead_ = false;
 	isDash_ = false;
 
@@ -62,6 +62,7 @@ Player::Player(void)
 
 Player::~Player(void)
 {
+
 	HpManager::GetInstance().UnregisterHP(this);
 	//delete capsule_;
 	// すべてのカプセルを解放
@@ -75,6 +76,8 @@ Player::~Player(void)
 		DeleteLightHandle(flashlight_.handle);
 		flashlight_.handle = -1;
 	}
+
+	ResourceManager::GetInstance().DeleteDuplicateModel(transform_.modelId);
 
 }
 

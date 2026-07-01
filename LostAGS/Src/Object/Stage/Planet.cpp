@@ -21,6 +21,7 @@ Planet::Planet(const NAME& name, const TYPE& type, const Transform& transform)
 
 Planet::~Planet(void)
 {
+	ResourceManager::GetInstance().DeleteDuplicateModel(transform_.modelId);
 }
 
 void Planet::Init(void)
