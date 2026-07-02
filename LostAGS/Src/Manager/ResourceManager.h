@@ -31,14 +31,23 @@ public:
 		CEILING_LIGHT,
 		F_G,
 		F_F,
-		BOOKSLF,
-		LOCKER,
-		FREEZER,
+		BOOKSLF, // 本棚
+		LOCKER, // ロッカー
+		FREEZER, // 冷凍庫
+		BOOK, // 本
+		DOOR, // ドア
+		MONITOR, // モニター
+		DESKTOPPC, // デスクトップPC
+		SINK, // シンク
 
 
 		RETURN_POINT,
+		// アイテム
 		LAPTOP,
 		WATCH,
+		BOOK168,
+		SMARTPHONE,
+
 
 		// Sound
 		WALK_SE,

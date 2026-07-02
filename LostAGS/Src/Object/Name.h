@@ -14,4 +14,9 @@ enum class NAME
     CEILING,
     BOOKSLF,
     LOCKER,
+    BOOK, // 本
+    DOOR, // ドア
+    MONITOR, // モニター
+    DESKTOPPC, // デスクトップPC
+    SINK, // シンク
 };

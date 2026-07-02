@@ -101,7 +101,6 @@ private:
 
     // Å‰‚Ì˜f¯
     void MakeMainStage(void);
-    void CreateFirstStage(void);
 
     // ƒAƒCƒeƒ€
     std::vector<Item*> items_;
@@ -193,8 +192,7 @@ private:
     bool isMiniMapVisible_;
 
     void DrawMiniMap(void) const;
-    void DrawMiniMapScene(void) const;
-
+  
     struct MiniMapRect
     {
         int left;

@@ -90,6 +90,21 @@ void ResourceManager::Init(void)
 	// 壁
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);
+	// ドア
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
+	resourcesMap_.emplace(SRC::WALL, res);
+	// モニター
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
+	resourcesMap_.emplace(SRC::WALL, res);
+	// デスクトップPC
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
+	resourcesMap_.emplace(SRC::WALL, res);
+	// シンク
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
+	resourcesMap_.emplace(SRC::WALL, res);
+	// 本
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Book.mv1");
+	resourcesMap_.emplace(SRC::BOOK, res);
 	// ショーケース
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_frame.mv1");
 	resourcesMap_.emplace(SRC::F_F, res);
@@ -104,6 +119,10 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::LAPTOP, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Watch.mv1"); // 腕時計
 	resourcesMap_.emplace(SRC::WATCH, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Book.mv1"); // １６８Book
+	resourcesMap_.emplace(SRC::BOOK168, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/SmartPhone.mv1"); // スマートフォン
+	resourcesMap_.emplace(SRC::SMARTPHONE, res);
 
 
 

@@ -22,8 +22,10 @@
 #include "../Furniture/BookShelf.h"
 #include "../Furniture/Locker.h"
 #include "../Furniture/Freezer.h"
+#include "../Furniture/Book.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
+
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -594,6 +596,13 @@ void Stage::MakeMainStage(void)
 	{ 0.93f, 0.5f, 1.0f },
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
+	// 本
+	CreateFurniture({
+	ResourceManager::SRC::BOOK,
+	{ -1445.0f, -100.0f, 330.0f },
+	{ 0.5f, 0.3f, 0.3f },
+	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+		});
 
 	// ロッカー--------------------------------------------
 	for (int i = 0; i < 13; i++)
@@ -608,7 +617,7 @@ void Stage::MakeMainStage(void)
 		});
 
 		// ロッカー周辺を腕時計の出現候補にする
-		watchSpawnPoints_.push_back(VGet(posX, -35.0f, 1010.0f));
+		watchSpawnPoints_.push_back(VGet(posX, -90.0f, 1070.0f));
 
 	}
 
@@ -625,7 +634,7 @@ void Stage::MakeMainStage(void)
 
 
 		// ロッカー周辺を腕時計の出現候補にする
-		watchSpawnPoints_.push_back(VGet(posX, -35.0f, 1010.0f));
+		watchSpawnPoints_.push_back(VGet(posX, -90.0f, 1340.0f));
 
 	}
 
@@ -666,7 +675,7 @@ void Stage::MakeMainStage(void)
 
 	// アイテムランダム生成
 	CreateRandomLaptopItemsFromSpawnPoints(1); // ノートPC
-	CreateRandomWatchItemsFromSpawnPoints(2); // 腕時計
+	CreateRandomWatchItemsFromSpawnPoints(20); // 腕時計
 
 
 	// 天井ライト
@@ -841,6 +850,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	{
 		f = new Freezer(&trans);
 	}
+	else if (data.modelSrc == ResourceManager::SRC::BOOK)
+	{
+		f = new Book(&trans);
+	}
 
 	if (f == nullptr)
 	{
@@ -947,7 +960,7 @@ void Stage::CreateRandomWatchItemsFromSpawnPoints(int count)
 			Item::TYPE::WATCH,
 			ResourceManager::SRC::WATCH,
 			watchSpawnPoints_[i],
-			VGet(0.05f, 0.05f, 0.05f)
+			VGet(0.03f, 0.03f, 0.03f)
 		);
 	}
 }
