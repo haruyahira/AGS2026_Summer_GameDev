@@ -596,13 +596,57 @@ void Stage::MakeMainStage(void)
 	{ 0.93f, 0.5f, 1.0f },
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
-	// 本
-	CreateFurniture({
-	ResourceManager::SRC::BOOK,
-	{ -1445.0f, -100.0f, 330.0f },
-	{ 0.5f, 0.3f, 0.3f },
-	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
-		});
+
+	//struct BookData {
+	//	VECTOR pos;
+	//	float rotY;
+	//};
+
+	//BookData books[] = {
+	//	{{ -1435.0f, -70.0f, -120.0f },-90.0f},
+	//	{{ -1435.0f, -35.0f, -120.0f },-90.0f},
+	//	{{ -1435.0f, 0.0f, -120.0f },-90.0f},
+	//	{{ -1435.0f, 35.0f, -120.0f },-90.0f},
+	//};
+
+	//for (auto& b : books)
+	//{
+	//	CreateFurniture({
+	//		ResourceManager::SRC::BOOK,
+	//		Vector3(b.pos.x, b.pos.y, b.pos.z),
+	//		{ 0.3f, 0.2f, 0.3f },
+	//		Vector3{ 0.0f, AsoUtility::Deg2RadF(b.rotY), 0.0f }
+	//		});
+	//}
+
+	std::set<int> bookskipY = {};
+	std::set<int> bookskipZ = {};
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (bookskipY.count(i) > 0)
+		{
+			continue;
+		}
+
+		for (int j = 0; j < 70; j++)
+		{
+			if (bookskipZ.count(j) > 0)
+			{
+				continue;
+			}
+
+			float bookposZ = -130.0f + (j * 12.0f);
+			float bookposY = -70.0f + (i * 35.0f);
+
+			CreateFurniture({
+				ResourceManager::SRC::BOOK,
+				{ -1435.0f, bookposY, bookposZ },
+				{ 0.3f, 0.2f, 0.3f },
+				{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
+				});
+		}
+	}
 
 	// ロッカー--------------------------------------------
 	for (int i = 0; i < 13; i++)
