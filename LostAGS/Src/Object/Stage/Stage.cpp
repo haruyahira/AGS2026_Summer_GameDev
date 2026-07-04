@@ -259,6 +259,8 @@ void Stage::Draw(void)
 
 
 #ifdef _DEBUG
+	DebugDrawItemPickupCheck();
+	DebugDrawPickupRange();
 	if (player_ != nullptr)
 	{
 		for (auto furniture : furnitures_)
@@ -749,6 +751,8 @@ void Stage::MakeMainStage(void)
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
 	1.0f, -1.0f
 		});
+
+
 	CreateFurniture({ // 休憩室のドア
 	ResourceManager::SRC::DOOR,
 	{ -1566.0f, -96.0f, 1000.0f },
@@ -756,12 +760,24 @@ void Stage::MakeMainStage(void)
 	{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f },
 	-1.0f,-1.0f
 		});
+	CreateFurniture({
+    ResourceManager::SRC::WALL,
+    { -1566.0f, 485.0f, 1000.0f },
+    { 0.32f, 1.0f, 0.5f },
+    { AsoUtility::Deg2RadF(180.0f), AsoUtility::Deg2RadF(0.0f), 0.0f }
+		});
 	CreateFurniture({ // 更衣室のドア
 	ResourceManager::SRC::DOOR,
 	{ -2559.0f, -96.0f, 1000.0f },
 	{ 1.1f, 1.0f, 1.0f },
 	{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f },
 	-1.0f, -1.0f
+		});
+	CreateFurniture({
+	ResourceManager::SRC::WALL,
+	{ -2559.0f, 485.0f, 1000.0f },
+	{ 0.32f, 1.0f, 0.5f },
+	{ AsoUtility::Deg2RadF(180.0f), AsoUtility::Deg2RadF(0.0f), 0.0f }
 		});
 
 	// 冷凍庫----------------------------------------------------
@@ -1106,6 +1122,9 @@ int Stage::FindLookingItem(void)
 	VECTOR playerPos = player_->GetPos();
 	VECTOR playerForward = player_->GetForward();
 
+	int nearestIndex = -1;
+	float nearestDistance = 9999999.0f;
+
 	for (int i = 0; i < (int)items_.size(); i++)
 	{
 		if (items_[i] == nullptr)
@@ -1118,13 +1137,42 @@ int Stage::FindLookingItem(void)
 			continue;
 		}
 
-		if (items_[i]->IsInPlayerView(playerPos, playerForward))
+		// まず距離判定
+		if (!items_[i]->IsInPlayerView(playerPos, playerForward))
 		{
-			return i;
+			continue;
+		}
+
+		VECTOR itemPos = items_[i]->GetPos();
+
+		// 判定用の線の開始位置と終了位置
+		// プレイヤーの少し上から、アイテムの少し上へ線を飛ばす
+		VECTOR lineStart = playerPos;
+		lineStart.y += 80.0f;
+
+		VECTOR lineEnd = itemPos;
+		lineEnd.y += 20.0f;
+
+		// 壁越しなら対象外
+		if (IsPickupLineBlocked(lineStart, lineEnd))
+		{
+			continue;
+		}
+
+		// 一番近いアイテムを選ぶ
+		VECTOR toItem = VSub(itemPos, playerPos);
+		toItem.y = 0.0f;
+
+		float distance = VSize(toItem);
+
+		if (distance < nearestDistance)
+		{
+			nearestDistance = distance;
+			nearestIndex = i;
 		}
 	}
 
-	return -1;
+	return nearestIndex;
 }
 
 void Stage::UpdateItemPickup(void)
@@ -2345,6 +2393,43 @@ int Stage::GetUsedInventorySlotCount(void) const
 	return total;
 }
 
+bool Stage::IsPickupLineBlocked(const VECTOR& from, const VECTOR& to) const
+{
+	for (auto f : furnitures_)
+	{
+		if (f == nullptr)
+		{
+			continue;
+		}
+
+		// 壁とドアだけを遮蔽物にする
+		Wall* wall = dynamic_cast<Wall*>(f);
+		Door* door = dynamic_cast<Door*>(f);
+
+		if (wall == nullptr && door == nullptr)
+		{
+			continue;
+		}
+
+		int modelId = f->GetModelId();
+
+		MV1_COLL_RESULT_POLY hit =
+			MV1CollCheck_Line(
+				modelId,
+				-1,
+				from,
+				to
+			);
+
+		if (hit.HitFlag)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Stage::DrawMiniMap(void) const
 {
 	if (player_ == nullptr)
@@ -2771,4 +2856,150 @@ void Stage::DrawMiniMap(void) const
 	);
 
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Stage::DebugDrawPickupRange(void) const
+{
+#ifdef _DEBUG
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	VECTOR playerPos = player_->GetPos();
+
+	// Item.cpp の pickupRange_ と同じ値
+	const float pickupRange = 200.0f;
+
+	// プレイヤーの足元あたりに表示
+	VECTOR center = VGet(
+		playerPos.x,
+		playerPos.y + 5.0f,
+		playerPos.z
+	);
+
+	const int div = 64;
+
+	for (int i = 0; i < div; i++)
+	{
+		float a0 = DX_TWO_PI_F * i / div;
+		float a1 = DX_TWO_PI_F * (i + 1) / div;
+
+		VECTOR p0 = VGet(
+			center.x + cosf(a0) * pickupRange,
+			center.y,
+			center.z + sinf(a0) * pickupRange
+		);
+
+		VECTOR p1 = VGet(
+			center.x + cosf(a1) * pickupRange,
+			center.y,
+			center.z + sinf(a1) * pickupRange
+		);
+
+		DrawLine3D(
+			p0,
+			p1,
+			GetColor(0, 255, 0)
+		);
+	}
+
+	// プレイヤーの向きも描画
+	VECTOR forward = player_->GetForward();
+	forward.y = 0.0f;
+
+	if (VSize(forward) > 0.001f)
+	{
+		forward = VNorm(forward);
+
+		VECTOR end = VAdd(
+			center,
+			VScale(forward, pickupRange)
+		);
+
+		DrawLine3D(
+			center,
+			end,
+			GetColor(255, 0, 0)
+		);
+	}
+#endif
+}
+
+void Stage::DebugDrawItemPickupCheck(void) const
+{
+#ifdef _DEBUG
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	VECTOR playerPos = player_->GetPos();
+	VECTOR playerForward = player_->GetForward();
+
+	VECTOR playerGround = playerPos;
+	playerGround.y += 10.0f;
+
+	for (int i = 0; i < (int)items_.size(); i++)
+	{
+		Item* item = items_[i];
+
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		if (!item->IsActive())
+		{
+			continue;
+		}
+
+		VECTOR itemPos = item->GetPos();
+
+		VECTOR toItem = VSub(itemPos, playerPos);
+		toItem.y = 0.0f;
+
+		float distance = VSize(toItem);
+
+		bool inRange = item->IsInPlayerView(playerPos, playerForward);
+
+		int color = inRange
+			? GetColor(0, 255, 0)
+			: GetColor(255, 0, 0);
+
+		// アイテム判定中心
+		DrawSphere3D(
+			itemPos,
+			20.0f,
+			8,
+			color,
+			color,
+			FALSE
+		);
+
+		// プレイヤーからアイテム判定中心への線
+		VECTOR itemGround = itemPos;
+		itemGround.y += 10.0f;
+
+		DrawLine3D(
+			playerGround,
+			itemGround,
+			color
+		);
+
+		// 画面上に距離表示
+		VECTOR screenPos = ConvWorldPosToScreenPos(itemPos);
+
+		DrawFormatString(
+			(int)screenPos.x,
+			(int)screenPos.y,
+			color,
+			"%s Dist: %.1f / %.1f %s",
+			item->GetName(),
+			distance,
+			item->GetPickupRange(),
+			inRange ? "OK" : "NG"
+		);
+	}
+#endif
 }

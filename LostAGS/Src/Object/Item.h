@@ -50,4 +50,5 @@ public:
 
     bool IsInPlayerView(const VECTOR& playerPos, const VECTOR& playerForward) const;
     void Pickup();
+    float GetPickupRange(void) const;
 };

@@ -8,7 +8,7 @@ Item::Item()
     type_ = TYPE::LAPTOP;
     isActive_ = false;
 
-    pickupRange_ = 200.0f;
+    pickupRange_ = 168.0f;
     viewDot_ = 0.7f;
 }
 
@@ -80,7 +80,7 @@ const char* Item::GetName() const
         return "òréûåv";
 
     case TYPE::KEY:
-        return "åÆ";
+        return "I68Book";
 
     case TYPE::MEDICINE:
         return "ñÚ";
@@ -114,9 +114,9 @@ bool Item::IsInPlayerView(const VECTOR& playerPos, const VECTOR& playerForward) 
         return false;
     }
 
-    // ãóó£ì‡Ç»ÇÁèEÇ¶ÇÈ
     return true;
 }
+
 
 
 void Item::Pickup()
@@ -124,3 +124,7 @@ void Item::Pickup()
     isActive_ = false;
 }
 
+float Item::GetPickupRange(void) const
+{
+    return pickupRange_;
+}

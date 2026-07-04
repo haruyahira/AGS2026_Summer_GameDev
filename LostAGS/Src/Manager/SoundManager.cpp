@@ -48,6 +48,8 @@ void SoundManager::Init()
         res.Load(ResourceManager::SRC::HIT_SE).handleId_;
     ses_[SE::DISE] =
         res.Load(ResourceManager::SRC::DISC_SE).handleId_;
+    ses_[SE::DOOROP] =
+        res.Load(ResourceManager::SRC::DOOROP_SE).handleId_;
 }
 
 void SoundManager::PlayBGM(BGM bgm, bool loop)

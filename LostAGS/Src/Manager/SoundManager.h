@@ -20,6 +20,7 @@ public:
         ATTACK,
         HIT,
         DISE,
+        DOOROP,
     };
 
 public:

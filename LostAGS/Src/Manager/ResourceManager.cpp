@@ -154,6 +154,8 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::HIT_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "SE/Discovery.wav");
 	resourcesMap_.emplace(SRC::DISC_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "SE/DoorOpen.mp3");
+	resourcesMap_.emplace(SRC::DOOROP_SE, res);
 
 
 }

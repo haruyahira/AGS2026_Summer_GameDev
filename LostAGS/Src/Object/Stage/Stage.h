@@ -71,6 +71,7 @@ public:
     int GetItemSlotSize(Item::TYPE type) const;
 
     int GetUsedInventorySlotCount(void) const;
+    bool IsPickupLineBlocked(const VECTOR& from, const VECTOR& to) const;
 
 private:
 
@@ -207,4 +208,8 @@ private:
     };
 
     std::vector<MiniMapRect> floorRects;
+
+    void DebugDrawPickupRange(void) const;
+    void DebugDrawItemPickupCheck(void) const;
+
 };

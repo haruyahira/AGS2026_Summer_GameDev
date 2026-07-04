@@ -1,6 +1,7 @@
 #include <cmath>
 #include "Door.h"
 #include "../../Manager/InputManager.h"
+#include "../../Manager/SoundManager.h"
 #include "../Player.h"
 #include "../../Application.h"
 
@@ -175,15 +176,23 @@ void Door::Update(Player& player)
     if (canInteract &&
         InputManager::GetInstance().IsTrgDown(KEY_INPUT_F))
     {
+        auto& snd = SoundManager::GetInstance();
+
         if (state_ == DoorState::Closed ||
             state_ == DoorState::Closing)
         {
             state_ = DoorState::Opening;
+
+            snd.SetSEVolume(255);
+            snd.PlaySE(SoundManager::SE::DOOROP);
         }
         else if (state_ == DoorState::Open ||
             state_ == DoorState::Opening)
         {
             state_ = DoorState::Closing;
+
+            snd.SetSEVolume(255);
+            snd.PlaySE(SoundManager::SE::DOOROP);
         }
     }
 
@@ -288,7 +297,7 @@ bool Door::CanInteract(const Player& player) const
 
     playerPos.y = collision_.center.y;
 
-    const float interactDistance = 220.0f;
+    const float interactDistance = 150.0f;
 
     VECTOR doorCenter = collision_.center;
     doorCenter.y = playerPos.y;
