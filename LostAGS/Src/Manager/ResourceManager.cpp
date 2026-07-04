@@ -91,8 +91,8 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);
 	// ドア
-	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
-	resourcesMap_.emplace(SRC::WALL, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Door.mv1");
+	resourcesMap_.emplace(SRC::DOOR, res);
 	// モニター
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);
@@ -124,39 +124,13 @@ void ResourceManager::Init(void)
 	res = new RES(RES_T::MODEL, PATH_MDL + "Item/SmartPhone.mv1"); // スマートフォン
 	resourcesMap_.emplace(SRC::SMARTPHONE, res);
 
-
-
-	//// 吹き出し
-	//res = new RES(RES_T::IMG, PATH_IMG + "SpeechBalloon.png");
-	//resourcesMap_.emplace(SRC::SPEECH_BALLOON, res);
-
-	// プレイヤー
-	res = new RES(RES_T::MODEL, PATH_MDL + "Player/Player.mv1");
+	// 登場キャラクター----------------------------------------------------
+	res = new RES(RES_T::MODEL, PATH_MDL + "Player/Player.mv1"); // プレイヤー
 	resourcesMap_.emplace(SRC::PLAYER, res);
-
-	// プレイヤー影
-	res = new RES(RES_T::IMG, PATH_IMG + "Shadow.png");
+	res = new RES(RES_T::IMG, PATH_IMG + "Shadow.png"); // プレイヤー影
 	resourcesMap_.emplace(SRC::PLAYER_SHADOW, res);
-
-
-	// 敵
-	res = new RES(RES_T::MODEL, PATH_MDL + "Enemy/Enemy.mv1");
+	res = new RES(RES_T::MODEL, PATH_MDL + "Enemy/Enemy.mv1"); // 敵
 	resourcesMap_.emplace(SRC::ENEMYNORMAL, res);
-
-
-	// スカイドーム
-	res = new RES(RES_T::MODEL, PATH_MDL + "SkyDome/SkyDome.mv1");
-	resourcesMap_.emplace(SRC::SKY_DOME, res);
-
-	
-
-	// 落とし穴の惑星
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/FallPlanet.mv1");
-	resourcesMap_.emplace(SRC::FALL_PLANET, res);
-
-	// 平坦な惑星01
-	res = new RES(RES_T::MODEL, PATH_MDL + "Planet/FlatPlanet01.mv1");
-	resourcesMap_.emplace(SRC::FLAT_PLANET_01, res);
 
 
 	//============

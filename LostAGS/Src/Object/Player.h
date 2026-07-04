@@ -125,6 +125,7 @@ public:
 	int GetHP(void) const;
 	int GetMaxHP(void) const;
 	VECTOR GetPos(void) const;
+	void SetPos(const VECTOR& pos);
 	VECTOR GetForward(void) const;
 	bool IsFlashLightOn() const;
 

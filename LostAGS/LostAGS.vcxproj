@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\Door.cpp" />
     <ClCompile Include="Src\Object\Furniture\Book.cpp" />
     <ClCompile Include="Src\Object\Furniture\Freezer.cpp" />
     <ClCompile Include="Src\Object\Furniture\Locker.cpp" />
@@ -205,6 +206,7 @@
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\Door.h" />
     <ClInclude Include="Src\Object\Furniture\Book.h" />
     <ClInclude Include="Src\Object\Furniture\Freezer.h" />
     <ClInclude Include="Src\Object\Furniture\Locker.h" />

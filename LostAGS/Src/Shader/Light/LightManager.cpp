@@ -77,7 +77,7 @@ void LightManager::SetFlashLight(
     flashLight_.outerCos = cosf(outerAngleRad);
 
     // 懐中電灯は今回は壁遮蔽しない
-    flashLight_.isWallBlocked = false;
+    flashLight_.isWallBlocked = true;
 
 }
 
@@ -147,15 +147,7 @@ void LightManager::SendToShader()
             continue;
         }
 
-        float dist =
-            VSize(
-                VSub(
-                    wall->GetPos(),
-                    viewPoint_
-                )
-            );
-
-        if (dist > 1700.0f)
+        if (!IsWallNeededByAnyLight(wall))
         {
             continue;
         }
@@ -305,7 +297,70 @@ void LightManager::WriteLightToCB(
     cb->lightDirInner[index].w = light.innerCos;
 
     cb->lightOuter[index].x = light.outerCos;
-    cb->lightOuter[index].y = 0.0f;
+    cb->lightOuter[index].y = light.isWallBlocked ? 1.0f : 0.0f;
     cb->lightOuter[index].z = 0.0f;
     cb->lightOuter[index].w = 0.0f;
+}
+
+bool LightManager::IsWallNeededByLight(
+    const LightBlocker* wall,
+    const ShaderLight& light
+) const
+{
+    if (wall == nullptr)
+    {
+        return false;
+    }
+
+    if (!light.isWallBlocked)
+    {
+        return false;
+    }
+
+    VECTOR wallPos = wall->GetPos();
+
+    float dx = wallPos.x - light.pos.x;
+    float dz = wallPos.z - light.pos.z;
+
+    VECTOR half = wall->GetHalfSize();
+
+    // 壁の長さぶん少し余裕を持たせる
+    float margin = 300.0f + half.x + half.z;
+
+    float range = light.range + margin;
+    float rangeSq = range * range;
+
+    float distSq = dx * dx + dz * dz;
+
+    return distSq <= rangeSq;
+}
+
+bool LightManager::IsWallNeededByAnyLight(
+    const LightBlocker* wall
+) const
+{
+    if (wall == nullptr)
+    {
+        return false;
+    }
+
+    // 懐中電灯
+    if (useFlashLight_)
+    {
+        if (IsWallNeededByLight(wall, flashLight_))
+        {
+            return true;
+        }
+    }
+
+    // 天井ライトなど
+    for (const ShaderLight& light : lights_)
+    {
+        if (IsWallNeededByLight(wall, light))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }

@@ -29,14 +29,19 @@ public:
     // ステージの切り替え間隔
     static constexpr float TIME_STAGE_CHANGE = 1.0f;
 
-    // 家具の設計図
+
     struct FurnitureData
     {
         ResourceManager::SRC modelSrc;
         Vector3 pos;
         Vector3 scl;
         Vector3 rot;
+
+        // ドア専用
+        float doorHingeSide = -1.0f;
+        float doorOpenSign = -1.0f;
     };
+
 
 public:
 

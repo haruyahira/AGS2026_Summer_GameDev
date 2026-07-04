@@ -11,15 +11,17 @@ struct PSOutput
     float4 depth : SV_TARGET2;
 };
 
+
 bool IsWallBlocked(
     float3 lightPos,
-    float3 worldPos
+    float3 worldPos,
+    float lightRange
 )
 {
     float distToPixel =
-        distance(lightPos, worldPos);
+    distance(lightPos, worldPos);
 
-    if (distToPixel > 900.0f)
+    if (distToPixel > lightRange)
     {
         return false;
     }
@@ -220,7 +222,7 @@ PSOutput main(VertexToPixel input)
             MAX_SHADER_LIGHT
         );
 
-    [unroll(MAX_SHADER_LIGHT)]
+  [unroll(MAX_SHADER_LIGHT)]
     for (int i = 0; i < MAX_SHADER_LIGHT; i++)
     {
         if (i >= count)
@@ -229,50 +231,61 @@ PSOutput main(VertexToPixel input)
         }
 
         float3 lightPos =
-            lightPosRange[i].xyz;
+        lightPosRange[i].xyz;
 
-        float dist =
-            distance(
-                lightPos,
-                input.WorldPos
-            );
+        float lightRange =
+        lightPosRange[i].w;
 
-        float shadow =
-            1.0f;
-
-        // =========================
-        // 壁遮蔽
-        // =========================
-
-        if (IsWallBlocked(
-            lightPos,
-            input.WorldPos
-        ))
-        {
-            shadow = 0.08f;
-        }
-
-        // =========================
-        // スポットライト
-        // =========================
+    // =========================
+    // 先にスポットライトの影響率を計算
+    // =========================
 
         float rate =
-            CalcSpotLightRate(
-                input.WorldPos,
-                lightPos,
-                lightPosRange[i].w,
-                normalize(
-                    lightDirInner[i].xyz
-                ),
-                lightDirInner[i].w,
-                lightOuter[i].x
-            );
+        CalcSpotLightRate(
+            input.WorldPos,
+            lightPos,
+            lightRange,
+            normalize(
+                lightDirInner[i].xyz
+            ),
+            lightDirInner[i].w,
+            lightOuter[i].x
+        );
+
+    // ライトが届いていないピクセルなら、
+    // 壁判定をしない
+        if (rate <= 0.001f)
+        {
+            continue;
+        }
+
+        float shadow =
+        1.0f;
+
+    // =========================
+    // 壁遮蔽するライトだけ判定
+    // =========================
+
+        bool useWallBlock =
+        lightOuter[i].y > 0.5f;
+
+        if (useWallBlock)
+        {
+            if (IsWallBlocked(
+            lightPos,
+            input.WorldPos,
+            lightRange
+        ))
+            {
+                shadow = 0.08f;
+            }
+        }
 
         light +=
-            lightColor[i].xyz *
-            rate *
-            shadow *
-            1.4f;
+        lightColor[i].xyz *
+        rate *
+        shadow *
+        1.4f;
     }
 
     // =========================

@@ -23,6 +23,7 @@
 #include "../Furniture/Locker.h"
 #include "../Furniture/Freezer.h"
 #include "../Furniture/Book.h"
+#include "../Furniture/Door.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
 
@@ -143,10 +144,21 @@ void Stage::Update(void)
 	}
 
 	// 家具
-	for (auto f : furnitures_)
+
+	for (auto furniture : furnitures_)
 	{
-		f->Update();
+		Door* door = dynamic_cast<Door*>(furniture);
+
+		if (door != nullptr)
+		{
+			door->Update(*player_);
+		}
+		else
+		{
+			furniture->Update();
+		}
 	}
+
 
 	for (auto f : glassFurnitures_)
 	{
@@ -162,6 +174,7 @@ void Stage::Update(void)
 	{
 		item->Update();
 	}
+
 	for (auto l : ceilingLights_)
 	{
 		l->Update();
@@ -244,6 +257,30 @@ void Stage::Draw(void)
 	SetUseTextureToShader(1, -1);
 	SetUseTextureToShader(2, -1);
 
+
+#ifdef _DEBUG
+	if (player_ != nullptr)
+	{
+		for (auto furniture : furnitures_)
+		{
+			if (furniture == nullptr)
+			{
+				continue;
+			}
+
+			Door* door = dynamic_cast<Door*>(furniture);
+
+			if (door != nullptr)
+			{
+				door->DebugDrawInteractRange(*player_);
+
+				// 追加：扉の当たり判定を可視化
+				door->DebugDrawCollision();
+			}
+		}
+	}
+#endif
+
 }
 
 
@@ -251,6 +288,35 @@ void Stage::DrawUI(void) const
 {
 	DrawItemUI();
 	DrawInventoryUI();
+
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	for (auto furniture : furnitures_)
+	{
+		if (furniture == nullptr)
+		{
+			continue;
+		}
+
+		Door* door = dynamic_cast<Door*>(furniture);
+
+		if (door == nullptr)
+		{
+			continue;
+		}
+
+		// 1つ表示できたら終了
+		if (door->DrawInteractUI(*player_))
+		{
+			return;
+		}
+	}
+
+
+
 
 	if (isMiniMapVisible_)
 	{
@@ -493,7 +559,7 @@ void Stage::MakeMainStage(void)
 		{
 		ResourceManager::SRC::WALL,
 		{ -2565.0f, -100.0f, 829.0f },
-		{ 3.87f, 1.0f, 0.5f },
+		{ 4.0f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
 
@@ -513,11 +579,11 @@ void Stage::MakeMainStage(void)
 		{ 1.7f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
-		// ②右右の壁
+		// ②右右の壁（休憩室と更衣室の間の壁）
 		{
 		ResourceManager::SRC::WALL,
 		{ -2060.0f, -100.0f, 1000.0f },
-		{ 1.7f, 1.0f, 0.5f },
+		{ 2.0f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
 		},
 		// ③右右の壁
@@ -574,6 +640,13 @@ void Stage::MakeMainStage(void)
 			{ 2.2f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
+			// 廊下扉の上の部分
+			{
+			ResourceManager::SRC::WALL,
+			{ -3430.0f, 485.0f, 915.0f },
+			{ 0.32f, 1.0f, 0.5f },
+			{  AsoUtility::Deg2RadF(180.0f), AsoUtility::Deg2RadF(-90.0f), 0.0f }
+			},
 
 			// ④正面左壁（厨房扉の左の壁）
 		{
@@ -597,28 +670,7 @@ void Stage::MakeMainStage(void)
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
-	//struct BookData {
-	//	VECTOR pos;
-	//	float rotY;
-	//};
-
-	//BookData books[] = {
-	//	{{ -1435.0f, -70.0f, -120.0f },-90.0f},
-	//	{{ -1435.0f, -35.0f, -120.0f },-90.0f},
-	//	{{ -1435.0f, 0.0f, -120.0f },-90.0f},
-	//	{{ -1435.0f, 35.0f, -120.0f },-90.0f},
-	//};
-
-	//for (auto& b : books)
-	//{
-	//	CreateFurniture({
-	//		ResourceManager::SRC::BOOK,
-	//		Vector3(b.pos.x, b.pos.y, b.pos.z),
-	//		{ 0.3f, 0.2f, 0.3f },
-	//		Vector3{ 0.0f, AsoUtility::Deg2RadF(b.rotY), 0.0f }
-	//		});
-	//}
-
+	
 	std::set<int> bookskipY = {};
 	std::set<int> bookskipZ = {};
 
@@ -682,10 +734,37 @@ void Stage::MakeMainStage(void)
 
 	}
 
+	// ドア------------------------------------------------------
+	CreateFurniture({ // 厨房のドア
+	ResourceManager::SRC::DOOR,
+	{ -3435.0f, -96.0f, -927.0f },
+	{ 1.0f, 1.0f, 1.0f },
+	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
+	1.0f, -1.0f
+		});
+	CreateFurniture({ // 廊下のドア
+	ResourceManager::SRC::DOOR,
+	{ -3435.0f, -96.0f, 918.0f },
+	{ 1.4f, 1.0f, 1.0f },
+	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
+	1.0f, -1.0f
+		});
+	CreateFurniture({ // 休憩室のドア
+	ResourceManager::SRC::DOOR,
+	{ -1566.0f, -96.0f, 1000.0f },
+	{ 1.0f, 1.0f, 1.0f },
+	{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f },
+	-1.0f,-1.0f
+		});
+	CreateFurniture({ // 更衣室のドア
+	ResourceManager::SRC::DOOR,
+	{ -2559.0f, -96.0f, 1000.0f },
+	{ 1.1f, 1.0f, 1.0f },
+	{ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f },
+	-1.0f, -1.0f
+		});
 
-	//-----------------------------------------------------------
-
-	// 冷凍庫
+	// 冷凍庫----------------------------------------------------
 	CreateFurniture({
 		ResourceManager::SRC::FREEZER,
 		{ -3415.0f, -96.0f, -295.0f },
@@ -897,6 +976,14 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	else if (data.modelSrc == ResourceManager::SRC::BOOK)
 	{
 		f = new Book(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::DOOR)
+	{
+
+		f = new Door(
+			&trans,data.rot.y,data.doorHingeSide,data.doorOpenSign
+		);
+
 	}
 
 	if (f == nullptr)
@@ -2015,18 +2102,7 @@ void Stage::DrawPostOutline(int outputScreen)
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
-//void Stage::DrawPostOutline(void)
-//{
-//	if (outlineRTColor_ < 0)
-//	{
-//		return;
-//	}
-//
-//	SetDrawScreen(DX_SCREEN_BACK);
-//
-//	// RTをそのまま描画
-//	DrawGraph(0, 0, outlineRTColor_, FALSE);
-//}
+
 void Stage::UpdateFlashLightForShader(
 	const VECTOR& cameraPos,
 	const VECTOR& cameraTarget

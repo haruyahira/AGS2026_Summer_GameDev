@@ -119,4 +119,8 @@ private:
         int index,
         const ShaderLight& light);
 
+    bool IsWallNeededByLight(const LightBlocker* wall, const ShaderLight& light) const;
+
+    bool IsWallNeededByAnyLight(const LightBlocker* wall) const;
+
 };

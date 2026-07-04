@@ -178,11 +178,6 @@ void Player::Draw(void)
 
 #ifdef _DEBUG
 
-	// すべてのカプセルを描画
-	for (auto& pair : capsules_) {
-		pair.second->Draw();
-	}
-
 	DrawFootstepDebug();
 
 	DrawFormatString(
@@ -1644,10 +1639,6 @@ bool Player::Damage(int damage)
 		return false;
 	}
 
-#ifdef _DEBUG
-	//printfDx("Player Damage : %d\n", damage);
-#endif
-
 	if (HpManager::GetInstance().IsDead(this))
 	{
 		isDead_ = true;
@@ -1656,9 +1647,6 @@ bool Player::Damage(int damage)
 		// 追加：一回でも死んだことを記録する
 		SceneManager::GetInstance().SetPlayerDeadOnce(true);
 
-#ifdef _DEBUG
-		printfDx("Player Dead\n");
-#endif
 	}
 
 	return true;
@@ -1696,6 +1684,12 @@ int Player::GetMaxHP(void) const
 VECTOR Player::GetPos(void) const
 {
 	return transform_.pos;
+}
+
+void Player::SetPos(const VECTOR& pos)
+{
+	transform_.pos = pos;
+	transform_.Update();
 }
 
 VECTOR Player::GetForward(void) const
