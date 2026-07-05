@@ -21,6 +21,7 @@ class WarpStar;
 class Planet;
 class Player;
 class Wall;
+class Button;
 
 class Stage
 {
@@ -224,4 +225,10 @@ private:
     void DrawEmergencyEscapeUI(void) const;
 
     bool isEscapeTimerStarted_;
+
+    Button* escapeButton_;
+    VECTOR escapeButtonPos_;
+    bool isEscapeButtonActivated_;
+    void UpdateEscapeButton();
+    void ActivateEscapeButton();
 };

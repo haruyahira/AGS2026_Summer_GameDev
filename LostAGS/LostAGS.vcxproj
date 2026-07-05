@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\Button.cpp" />
     <ClCompile Include="Src\Object\Furniture\Door.cpp" />
     <ClCompile Include="Src\Object\Furniture\Book.cpp" />
     <ClCompile Include="Src\Object\Furniture\Freezer.cpp" />
@@ -188,7 +189,6 @@
     <ClCompile Include="Src\Object\Player.cpp" />
     <ClCompile Include="Src\Object\Stage\Planet.cpp" />
     <ClCompile Include="Src\Object\Stage\Stage.cpp" />
-    <ClCompile Include="Src\Object\Stage\WarpStar.cpp" />
     <ClCompile Include="Src\Scene\GameClearScene.cpp" />
     <ClCompile Include="Src\Scene\GameOverScene.cpp" />
     <ClCompile Include="Src\Scene\GameScene.cpp" />
@@ -206,6 +206,7 @@
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\Button.h" />
     <ClInclude Include="Src\Object\Furniture\Door.h" />
     <ClInclude Include="Src\Object\Furniture\Book.h" />
     <ClInclude Include="Src\Object\Furniture\Freezer.h" />
@@ -253,7 +254,6 @@
     <ClInclude Include="Src\Object\Player.h" />
     <ClInclude Include="Src\Object\Stage\Planet.h" />
     <ClInclude Include="Src\Object\Stage\Stage.h" />
-    <ClInclude Include="Src\Object\Stage\WarpStar.h" />
     <ClInclude Include="Src\Scene\GameClearScene.h" />
     <ClInclude Include="Src\Scene\GameOverScene.h" />
     <ClInclude Include="Src\Scene\GameScene.h" />

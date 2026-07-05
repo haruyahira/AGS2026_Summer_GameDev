@@ -19,4 +19,5 @@ enum class NAME
     MONITOR, // モニター
     DESKTOPPC, // デスクトップPC
     SINK, // シンク
+	BUTTON, // ボタン
 };

@@ -39,6 +39,7 @@ public:
 		MONITOR, // モニター
 		DESKTOPPC, // デスクトップPC
 		SINK, // シンク
+		BUTTON, // ボタン
 
 
 		RETURN_POINT,

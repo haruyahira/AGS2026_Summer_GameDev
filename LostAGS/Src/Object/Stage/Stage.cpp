@@ -8,7 +8,6 @@
 #include "../../Manager/SceneManager.h"
 #include "../../Manager/ResourceManager.h"
 #include "../../Manager/InputManager.h"
-#include "WarpStar.h"
 #include "../Player.h"
 #include "Planet.h"
 #include "../Collider/Collider.h"
@@ -24,9 +23,9 @@
 #include "../Furniture/Freezer.h"
 #include "../Furniture/Book.h"
 #include "../Furniture/Door.h"
+#include "../Furniture/Button.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
-
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -37,21 +36,24 @@ Stage::Stage(Player* player)
 	step_ = 0.0f;
 	stoneDevice_ = nullptr;
 
+	// 強制脱出ボタン
+	escapeButton_ = nullptr;
+	escapeButtonPos_ = VGet(0.0f, 0.0f, 0.0f);
+	isEscapeButtonActivated_ = false;
+
 	lookingItemIndex_ = -1;
 	isItemMax_ = false;
-	// ミニマップ
+
 	miniMapScreen_ = -1;
 	isMiniMapVisible_ = false;
 
-
-	escapeTimeLimit_ = 300 * 1000;       
-	emergencyEscapeTime_ = 60 * 1000;    
+	escapeTimeLimit_ = 300 * 1000;
+	emergencyEscapeTime_ = 60 * 1000;
 	escapeStartTime_ = 0;
 
 	isEscapeTimerStarted_ = false;
 	isEmergencyEscape_ = false;
 	isResultChanged_ = false;
-
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
@@ -60,7 +62,6 @@ Stage::Stage(Player* player)
 		stolenItemCount_[i] = 0;
 	}
 }
-
 Stage::~Stage(void)
 {
 	printf("[Stage Destructor] called\n");
@@ -112,6 +113,7 @@ Stage::~Stage(void)
 	ceilingLights_.clear();
 	ReleasePostOutline();
 	lightEffect_.Release();
+	escapeButton_ = nullptr;
 }
 
 void Stage::Init(void)
@@ -198,6 +200,14 @@ void Stage::Update(void)
 
 	UpdateItemPickup();
 	UpdateStoneDeviceRegister();
+	UpdateEscapeButton();
+
+
+	if (isEscapeButtonActivated_)
+	{
+		return;
+	}
+
 
 
 	// 追加：TABを押している間ミニマップ表示
@@ -250,7 +260,7 @@ void Stage::Update(void)
 	{
 		isResultChanged_ = true;
 
-		int stolenMoney = CalcStolenMoney();
+		int stolenMoney = CalcTotalMoney();
 
 		SceneManager::GetInstance().SetResultData(stolenMoney);
 		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
@@ -784,6 +794,13 @@ void Stage::MakeMainStage(void)
 		watchSpawnPoints_.push_back(VGet(posX, -90.0f, 1340.0f));
 
 	}
+	CreateFurniture({ // 脱出ボタン
+	ResourceManager::SRC::BUTTON,
+	{ -3480.0f, -96.0f, 100.0f },
+	{ 0.5f, 0.5f, 0.5f },
+	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
+	1.0f, -1.0f
+		});
 
 	// ドア------------------------------------------------------
 	CreateFurniture({ // 厨房のドア
@@ -1052,7 +1069,14 @@ void Stage::CreateFurniture(const FurnitureData& data)
 		f = new Door(
 			&trans,data.rot.y,data.doorHingeSide,data.doorOpenSign
 		);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::BUTTON)
+	{
+		f = new Button(&trans);
 
+		// 強制脱出ボタンとして記録
+		escapeButton_ = dynamic_cast<Button*>(f);
+		escapeButtonPos_ = VGet(data.pos.x, data.pos.y, data.pos.z);
 	}
 
 	if (f == nullptr)
@@ -1294,7 +1318,6 @@ void Stage::RegisterItemsToStoneDevice(void)
 		itemCount_[i] = 0;
 	}
 }
-
 void Stage::UpdateStoneDeviceRegister(void)
 {
 	if (stoneDevice_ == nullptr)
@@ -1314,27 +1337,10 @@ void Stage::UpdateStoneDeviceRegister(void)
 
 	auto& ins = InputManager::GetInstance();
 
-	// Eキー：リザルト画面へ
-	if (
-		ins.IsTrgDown(KEY_INPUT_E) ||
-		ins.IsPadBtnTrgDown(
-			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::TOP)
-		)
-	{
-		int stolenMoney = CalcStolenMoney();
-
-		SceneManager::GetInstance().SetResultData(stolenMoney);
-		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
-		return;
-	}
-
-	// アイテムを見ている時はF登録だけ止める
 	if (lookingItemIndex_ != -1)
 	{
 		return;
 	}
-
 
 	if (
 		ins.IsTrgDown(KEY_INPUT_F) ||
@@ -1487,7 +1493,7 @@ void Stage::DrawItemUI(void) const
 				DrawString(
 					20,
 					80,
-					"Fキーでアイテム登録 / Eキーで脱出",
+					"Fキーでアイテム転送",
 					GetColor(255, 255, 255)
 				);
 			}
@@ -1496,11 +1502,21 @@ void Stage::DrawItemUI(void) const
 				DrawString(
 					20,
 					80,
-					"登録できるアイテムがありません / Eキーで脱出",
+					"転送できるアイテムがありません",
 					GetColor(180, 180, 180)
 				);
 			}
 		}
+	}
+
+	if (escapeButton_ != nullptr && !isEscapeButtonActivated_)
+	{
+		DrawString(
+			20,
+			105,
+			"脱出ボタンを殴ると脱出",
+			GetColor(255, 220, 80)
+		);
 	}
 }
 
@@ -3259,3 +3275,58 @@ void Stage::StartEscapeTimer(void)
 	isEmergencyEscape_ = false;
 	isResultChanged_ = false;
 }
+
+void Stage::UpdateEscapeButton()
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	if (escapeButton_ == nullptr)
+	{
+		return;
+	}
+
+	if (isEscapeButtonActivated_)
+	{
+		return;
+	}
+
+	// 攻撃中でなければ判定しない
+	if (!player_->IsAttacking())
+	{
+		return;
+	}
+
+	VECTOR attackPos = player_->GetAttackPos();
+
+	VECTOR toButton = VSub(escapeButtonPos_, attackPos);
+	float distance = VSize(toButton);
+
+	// パンチがボタンに当たる距離
+	const float HIT_RANGE = 90.0f;
+
+	if (distance <= HIT_RANGE)
+	{
+		ActivateEscapeButton();
+	}
+}
+
+void Stage::ActivateEscapeButton()
+{
+	if (isEscapeButtonActivated_)
+	{
+		return;
+	}
+
+	isEscapeButtonActivated_ = true;
+	isResultChanged_ = true;
+
+	// 持っているアイテム + StoneDeviceに転送済みのアイテムを換金する
+	int stolenMoney = CalcTotalMoney();
+
+	SceneManager::GetInstance().SetResultData(stolenMoney);
+	SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
+}
+
