@@ -48,5 +48,17 @@ private:
 	int hideEnemyStartTime_;
 	static constexpr int HIDE_ENEMY_TIME = 500; // 0.5•b
 
-	
+	enum class STEP
+	{
+		INTRO,
+		PLAY,
+	};
+
+	STEP step_;
+
+	int introTitleFont_;
+	int introBodyFont_;
+	int introSmallFont_;
+
+	void DrawIntroUI(void) const;
 };

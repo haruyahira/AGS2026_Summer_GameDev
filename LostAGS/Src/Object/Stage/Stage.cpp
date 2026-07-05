@@ -42,8 +42,15 @@ Stage::Stage(Player* player)
 	// ミニマップ
 	miniMapScreen_ = -1;
 	isMiniMapVisible_ = false;
-	
 
+
+	escapeTimeLimit_ = 300 * 1000;       
+	emergencyEscapeTime_ = 60 * 1000;    
+	escapeStartTime_ = 0;
+
+	isEscapeTimerStarted_ = false;
+	isEmergencyEscape_ = false;
+	isResultChanged_ = false;
 
 
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
@@ -133,6 +140,15 @@ void Stage::Init(void)
 
 	step_ = -1.0f;
 
+
+	// 導入演出が終わるまでタイマーは開始しない
+	escapeStartTime_ = 0;
+	isEscapeTimerStarted_ = false;
+	isEmergencyEscape_ = false;
+	isResultChanged_ = false;
+
+
+
 }
 
 void Stage::Update(void)
@@ -211,6 +227,36 @@ void Stage::Update(void)
 		}
 	}
 
+	// =========================
+	// 脱出時間チェック
+	// =========================
+	if (!isEscapeTimerStarted_)
+	{
+		return;
+	}
+
+	int nowTime = GetNowCount();
+	int elapsedTime = nowTime - escapeStartTime_;
+
+	// 5分経過したら予備の強制脱出装置モードへ
+	if (elapsedTime >= escapeTimeLimit_)
+	{
+		isEmergencyEscape_ = true;
+	}
+
+	// 5分 + 1分 経過したらリザルトへ
+	if (!isResultChanged_ &&
+		elapsedTime >= escapeTimeLimit_ + emergencyEscapeTime_)
+	{
+		isResultChanged_ = true;
+
+		int stolenMoney = CalcStolenMoney();
+
+		SceneManager::GetInstance().SetResultData(stolenMoney);
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
+
+		return;
+	}
 
 }
 void Stage::Draw(void)
@@ -288,6 +334,13 @@ void Stage::Draw(void)
 
 void Stage::DrawUI(void) const
 {
+	DrawEscapeTimeUI();
+
+	if (isEmergencyEscape_)
+	{
+		DrawEmergencyEscapeUI();
+	}
+
 	DrawItemUI();
 	DrawInventoryUI();
 
@@ -310,15 +363,11 @@ void Stage::DrawUI(void) const
 			continue;
 		}
 
-		// 1つ表示できたら終了
 		if (door->DrawInteractUI(*player_))
 		{
 			return;
 		}
 	}
-
-
-
 
 	if (isMiniMapVisible_)
 	{
@@ -653,8 +702,8 @@ void Stage::MakeMainStage(void)
 			// ④正面左壁（厨房扉の左の壁）
 		{
 			ResourceManager::SRC::WALL,
-			{ -3430.0f, -100.0f, -1092.0f },
-			{ 0.43f, 1.0f, 0.5f },
+			{ -3430.0f, -100.0f, -1084.0f },
+			{ 0.62f, 1.0f, 0.5f },
 			{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		},
 	};
@@ -739,10 +788,16 @@ void Stage::MakeMainStage(void)
 	// ドア------------------------------------------------------
 	CreateFurniture({ // 厨房のドア
 	ResourceManager::SRC::DOOR,
-	{ -3435.0f, -96.0f, -927.0f },
-	{ 1.0f, 1.0f, 1.0f },
+	{ -3430.0f, -96.0f, -890.0f },
+	{ 1.1f, 1.0f, 1.0f },
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
 	1.0f, -1.0f
+		});
+	CreateFurniture({
+	ResourceManager::SRC::WALL,
+	{ -3430.0f, 485.0f, -890.0f },
+	{ 0.32f, 1.0f, 0.5f },
+	{ AsoUtility::Deg2RadF(180.0f), AsoUtility::Deg2RadF(90.0f), 0.0f }
 		});
 	CreateFurniture({ // 廊下のドア
 	ResourceManager::SRC::DOOR,
@@ -751,8 +806,6 @@ void Stage::MakeMainStage(void)
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
 	1.0f, -1.0f
 		});
-
-
 	CreateFurniture({ // 休憩室のドア
 	ResourceManager::SRC::DOOR,
 	{ -1566.0f, -96.0f, 1000.0f },
@@ -1299,6 +1352,7 @@ void Stage::UpdateStoneDeviceRegister(void)
 
 void Stage::DrawItemUI(void) const
 {
+
 	stoneDevice_->DrawUI();
 	if (lookingItemIndex_ != -1)
 	{
@@ -3002,4 +3056,206 @@ void Stage::DebugDrawItemPickupCheck(void) const
 		);
 	}
 #endif
+}
+
+void Stage::DrawEscapeTimeUI(void) const
+{
+	if (!isEscapeTimerStarted_)
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+
+	int nowTime = GetNowCount();
+	int elapsedTime = nowTime - escapeStartTime_;
+
+	int remainTime = 0;
+
+	if (!isEmergencyEscape_)
+	{
+		// 通常の5分カウント
+		remainTime = escapeTimeLimit_ - elapsedTime;
+	}
+	else
+	{
+		// 5分経過後の1分カウント
+		int emergencyElapsedTime = elapsedTime - escapeTimeLimit_;
+		remainTime = emergencyEscapeTime_ - emergencyElapsedTime;
+	}
+
+	if (remainTime < 0)
+	{
+		remainTime = 0;
+	}
+
+	int remainSec = remainTime / 1000;
+	int minute = remainSec / 60;
+	int second = remainSec % 60;
+
+	char timeText[128];
+
+	if (!isEmergencyEscape_)
+	{
+		sprintf_s(timeText, "脱出時間  %02d:%02d", minute, second);
+	}
+	else
+	{
+		sprintf_s(timeText, "強制脱出装置 起動まで  %02d:%02d", minute, second);
+	}
+
+	int textW = GetDrawStringWidth(timeText, strlen(timeText));
+
+	int x = screenW / 2 - textW / 2;
+	int y = 20;
+
+	int textColor = GetColor(255, 255, 255);
+
+	if (isEmergencyEscape_)
+	{
+		textColor = GetColor(255, 80, 80);
+	}
+	else if (remainSec <= 30)
+	{
+		textColor = GetColor(255, 80, 80);
+	}
+	else if (remainSec <= 60)
+	{
+		textColor = GetColor(255, 220, 80);
+	}
+
+	// 背景
+	DrawBox(
+		x - 25,
+		y - 10,
+		x + textW + 25,
+		y + 45,
+		GetColor(0, 0, 0),
+		TRUE
+	);
+
+	// 枠
+	DrawBox(
+		x - 25,
+		y - 10,
+		x + textW + 25,
+		y + 45,
+		textColor,
+		FALSE
+	);
+
+	// 文字
+	DrawString(
+		x,
+		y,
+		timeText,
+		textColor
+	);
+}
+
+void Stage::DrawEmergencyEscapeUI(void) const
+{
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	const char* message1 = "5分経過致しました。";
+	const char* message2 = "脱出装置が停止されました。";
+	const char* message3 = "予備の強制脱出装置を作動させます。";
+	const char* message4 = "起動まであと1分掛かります。";
+	const char* message5 = "それまで耐えてください。";
+
+	int boxW = 720;
+	int boxH = 190;
+
+	int boxX = screenW / 2 - boxW / 2;
+	int boxY = 90;
+
+	// 点滅用
+	float t = GetNowCount() / 1000.0f;
+	float blink = (sinf(t * 6.0f) + 1.0f) * 0.5f;
+
+	int borderColor = GetColor(
+		255,
+		80 + (int)(blink * 100.0f),
+		80
+	);
+
+	// 半透明背景
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(20, 0, 0),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// 枠
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		borderColor,
+		FALSE
+	);
+
+	DrawBox(
+		boxX + 4,
+		boxY + 4,
+		boxX + boxW - 4,
+		boxY + boxH - 4,
+		GetColor(120, 30, 30),
+		FALSE
+	);
+
+	// タイトル
+	const char* title = "WARNING";
+	int titleW = GetDrawStringWidth(title, strlen(title));
+
+	DrawString(
+		screenW / 2 - titleW / 2,
+		boxY + 15,
+		title,
+		GetColor(255, 80, 80)
+	);
+
+	// メッセージ中央揃え
+	const char* messages[] =
+	{
+		message1,
+		message2,
+		message3,
+		message4,
+		message5
+	};
+
+	int startY = boxY + 50;
+
+	for (int i = 0; i < 5; i++)
+	{
+		int textW = GetDrawStringWidth(messages[i], strlen(messages[i]));
+
+		DrawString(
+			screenW / 2 - textW / 2,
+			startY + i * 24,
+			messages[i],
+			GetColor(255, 255, 255)
+		);
+	}
+}
+
+void Stage::StartEscapeTimer(void)
+{
+	escapeStartTime_ = GetNowCount();
+
+	isEscapeTimerStarted_ = true;
+	isEmergencyEscape_ = false;
+	isResultChanged_ = false;
 }

@@ -42,6 +42,7 @@ public:
         float doorOpenSign = -1.0f;
     };
 
+    void StartEscapeTimer(void);
 
 public:
 
@@ -211,5 +212,16 @@ private:
 
     void DebugDrawPickupRange(void) const;
     void DebugDrawItemPickupCheck(void) const;
+    
+    int escapeTimeLimit_;          // 通常脱出時間 5分
+    int emergencyEscapeTime_;      // 予備脱出装置起動まで 1分
+    int escapeStartTime_;          // ゲーム開始時間
 
+    bool isEmergencyEscape_;       // 5分経過後か
+    bool isResultChanged_;         // リザルトへ移動済みか
+
+    void DrawEscapeTimeUI(void) const;
+    void DrawEmergencyEscapeUI(void) const;
+
+    bool isEscapeTimerStarted_;
 };
