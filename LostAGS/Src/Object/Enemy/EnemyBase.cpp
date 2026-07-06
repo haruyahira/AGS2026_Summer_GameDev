@@ -476,7 +476,6 @@ bool EnemyBase::IsHitPlayer(Player* player)
 
 bool EnemyBase::CollisionFurniture(Player* player, VECTOR beforePos)
 {
-    // beforePos‚ÍŒÄ‚Ño‚µ‘¤‚Å–ß‚·‚½‚ß‚ÉŽg‚¤
     (void)beforePos;
 
     if (player == nullptr)
@@ -487,7 +486,7 @@ bool EnemyBase::CollisionFurniture(Player* player, VECTOR beforePos)
     const auto& furnitures = player->GetFurnitures();
 
     float bottomY = transform_.pos.y;
-    float topY = transform_.pos.y + 80.0f;
+    float topY = transform_.pos.y + bodyHeight_;
 
     for (auto f : furnitures)
     {
@@ -496,17 +495,39 @@ bool EnemyBase::CollisionFurniture(Player* player, VECTOR beforePos)
             continue;
         }
 
-        // Wall / Ceiling ‚È‚ÇOBBŒn
+        // -------------------------------------------------
+        // 1. Wall / Showcase ‚È‚Ç ResolveCollision ‚ðŽ‚Â‰Æ‹ï
+        // -------------------------------------------------
+        VECTOR testPos = transform_.pos;
+
         if (f->ResolveCollision(
-            transform_.pos,
+            testPos,
             radius_,
             bottomY,
             topY))
         {
+            transform_.pos = testPos;
             return true;
         }
 
-        // Table / Showcase ‚È‚ÇBoxColliderŒn
+        // -------------------------------------------------
+        // 2. Table ‚È‚Ç OBB Collider ‚ðŽ‚Â‰Æ‹ï
+        // -------------------------------------------------
+        for (const auto& obb : f->GetOBBColliders())
+        {
+            if (obb.ResolveCollisionXZ(
+                transform_.pos,
+                radius_,
+                bottomY,
+                topY))
+            {
+                return true;
+            }
+        }
+
+        // -------------------------------------------------
+        // 3. BoxCollider Œn‚Ì‰Æ‹ï
+        // -------------------------------------------------
         for (const auto& box : f->GetColliders())
         {
             float boxBottom = box.center.y - box.halfSize.y;

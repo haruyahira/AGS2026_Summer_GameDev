@@ -204,6 +204,9 @@
     <ClCompile Include="Src\Object\Furniture\Button.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Shader\RimLightEffect.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Application.h">
@@ -395,6 +398,9 @@
     <ClInclude Include="Src\Object\Furniture\Button.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Shader\RimLightEffect.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Src\Shader\Light\Light3DPS.hlsl" />
@@ -407,6 +413,7 @@
     <FxCompile Include="Src\Shader\PostEffect\Monotone.hlsl" />
     <FxCompile Include="Src\Shader\PostEffect\Sepia.hlsl" />
     <FxCompile Include="Src\Shader\PostEffect\Wave.hlsl" />
+    <FxCompile Include="Src\Shader\ItemRimLightPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Src\Shader\Common\Vertex\MV1Input.hlsli" />

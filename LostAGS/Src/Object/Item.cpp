@@ -1,6 +1,7 @@
 #include "Item.h"
 
 #include "../Utility/AsoUtility.h"
+#include "../Shader/RimLightEffect.h"
 
 Item::Item()
     : resMng_(ResourceManager::GetInstance())
@@ -22,7 +23,13 @@ Item::~Item()
 
 }
 
-void Item::Init(TYPE type, ResourceManager::SRC modelSrc, VECTOR pos, VECTOR scl)
+void Item::Init(
+    TYPE type,
+    ResourceManager::SRC modelSrc,
+    VECTOR pos,
+    VECTOR scl,
+    VECTOR rot
+)
 {
     type_ = type;
     isActive_ = true;
@@ -30,7 +37,14 @@ void Item::Init(TYPE type, ResourceManager::SRC modelSrc, VECTOR pos, VECTOR scl
     transform_.SetModel(resMng_.LoadModelDuplicate(modelSrc));
     transform_.pos = pos;
     transform_.scl = scl;
-    transform_.quaRot = Quaternion();
+
+    transform_.quaRot =
+        Quaternion::Euler(
+            rot.x,
+            rot.y,
+            rot.z
+        );
+
     transform_.Update();
 }
 
@@ -51,8 +65,10 @@ void Item::Draw()
         return;
     }
 
+    transform_.Update();
     MV1DrawModel(transform_.modelId);
 }
+
 
 bool Item::IsActive() const
 {
@@ -79,7 +95,7 @@ const char* Item::GetName() const
     case TYPE::WATCH:
         return "òréûåv";
 
-    case TYPE::KEY:
+    case TYPE::BOOK168:
         return "I68Book";
 
     case TYPE::MEDICINE:
@@ -127,4 +143,106 @@ void Item::Pickup()
 float Item::GetPickupRange(void) const
 {
     return pickupRange_;
+}
+
+
+void Item::DrawRimLight(RimLightEffect& rimLight)
+{
+    if (!isActive_)
+    {
+        return;
+    }
+
+    VECTOR color = VGet(0.25f, 0.75f, 1.0f);
+
+    switch (type_)
+    {
+    case TYPE::LAPTOP:
+        color = VGet(0.25f, 0.75f, 1.0f);
+        break;
+
+    case TYPE::WATCH:
+        color = VGet(1.0f, 0.85f, 0.25f);
+        break;
+
+    case TYPE::BOOK168:
+        color = VGet(1.0f, 1.0f, 1.0f);
+        break;
+
+    case TYPE::MEDICINE:
+        color = VGet(1.0f, 0.35f, 0.55f);
+        break;
+
+    default:
+        break;
+    }
+
+    float t = GetNowCount() / 1000.0f;
+    float blink =
+        (sinf(t * 4.0f) + 1.0f) * 0.5f;
+
+
+    float power = 5.0f;
+    float intensity = 0.45f + blink * 0.25f;
+    float alpha = 0.6f;
+
+
+    rimLight.Begin(
+        color,
+        power,
+        intensity,
+        alpha
+    );
+
+    transform_.Update();
+    MV1DrawModel(transform_.modelId);
+
+    rimLight.End();
+}
+
+void Item::DrawWhiteBlink(void)
+{
+    if (!isActive_)
+    {
+        return;
+    }
+
+    float t = GetNowCount() / 1000.0f;
+
+    // 0.0 Å` 1.0
+    float blink =
+        (sinf(t * 6.0f) + 1.0f) * 0.5f;
+
+    // äÆëSÇ…è¡Ç¶ÇÈèuä‘Ç‡çÏÇÈ
+    int alpha =
+        (int)(blink * 180.0f);
+
+    if (alpha <= 5)
+    {
+        return;
+    }
+
+    transform_.Update();
+
+    // èdóvÅFí èÌÉVÉFÅ[É_Å[ÇâèúÇµÇƒÇ©ÇÁï`Ç≠
+    SetUseVertexShader(-1);
+    SetUsePixelShader(-1);
+
+    SetUseTextureToShader(0, -1);
+    SetUseTextureToShader(1, -1);
+    SetUseTextureToShader(2, -1);
+
+    SetUseLighting(FALSE);
+
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(FALSE);
+
+    SetUseBackCulling(TRUE);
+
+    // îíÇ≠â¡éZï`âÊ
+    SetDrawBright(255, 255, 255);
+    SetDrawBlendMode(DX_BLENDMODE_ADD, alpha);
+
+    MV1DrawModel(transform_.modelId);
+
 }

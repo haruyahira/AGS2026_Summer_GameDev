@@ -122,7 +122,7 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::LAPTOP, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Watch.mv1"); // òréûåv
 	resourcesMap_.emplace(SRC::WATCH, res);
-	res = new RES(RES_T::MODEL, PATH_MDL + "Item/Book.mv1"); // ÇPÇUÇWBook
+	res = new RES(RES_T::MODEL, PATH_MDL + "Item/168Book.mv1"); // ÇPÇUÇWBook
 	resourcesMap_.emplace(SRC::BOOK168, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Item/SmartPhone.mv1"); // ÉXÉ}Å[ÉgÉtÉHÉì
 	resourcesMap_.emplace(SRC::SMARTPHONE, res);

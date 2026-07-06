@@ -89,7 +89,7 @@ void Player::Init(void)
 		ResourceManager::SRC::PLAYER));
 	//MV1SetAmbColorScale(transform_.modelId, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
 	transform_.scl = { 0.1f, 0.1f, 0.1f };
-	transform_.pos = { 0.0f, -30.0f, -50.0f };
+	transform_.pos = { -3650.0f, -30.0f, 100.0f },
 	transform_.quaRot = Quaternion();
 	transform_.quaRotLocal =
 		Quaternion::Euler({ 0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f });

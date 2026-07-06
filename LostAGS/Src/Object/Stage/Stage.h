@@ -15,6 +15,7 @@
 #include "../Item.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
+#include "../../Shader/RimLightEffect.h"
 
 class ResourceManager;
 class WarpStar;
@@ -30,6 +31,19 @@ public:
     // ステージの切り替え間隔
     static constexpr float TIME_STAGE_CHANGE = 1.0f;
 
+    enum class LIGHT_AREA
+    {
+        NONE = 0,
+        HALL = 1 << 0,  // 客席
+        KITCHEN = 1 << 1,  // 厨房
+        CORRIDOR = 1 << 2,  // 廊下
+        BREAKROOM = 1 << 3,  // 休憩室
+        LOCKER = 1 << 4,  // 更衣室
+        OFFICE = 1 << 5,  // 店長室
+        ESCAPE = 1 << 6,  // 脱出エリア
+        ALL = 0xFFFF
+    };
+
 
     struct FurnitureData
     {
@@ -38,9 +52,11 @@ public:
         Vector3 scl;
         Vector3 rot;
 
-        // ドア専用
-        float doorHingeSide = -1.0f;
+        float doorHingeSide = 1.0f;
         float doorOpenSign = -1.0f;
+
+        int lightAreaMask = (int)LIGHT_AREA::NONE;
+        bool isLightBlocker = false;
     };
 
     void StartEscapeTimer(void);
@@ -79,6 +95,7 @@ private:
 
     // HLSLライト
     LightEffect lightEffect_;
+    RimLightEffect rimLightEffect_;
 
     // シングルトン参照
     ResourceManager& resMng_;
@@ -125,12 +142,14 @@ private:
     // アイテム出現候補地点
     std::vector<VECTOR> itemSpawnPoints_;
     std::vector<VECTOR> watchSpawnPoints_;
+    std::vector<VECTOR> bookSpawnPoints_;
 
     void CreateItem(
         Item::TYPE type,
         ResourceManager::SRC modelSrc,
         VECTOR pos,
-        VECTOR scl
+        VECTOR scl,
+        VECTOR rot = VGet(0.0f, 0.0f, 0.0f)
     );
     // ランダムにアイテムを出現
     void CreateRandomLaptopItemsFromSpawnPoints(int count);
@@ -231,4 +250,24 @@ private:
     bool isEscapeButtonActivated_;
     void UpdateEscapeButton();
     void ActivateEscapeButton();
+    void DrawPickupUI(void) const;
+
+ // =========================
+// ライト遮蔽用：エリア別の壁
+// =========================
+    std::vector<LightBlocker*> hallBlockers_;
+    std::vector<LightBlocker*> kitchenBlockers_;
+    std::vector<LightBlocker*> corridorBlockers_;
+    std::vector<LightBlocker*> lockerBlockers_;
+    std::vector<LightBlocker*> officeBlockers_;
+    std::vector<LightBlocker*> escapeBlockers_;
+    void RegisterLightBlockerByArea(
+        LightBlocker* blocker,
+        const VECTOR& pos
+    );
+
+    const std::vector<LightBlocker*>& GetLightBlockersByLightPos(
+        const VECTOR& lightPos
+    ) const;
+
 };

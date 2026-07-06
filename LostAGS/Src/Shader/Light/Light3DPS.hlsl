@@ -12,6 +12,7 @@ struct PSOutput
 };
 
 
+
 bool IsWallBlocked(
     float3 lightPos,
     float3 worldPos,

@@ -5,6 +5,7 @@
 #include "../Manager/ResourceManager.h"
 
 class Player;
+class RimLightEffect;
 
 class Item
 {
@@ -14,7 +15,7 @@ public:
     {
         LAPTOP,     // ノートPC
         WATCH,    // 腕時計
-        KEY,        // 鍵
+        BOOK168,        // 本
         MEDICINE,   // 薬
 
         MAX
@@ -31,13 +32,21 @@ private:
     float viewDot_;
 
     ResourceManager& resMng_;
+  
+
 
 public:
 
     Item();
     ~Item();
 
-    void Init(TYPE type, ResourceManager::SRC modelSrc, VECTOR pos, VECTOR scl);
+    void Init(
+        TYPE type,
+        ResourceManager::SRC modelSrc,
+        VECTOR pos,
+        VECTOR scl,
+        VECTOR rot = VGet(0.0f, 0.0f, 0.0f)
+    );
     void Update();
     void Draw();
 
@@ -51,4 +60,6 @@ public:
     bool IsInPlayerView(const VECTOR& playerPos, const VECTOR& playerForward) const;
     void Pickup();
     float GetPickupRange(void) const;
+    void DrawRimLight(RimLightEffect& rimLight);
+    void DrawWhiteBlink(void);
 };

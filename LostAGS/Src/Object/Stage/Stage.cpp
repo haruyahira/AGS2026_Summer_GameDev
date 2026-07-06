@@ -26,6 +26,7 @@
 #include "../Furniture/Button.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
+#include "../../Shader/RimLightEffect.h"
 
 Stage::Stage(Player* player)
 	: resMng_(ResourceManager::GetInstance())
@@ -113,6 +114,8 @@ Stage::~Stage(void)
 	ceilingLights_.clear();
 	ReleasePostOutline();
 	lightEffect_.Release();
+	//rimLightEffect_.Release();
+
 	escapeButton_ = nullptr;
 }
 
@@ -125,6 +128,10 @@ void Stage::Init(void)
 		"Data/Shader/Light3DVS.cso",
 		"Data/Shader/Light3DPS.cso"
 	);
+	//rimLightEffect_.Init(
+	//	"Data/Shader/ItemRimLightPS.cso"
+	//);
+
 
 	// ポストエフェクト輪郭線用
 	InitPostOutline();
@@ -353,6 +360,7 @@ void Stage::DrawUI(void) const
 
 	DrawItemUI();
 	DrawInventoryUI();
+	DrawPickupUI();
 
 	if (player_ == nullptr)
 	{
@@ -413,6 +421,7 @@ void Stage::MakeMainStage(void)
 	// アイテム候補地点を初期化
 	itemSpawnPoints_.clear();
 	watchSpawnPoints_.clear();
+	bookSpawnPoints_.clear();
 
 	// 最初のステージ
 	//------------------------------------------------------------------------------
@@ -732,34 +741,50 @@ void Stage::MakeMainStage(void)
 		});
 
 	
-	std::set<int> bookskipY = {};
-	std::set<int> bookskipZ = {};
+	// 本棚の本
+	// i = 行, j = 列
+	std::set<std::pair<int, int>> itemBookSlots =
+	{
+		{ 1, 3 },   // 2行目 4列目をアイテム本にする
+		{ 2, 7 }    // 3行目 8列目をアイテム本にする
+	};
 
 	for (int i = 0; i < 4; i++)
 	{
-		if (bookskipY.count(i) > 0)
+		for (int j = 0; j < 10; j++)
 		{
-			continue;
-		}
+			float bookposZ = -130.0f + (j * 95.0f);
+			float bookposY = -70.0f + (i * 35.0f);
 
-		for (int j = 0; j < 70; j++)
-		{
-			if (bookskipZ.count(j) > 0)
+			// この場所をアイテム本にするか
+			bool isItemBook =
+				itemBookSlots.count({ i, j }) > 0;
+
+			if (isItemBook)
 			{
+				// 飾り本は作らず、拾えるアイテム本を作る
+				CreateItem(
+					Item::TYPE::BOOK168,
+					ResourceManager::SRC::BOOK168,
+					VGet(-1435.0f, bookposY, bookposZ),
+					VGet(0.1f, 0.1f, 0.1f),
+					VGet(0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f)
+				);
+
 				continue;
 			}
 
-			float bookposZ = -130.0f + (j * 12.0f);
-			float bookposY = -70.0f + (i * 35.0f);
-
+			// 通常の飾り本
 			CreateFurniture({
 				ResourceManager::SRC::BOOK,
 				{ -1435.0f, bookposY, bookposZ },
-				{ 0.3f, 0.2f, 0.3f },
+				{ 2.0f, 0.2f, 0.3f },
 				{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 				});
 		}
 	}
+
+
 
 	// ロッカー--------------------------------------------
 	for (int i = 0; i < 13; i++)
@@ -884,7 +909,7 @@ void Stage::MakeMainStage(void)
 
 	// アイテムランダム生成
 	CreateRandomLaptopItemsFromSpawnPoints(1); // ノートPC
-	CreateRandomWatchItemsFromSpawnPoints(20); // 腕時計
+	CreateRandomWatchItemsFromSpawnPoints(3); // 腕時計
 
 
 	// 天井ライト
@@ -1007,6 +1032,60 @@ void Stage::MakeMainStage(void)
 	}
 }
 
+void Stage::RegisterLightBlockerByArea(
+	LightBlocker* blocker,
+	const VECTOR& pos
+)
+{
+	if (blocker == nullptr)
+	{
+		return;
+	}
+
+	// 上にある扉上パーツなどはライト遮蔽から外す
+	if (pos.y > 300.0f)
+	{
+		return;
+	}
+
+	// 脱出エリア
+	if (pos.x <= -3400.0f && pos.x >= -3950.0f &&
+		pos.z >= -450.0f && pos.z <= 650.0f)
+	{
+		escapeBlockers_.push_back(blocker);
+		return;
+	}
+
+	// 厨房
+	if (pos.x <= -1700.0f && pos.x >= -4300.0f &&
+		pos.z <= 850.0f)
+	{
+		kitchenBlockers_.push_back(blocker);
+		return;
+	}
+
+	// 廊下・休憩室・更衣室・店長室周辺
+	if (pos.z >= 830.0f)
+	{
+		corridorBlockers_.push_back(blocker);
+
+		if (pos.x <= -2200.0f)
+		{
+			lockerBlockers_.push_back(blocker);
+		}
+
+		if (pos.x >= -1600.0f)
+		{
+			officeBlockers_.push_back(blocker);
+		}
+
+		return;
+	}
+
+	// それ以外は客席
+	hallBlockers_.push_back(blocker);
+}
+
 void Stage::CreateFurniture(const FurnitureData& data)
 {
 	Transform trans;
@@ -1041,11 +1120,11 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	}
 	else if (data.modelSrc == ResourceManager::SRC::F_F)
 	{
-		f = new Showcase(&trans);
+		f = new Showcase(&trans, data.rot.y);
 	}
 	else if (data.modelSrc == ResourceManager::SRC::F_G)
 	{
-		f = new Showcase(&trans);
+		f = new Showcase(&trans, data.rot.y);
 	}
 	else if (data.modelSrc == ResourceManager::SRC::BOOKSLF)
 	{
@@ -1086,16 +1165,24 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 	f->Init();
 
-	// 壁をライト遮蔽用に自動登録
-
-	LightBlocker* blocker =
-		dynamic_cast<LightBlocker*>(f);
-
-	if (blocker != nullptr)
+	// 壁をライト遮蔽用に登録
+	// ただし、LightManagerへ全壁登録はしない。
+	// Stage側でエリア別に管理する。
+	if (data.modelSrc == ResourceManager::SRC::WALL)
 	{
-		lightEffect_
-			.GetLightManager()
-			.AddWallBlocker(blocker);
+		LightBlocker* blocker =
+			dynamic_cast<LightBlocker*>(f);
+
+		if (blocker != nullptr)
+		{
+			VECTOR wallPos = VGet(
+				data.pos.x,
+				data.pos.y,
+				data.pos.z
+			);
+
+			RegisterLightBlockerByArea(blocker, wallPos);
+		}
 	}
 
 
@@ -1124,12 +1211,22 @@ void Stage::CreateItem(
 	Item::TYPE type,
 	ResourceManager::SRC modelSrc,
 	VECTOR pos,
-	VECTOR scl)
+	VECTOR scl,
+	VECTOR rot)
 {
 	Item* item = new Item();
-	item->Init(type, modelSrc, pos, scl);
+
+	item->Init(
+		type,
+		modelSrc,
+		pos,
+		scl,
+		rot
+	);
+
 	items_.push_back(item);
 }
+
 
 void Stage::CreateRandomLaptopItemsFromSpawnPoints(int count)
 {
@@ -1415,8 +1512,8 @@ void Stage::DrawItemUI(void) const
 		case Item::TYPE::WATCH:
 			name = "腕時計";
 			break;
-		case Item::TYPE::KEY:
-			name = "鍵";
+		case Item::TYPE::BOOK168:
+			name = "I６８同人誌";
 			break;
 		case Item::TYPE::MEDICINE:
 			name = "薬";
@@ -1461,8 +1558,8 @@ void Stage::DrawItemUI(void) const
 		case Item::TYPE::WATCH:
 			name = "腕時計";
 			break;
-		case Item::TYPE::KEY:
-			name = "鍵";
+		case Item::TYPE::BOOK168:
+			name = "I６８同人誌";
 			break;
 		case Item::TYPE::MEDICINE:
 			name = "薬";
@@ -1537,13 +1634,13 @@ int Stage::GetItemPrice(Item::TYPE type) const
 	switch (type)
 	{
 	case Item::TYPE::LAPTOP:
-		return 168000;
+		return 320000;
 
 	case Item::TYPE::WATCH:
 		return 37800;
 
-	case Item::TYPE::KEY:
-		return 10000;
+	case Item::TYPE::BOOK168:
+		return 168000;
 
 	case Item::TYPE::MEDICINE:
 		return 3000;
@@ -1623,14 +1720,19 @@ void Stage::CreateCeilingLight(const Stage::FurnitureData& data)
 	);
 
 
+	VECTOR lightPos = VGet(data.pos.x, data.pos.y, data.pos.z);
+
+	const std::vector<LightBlocker*>& blockers =
+		GetLightBlockersByLightPos(lightPos);
+
 	lightEffect_.GetLightManager().AddLight(
-		VGet(data.pos.x, data.pos.y, data.pos.z),
+		lightPos,
 		VGet(0.45f, 0.36f, 0.24f),
 		VGet(0.0f, -1.0f, 0.0f),
 		950.0f,
 		DX_PI_F / 8.0f,
 		DX_PI_F / 3.5f,
-		true
+		blockers
 	);
 
 }
@@ -1887,26 +1989,16 @@ void Stage::CreateKitchenLight(const Stage::FurnitureData& data)
 
 	// 厨房用ライト
 	// 白っぽく、広く、少し強め
+	VECTOR lightPos = VGet(data.pos.x, data.pos.y, data.pos.z);
+
 	lightEffect_.GetLightManager().AddLight(
-		VGet(data.pos.x, data.pos.y, data.pos.z),
-
-		// 色：蛍光灯っぽい白
+		lightPos,
 		VGet(0.50f, 0.52f, 0.58f),
-
-		// 真下
 		VGet(0.0f, -1.0f, 0.0f),
-
-		// 届く距離
 		800.0f,
-
-		// 中心の明るい範囲
 		DX_PI_F / 3.2f,
-
-		// 外側までかなり広く
 		DX_PI_F / 3.0f,
-
-		// 壁で遮る
-		true
+		kitchenBlockers_
 	);
 
 }
@@ -2000,6 +2092,13 @@ void Stage::DrawOpaqueSceneForOutline(
 		f->Draw();
 	}
 
+	
+
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Draw();
+	}
+
 	for (auto item : items_)
 	{
 		if (item == nullptr)
@@ -2010,16 +2109,15 @@ void Stage::DrawOpaqueSceneForOutline(
 		item->Draw();
 	}
 
-	if (stoneDevice_ != nullptr)
-	{
-		stoneDevice_->Draw();
-	}
+
 
 	lightEffect_.End();
 
 	// MRT解除
 	SetRenderTargetToShader(1, -1);
 	SetRenderTargetToShader(2, -1);
+
+
 
 	// =================================
 	// ここからはRTColorに通常描画する
@@ -2062,6 +2160,19 @@ void Stage::DrawOpaqueSceneForOutline(
 		{
 			f->Draw();
 		}
+	}
+
+	// =========================
+    // アイテム白点滅
+    // =========================
+	for (auto item : items_)
+	{
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		item->DrawWhiteBlink();
 	}
 
 	SetDrawBright(255, 255, 255);
@@ -2364,10 +2475,9 @@ void Stage::DrawInventoryUI(void) const
 				name = "腕時計";
 				break;
 
-			case Item::TYPE::KEY:
-				name = "鍵";
+			case Item::TYPE::BOOK168:
+				name = "I６８同人誌";
 				break;
-
 			case Item::TYPE::MEDICINE:
 				name = "薬";
 				break;
@@ -2438,7 +2548,7 @@ int Stage::GetItemSlotSize(Item::TYPE type) const
 	case Item::TYPE::WATCH:
 		return 1;
 
-	case Item::TYPE::KEY:
+	case Item::TYPE::BOOK168:
 		return 1;
 
 	case Item::TYPE::MEDICINE:
@@ -2599,6 +2709,78 @@ void Stage::DrawMiniMap(void) const
 		};
 
 	// =========================
+	// 脱出エリアを白く半透明で点滅描画
+	// =========================
+	auto DrawEscapeRoom = [&](float x1, float z1, float x2, float z2)
+	{
+		int mx1 = WorldToMapX(x1);
+		int my1 = WorldToMapY(z1);
+		int mx2 = WorldToMapX(x2);
+		int my2 = WorldToMapY(z2);
+
+		int left = mx1;
+		int right = mx2;
+		int top = my1;
+		int bottom = my2;
+
+		if (left > right)
+		{
+			int temp = left;
+			left = right;
+			right = temp;
+		}
+
+		if (top > bottom)
+		{
+			int temp = top;
+			top = bottom;
+			bottom = temp;
+		}
+
+		// 点滅用
+		float t = GetNowCount() / 1000.0f;
+		float blink = (sinf(t * 5.0f) + 1.0f) * 0.5f;
+
+		// 透明度を変化させる
+		int alpha = 50 + (int)(blink * 100.0f);
+
+		// 白い半透明塗り
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+		DrawBox(
+			left,
+			top,
+			right,
+			bottom,
+			GetColor(255, 255, 255),
+			TRUE
+		);
+
+		// 内側をさらに薄く光らせる
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha / 2);
+		DrawBox(
+			left + 5,
+			top + 5,
+			right - 5,
+			bottom - 5,
+			GetColor(255, 255, 255),
+			TRUE
+		);
+
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+		// 枠線
+		DrawBox(
+			left,
+			top,
+			right,
+			bottom,
+			GetColor(255, 255, 255),
+			FALSE
+		);
+
+	};
+
+	// =========================
 	// 自由な線を描く
 	// =========================
 	auto DrawMapLine = [&](float x1, float z1, float x2, float z2)
@@ -2728,6 +2910,13 @@ void Stage::DrawMiniMap(void) const
 		-1170.0f,	
 		-4270.0f,
 		1370.0f
+	);
+	// 脱出エリア
+	DrawEscapeRoom(
+		-3460.0f,
+		-110.0f,	
+		-3755.0f,
+		590.0f
 	);
 
 	
@@ -3330,3 +3519,173 @@ void Stage::ActivateEscapeButton()
 	SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RESULT);
 }
 
+void Stage::DrawPickupUI(void) const
+{
+	if (lookingItemIndex_ == -1)
+	{
+		return;
+	}
+
+	if (lookingItemIndex_ < 0 || lookingItemIndex_ >= (int)items_.size())
+	{
+		return;
+	}
+
+	Item* item = items_[lookingItemIndex_];
+
+	if (item == nullptr)
+	{
+		return;
+	}
+
+	if (!item->IsActive())
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	Item::TYPE type = item->GetType();
+
+	const char* itemName = item->GetName();
+	int price = GetItemPrice(type);
+	int slotSize = GetItemSlotSize(type);
+
+	// UI位置
+	const int boxW = 520;
+	const int boxH = 110;
+
+	const int boxX = screenW / 2 - boxW / 2;
+	const int boxY = screenH - 230;
+
+	// 点滅
+	float t = GetNowCount() / 1000.0f;
+	float blink = (sinf(t * 6.0f) + 1.0f) * 0.5f;
+
+	int borderAlpha = 140 + (int)(blink * 100.0f);
+
+	// 持てるかどうか
+	bool canPickup = !isItemMax_;
+
+	int mainColor = canPickup
+		? GetColor(255, 255, 255)
+		: GetColor(255, 80, 80);
+
+	int accentColor = canPickup
+		? GetColor(120, 220, 255)
+		: GetColor(255, 80, 80);
+
+	// 背景
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(10, 15, 25),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// 枠
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, borderAlpha);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		accentColor,
+		FALSE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// アイテム名
+	DrawFormatString(
+		boxX + 25,
+		boxY + 18,
+		mainColor,
+		"%s",
+		itemName
+	);
+
+	// 価値・枠数
+	DrawFormatString(
+		boxX + 25,
+		boxY + 48,
+		GetColor(210, 210, 210),
+		"必要枠：%d",
+		slotSize
+	);
+
+	// Fキー枠
+	int keyBoxX = boxX + boxW - 120;
+	int keyBoxY = boxY + 28;
+
+	DrawBox(
+		keyBoxX,
+		keyBoxY,
+		keyBoxX + 48,
+		keyBoxY + 48,
+		canPickup ? GetColor(255, 255, 255) : GetColor(120, 60, 60),
+		FALSE
+	);
+
+	DrawString(
+		keyBoxX + 17,
+		keyBoxY + 14,
+		"F",
+		mainColor
+	);
+
+	if (canPickup)
+	{
+		DrawString(
+			keyBoxX + 60,
+			keyBoxY + 15,
+			"拾う",
+			GetColor(255, 255, 255)
+		);
+	}
+	else
+	{
+		DrawString(
+			boxX + 25,
+			boxY + 78,
+			"インベントリがいっぱいです",
+			GetColor(255, 80, 80)
+		);
+	}
+}
+
+const std::vector<LightBlocker*>& Stage::GetLightBlockersByLightPos(
+	const VECTOR& lightPos
+) const
+{
+	// 脱出エリア
+	if (lightPos.x <= -3400.0f && lightPos.x >= -3950.0f &&
+		lightPos.z >= -450.0f && lightPos.z <= 650.0f)
+	{
+		return escapeBlockers_;
+	}
+
+	// 厨房
+	if (lightPos.x <= -1700.0f && lightPos.x >= -4300.0f &&
+		lightPos.z <= 850.0f)
+	{
+		return kitchenBlockers_;
+	}
+
+	// 廊下・更衣室・休憩室・店長室
+	if (lightPos.z >= 830.0f)
+	{
+		return corridorBlockers_;
+	}
+
+	// 客席
+	return hallBlockers_;
+}

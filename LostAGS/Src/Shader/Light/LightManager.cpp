@@ -26,9 +26,9 @@ void LightManager::Release()
 }
 
 void LightManager::AddLight(
-    VECTOR pos,
-    VECTOR color,
-    VECTOR dir,
+    const VECTOR& pos,
+    const VECTOR& color,
+    const VECTOR& dir,
     float range,
     float innerAngleRad,
     float outerAngleRad,
@@ -47,9 +47,44 @@ void LightManager::AddLight(
     light.range = range;
     light.innerCos = cosf(innerAngleRad);
     light.outerCos = cosf(outerAngleRad);
-
-    // 天井ライトは壁で遮る
     light.isWallBlocked = isWallBlocked;
+
+    lights_.push_back(light);
+}
+
+void LightManager::AddLight(
+    const VECTOR& pos,
+    const VECTOR& color,
+    const VECTOR& dir,
+    float range,
+    float innerAngleRad,
+    float outerAngleRad,
+    const std::vector<LightBlocker*>& blockers)
+{
+    if ((int)lights_.size() >= MAX_LIGHT)
+    {
+        return;
+    }
+
+    ShaderLight light;
+
+    light.pos = pos;
+    light.color = color;
+    light.dir = VNorm(dir);
+    light.range = range;
+    light.innerCos = cosf(innerAngleRad);
+    light.outerCos = cosf(outerAngleRad);
+
+    // 壁リストが空なら遮蔽なし
+    light.isWallBlocked = !blockers.empty();
+
+    for (auto blocker : blockers)
+    {
+        if (blocker != nullptr)
+        {
+            light.blockers.push_back(blocker);
+        }
+    }
 
     lights_.push_back(light);
 }
@@ -85,7 +120,6 @@ void LightManager::DisableFlashLight()
 {
     useFlashLight_ = false;
 }
-
 void LightManager::SendToShader()
 {
     if (constBufferHandle_ == -1)
@@ -117,7 +151,7 @@ void LightManager::SendToShader()
     }
 
     // =========================
-    // 天井ライト
+    // 通常ライト
     // =========================
     for (int i = 0; i < (int)lights_.size(); i++)
     {
@@ -128,105 +162,140 @@ void LightManager::SendToShader()
 
         const ShaderLight& light = lights_[i];
 
-        // 壁で遮られているライトはShaderへ送らない
-      /*  if (IsBlockedByWall(light))
-        {
-            continue;
-        }*/
-
         WriteLightToCB(cb, count, light);
         count++;
     }
 
+    // =========================
+    // シェーダーへ送る壁だけを集める
+    // =========================
+    std::vector<const LightBlocker*> sendWalls;
+
+    // =========================
+    // 懐中電灯用の壁
+    // =========================
+    if (useFlashLight_ && flashLight_.isWallBlocked)
+    {
+        for (const LightBlocker* wall : wallBlockers_)
+        {
+            if (wall == nullptr)
+            {
+                continue;
+            }
+
+            if (!IsWallNeededByLight(wall, flashLight_))
+            {
+                continue;
+            }
+
+            bool alreadyExists = false;
+
+            for (const LightBlocker* addedWall : sendWalls)
+            {
+                if (addedWall == wall)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if (!alreadyExists)
+            {
+                sendWalls.push_back(wall);
+            }
+        }
+    }
+
+    // =========================
+    // 通常ライト用の壁
+    // 各ライトが持っている blockers だけを見る
+    // =========================
+    for (const ShaderLight& light : lights_)
+    {
+        if (!light.isWallBlocked)
+        {
+            continue;
+        }
+
+        for (const LightBlocker* wall : light.blockers)
+        {
+            if (wall == nullptr)
+            {
+                continue;
+            }
+
+            if (!IsWallNeededByLight(wall, light))
+            {
+                continue;
+            }
+
+            bool alreadyExists = false;
+
+            for (const LightBlocker* addedWall : sendWalls)
+            {
+                if (addedWall == wall)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if (!alreadyExists)
+            {
+                sendWalls.push_back(wall);
+            }
+        }
+    }
+
+    // =========================
+    // 壁情報をシェーダーへ送る
+    // =========================
     int wallCount = 0;
 
-    for (const LightBlocker* wall : wallBlockers_)
+    for (const LightBlocker* wall : sendWalls)
     {
         if (wall == nullptr)
         {
             continue;
         }
 
-        if (!IsWallNeededByAnyLight(wall))
-        {
-            continue;
-        }
-
-
         if (wallCount >= MAX_WALL)
         {
             break;
         }
 
-      
-        VECTOR pos =
-            wall->GetPos();
+        VECTOR pos = wall->GetPos();
 
+        VECTOR axisX = wall->GetAxisX();
+        VECTOR axisZ = wall->GetAxisZ();
 
-        VECTOR axisX =
-            wall->GetAxisX();
-
-        VECTOR axisZ =
-            wall->GetAxisZ();
-
+        // 今までの処理に合わせて入れ替え
         VECTOR temp = axisX;
         axisX = axisZ;
         axisZ = temp;
 
-        VECTOR half =
-            wall->GetHalfSize();
+        VECTOR half = wall->GetHalfSize();
 
-        cb->wallPosSize[wallCount].x =
-            pos.x;
+        cb->wallPosSize[wallCount].x = pos.x;
+        cb->wallPosSize[wallCount].y = pos.y;
+        cb->wallPosSize[wallCount].z = pos.z;
+        cb->wallPosSize[wallCount].w = half.x;
 
-        cb->wallPosSize[wallCount].y =
-            pos.y;
+        cb->wallAxisX[wallCount].x = axisX.x;
+        cb->wallAxisX[wallCount].y = axisX.y;
+        cb->wallAxisX[wallCount].z = axisX.z;
+        cb->wallAxisX[wallCount].w = half.z;
 
-        cb->wallPosSize[wallCount].z =
-            pos.z;
-
-        // X half
-        cb->wallPosSize[wallCount].w =
-            half.x;
-
-        // axisX
-        cb->wallAxisX[wallCount].x =
-            axisX.x;
-
-        cb->wallAxisX[wallCount].y =
-            axisX.y;
-
-        cb->wallAxisX[wallCount].z =
-            axisX.z;
-
-        // Z half
-        cb->wallAxisX[wallCount].w =
-            half.z;
-
-        // axisZ
-        cb->wallAxisZ[wallCount].x =
-            axisZ.x;
-
-        cb->wallAxisZ[wallCount].y =
-            axisZ.y;
-
-        cb->wallAxisZ[wallCount].z =
-            axisZ.z;
-
-
-        // 高さ
-        cb->wallAxisZ[wallCount].w =
-            half.y;
-
-        wallCount++;
+        cb->wallAxisZ[wallCount].x = axisZ.x;
+        cb->wallAxisZ[wallCount].y = axisZ.y;
+        cb->wallAxisZ[wallCount].z = axisZ.z;
+        cb->wallAxisZ[wallCount].w = half.y;
 
 #ifdef _DEBUG
-
-        wall->DrawDebug(
-            GetColor(255, 0, 0)
-        );
-
+        wall->DrawDebug(GetColor(255, 0, 0));
 #endif
+
+        wallCount++;
     }
 
     cb->wallCount.x = (float)wallCount;
@@ -245,18 +314,6 @@ void LightManager::SendToShader()
         DX_SHADERTYPE_PIXEL,
         4
     );
-}
-
-void LightManager::AddWallBlocker(
-    const LightBlocker* wall
-)
-{
-    if (wall == nullptr)
-    {
-        return;
-    }
-
-    wallBlockers_.push_back(wall);
 }
 void LightManager::ClearWallBlockers(void)
 {

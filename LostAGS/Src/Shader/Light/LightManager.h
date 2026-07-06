@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <DxLib.h>
+
 class LightBlocker;
 
 struct ShaderLight
@@ -15,8 +16,10 @@ struct ShaderLight
     float innerCos;
     float outerCos;
 
-    bool isWallBlocked;
+    bool isWallBlocked = false;
 
+    // このライトが判定する壁だけを持つ
+    std::vector<const LightBlocker*> blockers;
 };
 
 class LightManager
@@ -27,14 +30,26 @@ public:
 
     void Release();
 
+    // 従来用：壁遮蔽ON/OFFだけ指定する版
     void AddLight(
-        VECTOR pos,
-        VECTOR color,
-        VECTOR dir,
+        const VECTOR& pos,
+        const VECTOR& color,
+        const VECTOR& dir,
         float range,
         float innerAngleRad,
         float outerAngleRad,
         bool isWallBlocked
+    );
+
+    // 新方式：このライト専用の壁リストを渡す版
+    void AddLight(
+        const VECTOR& pos,
+        const VECTOR& color,
+        const VECTOR& dir,
+        float range,
+        float innerAngleRad,
+        float outerAngleRad,
+        const std::vector<LightBlocker*>& blockers
     );
 
     void Clear();
@@ -53,7 +68,6 @@ public:
 
     void DisableFlashLight();
 
-
     void AddWallBlocker(
         const LightBlocker* wall
     );
@@ -62,41 +76,25 @@ public:
 
     void SetViewPoint(VECTOR viewPoint);
 
-
 private:
-
 
     static const int MAX_LIGHT = 100;
     static const int MAX_WALL = 64;
-
 
     struct LightCB
     {
         DxLib::FLOAT4 lightCount;
 
         DxLib::FLOAT4 lightPosRange[MAX_LIGHT];
-
         DxLib::FLOAT4 lightColor[MAX_LIGHT];
-
         DxLib::FLOAT4 lightDirInner[MAX_LIGHT];
-
         DxLib::FLOAT4 lightOuter[MAX_LIGHT];
 
-
-        // =====================
-        // 壁情報追加
-        // =====================
-
         DxLib::FLOAT4 wallPosSize[MAX_WALL];
-
-        // xyz = axisX
         DxLib::FLOAT4 wallAxisX[MAX_WALL];
-
-        // xyz = axisZ
         DxLib::FLOAT4 wallAxisZ[MAX_WALL];
 
         DxLib::FLOAT4 wallCount;
-
     };
 
 private:
@@ -104,12 +102,13 @@ private:
     std::vector<ShaderLight> lights_;
 
     bool useFlashLight_ = false;
-
     ShaderLight flashLight_;
 
     int constBufferHandle_ = -1;
 
-    std::vector<const LightBlocker*> wallBlockers_;   
+    // 懐中電灯用の全壁候補
+    std::vector<const LightBlocker*> wallBlockers_;
+
     VECTOR viewPoint_;
 
     bool IsBlockedByWall(const ShaderLight& light) const;
@@ -117,10 +116,15 @@ private:
     void WriteLightToCB(
         LightCB* cb,
         int index,
-        const ShaderLight& light);
+        const ShaderLight& light
+    );
 
-    bool IsWallNeededByLight(const LightBlocker* wall, const ShaderLight& light) const;
+    bool IsWallNeededByLight(
+        const LightBlocker* wall,
+        const ShaderLight& light
+    ) const;
 
-    bool IsWallNeededByAnyLight(const LightBlocker* wall) const;
-
+    bool IsWallNeededByAnyLight(
+        const LightBlocker* wall
+    ) const;
 };

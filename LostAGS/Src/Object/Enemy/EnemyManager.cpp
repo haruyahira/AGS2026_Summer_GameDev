@@ -20,8 +20,8 @@ void EnemyManager::Init(void)
 	EnemyBase::ResetChasingEnemyCount();
 
 	//// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
-	//EnemyNormal* testEnemy = new EnemyNormal();
-	//testEnemy->Init();
+	EnemyNormal* testEnemy = new EnemyNormal();
+	testEnemy->Init();
 	//EnemyNormal* enemy2 = new EnemyNormal();
 	//enemy2->Init();
 
@@ -118,10 +118,10 @@ void EnemyManager::Init(void)
 	};
 
 
-	/*testEnemy->SetPatrolPoints(points);
+	testEnemy->SetPatrolPoints(points);
 	testEnemy->SetPatrolLinks(links);
 	testEnemy->SetPos(points[5]);
-	enemies_.push_back(testEnemy);*/
+	enemies_.push_back(testEnemy);
 
 	debugPatrolPoints_ = points;
 	debugPatrolLinks_ = links;
@@ -132,17 +132,17 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	//for (int i = 0; i < 100; i++)
-	//{
-	//	EnemyNormal* enemy = new EnemyNormal();
+	for (int i = 0; i < 4; i++)
+	{
+		EnemyNormal* enemy = new EnemyNormal();
 
-	//	enemy->Init();
+		enemy->Init();
 
-	//	enemy->SetPatrolPoints(points);
-	//	enemy->SetPatrolLinks(links);
+		enemy->SetPatrolPoints(points);
+		enemy->SetPatrolLinks(links);
 
-	//	enemies_.push_back(enemy);
-	//}
+		enemies_.push_back(enemy);
+	}
 
 }
 
