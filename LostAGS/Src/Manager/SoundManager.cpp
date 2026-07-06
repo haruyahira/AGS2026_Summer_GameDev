@@ -39,6 +39,8 @@ void SoundManager::Init()
     // SE
     ses_[SE::WALK] =
         res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
+    ses_[SE::E_WALK] =
+        res.Load(ResourceManager::SRC::WALK_E_SE).handleId_;  
   
     ses_[SE::RUN] =
         res.Load(ResourceManager::SRC::WALK_SE).handleId_;  

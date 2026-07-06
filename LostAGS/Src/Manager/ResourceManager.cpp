@@ -151,6 +151,8 @@ void ResourceManager::Init(void)
 	// SE
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Walk.mp3");
 	resourcesMap_.emplace(SRC::WALK_SE, res);
+	res = new RES(RES_T::SOUND, PATH_SND + "Se/EnemyWalk.mp3");
+	resourcesMap_.emplace(SRC::WALK_E_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Attack.mp3");
 	resourcesMap_.emplace(SRC::ATTACK_SE, res);
 	res = new RES(RES_T::SOUND, PATH_SND + "Se/Hit.mp3");

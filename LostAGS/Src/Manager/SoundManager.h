@@ -16,6 +16,7 @@ public:
     enum class SE
     {
         WALK,
+        E_WALK,
         RUN,
         ATTACK,
         HIT,

@@ -69,6 +69,10 @@ EnemyBase::EnemyBase(void) : ActorBase()
     wasChasing_ = false;
     lastKnownPlayerPos_ = VGet(0.0f, 0.0f, 0.0f);
     isPlayerAttackHit_ = false;
+    isFootstepActive_ = false;
+    footstepTimer_ = 0.0f;
+    footstepInterval_ = 0.45f;
+    footstepRange_ = 0.0f;
 #ifdef _DEBUG
     debugFootstepHearRange_ = footstepHearRangeNormal_;
     debugCanHearFootstep_ = false;
@@ -102,6 +106,7 @@ void EnemyBase::Update(Player* player)
     {
         return;
     }
+    VECTOR beforeFootstepPos = transform_.pos;
 
 #ifdef _DEBUG
     debugFootstepHearRange_ = GetCurrentFootstepHearRange();
@@ -250,6 +255,8 @@ void EnemyBase::Update(Player* player)
             UpdateWander(player);
         }
     }
+
+    UpdateFootstepSound(player, beforeFootstepPos);
 
     // アニメーション更新
     if (animationController_)
@@ -1094,4 +1101,96 @@ void EnemyBase::SetChasing(bool chasing)
 void EnemyBase::ResetChasingEnemyCount()
 {
     chasingEnemyCount_ = 0;
+}
+
+void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
+{
+    VECTOR diff =
+        VSub(transform_.pos, beforePos);
+
+    diff.y = 0.0f;
+
+    float moveDistance =
+        VSize(diff);
+
+    // ほぼ動いていないなら足音なし
+    if (moveDistance < 0.5f || isAttacking_)
+    {
+        isFootstepActive_ = false;
+        footstepTimer_ = 0.0f;
+        footstepRange_ = 0.0f;
+        return;
+    }
+
+    isFootstepActive_ = true;
+
+    // 追跡中は足音を速く、大きめにする
+    if (isChasing_)
+    {
+        footstepInterval_ = 0.28f;
+        footstepRange_ = 450.0f;
+    }
+    else
+    {
+        footstepInterval_ = 0.45f;
+        footstepRange_ = 280.0f;
+    }
+
+    footstepTimer_ +=
+        SceneManager::GetInstance().GetDeltaTime();
+
+    if (footstepTimer_ < footstepInterval_)
+    {
+        return;
+    }
+
+    footstepTimer_ = 0.0f;
+
+    int volume = 180;
+
+    // プレイヤーから遠い敵の足音は小さくする
+    if (player != nullptr)
+    {
+        VECTOR playerPos =
+            player->GetTransform().pos;
+
+        VECTOR toPlayer =
+            VSub(playerPos, transform_.pos);
+
+        toPlayer.y = 0.0f;
+
+        float dist =
+            VSize(toPlayer);
+
+        const float maxHearDistance = 1200.0f;
+
+        if (dist > maxHearDistance)
+        {
+            return;
+        }
+
+        float rate =
+            1.0f - dist / maxHearDistance;
+
+        if (rate < 0.0f)
+        {
+            rate = 0.0f;
+        }
+
+        if (rate > 1.0f)
+        {
+            rate = 1.0f;
+        }
+
+        volume =
+            40 + static_cast<int>(rate * 180.0f);
+    }
+
+    auto& snd =
+        SoundManager::GetInstance();
+
+    snd.SetSEVolume(volume);
+
+    // SoundManager側の名前に合わせて変更してください
+    snd.PlaySE(SoundManager::SE::E_WALK);
 }

@@ -52,6 +52,7 @@ public:
 
 		// Sound
 		WALK_SE,
+		WALK_E_SE,
 		RUN_SE,
 		ATTACK_SE,
 		HIT_SE,

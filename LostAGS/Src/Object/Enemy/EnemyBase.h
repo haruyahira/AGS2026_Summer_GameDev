@@ -145,5 +145,19 @@ protected:
         static int chasingEnemyCount_;
 
         void SetChasing(bool chasing);
+
+
+        // ‘«‰¹
+        bool isFootstepActive_;
+        float footstepTimer_;
+        float footstepInterval_;
+        float footstepRange_;
+
+        void UpdateFootstepSound(Player* player, const VECTOR& beforePos);
+
+#ifdef _DEBUG
+        void DrawEnemyFootstepDebug(void) const;
+#endif
+
      
 };
