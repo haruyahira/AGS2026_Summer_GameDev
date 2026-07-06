@@ -93,9 +93,12 @@ void ResourceManager::Init(void)
 	// ドア
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Door.mv1");
 	resourcesMap_.emplace(SRC::DOOR, res);
-	// ドア
+	// 脱出装置
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Button.mv1");
 	resourcesMap_.emplace(SRC::BUTTON, res);
+	// ゴミ箱
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Trashcan.mv1");
+	resourcesMap_.emplace(SRC::TRASHCAN, res);
 	// モニター
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Wall.mv1");
 	resourcesMap_.emplace(SRC::WALL, res);

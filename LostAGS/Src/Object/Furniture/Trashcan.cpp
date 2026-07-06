@@ -1,0 +1,728 @@
+#include "Trashcan.h"
+#include "../../Manager/InputManager.h"
+#include "../../Manager/SoundManager.h"
+#include "../Player.h"
+
+Trashcan::Trashcan(const Transform* trans)
+    : Furniture(NAME::BOOKSLF, trans)
+{
+}
+
+void Trashcan::Init()
+{
+    colliders_.clear();
+
+    animAttachIndex_ = MV1AttachAnim(trans_.modelId, 0);
+
+    if (animAttachIndex_ != -1)
+    {
+        animTotalTime_ =
+            MV1GetAttachAnimTotalTime(
+                trans_.modelId,
+                animAttachIndex_
+            );
+
+        animTime_ = 0.0f;
+
+        MV1SetAttachAnimTime(
+            trans_.modelId,
+            animAttachIndex_,
+            animTime_
+        );
+    }
+
+    state_ = TrashcanState::Closed;
+
+    // =========================
+    // ゴミ箱の当たり判定
+    // =========================
+   // =========================
+// ゴミ箱の外側
+// =========================
+    outerHalf_ = VGet(
+        220.0f,   // 横幅
+        120.0f,   // 高さ
+        110.0f    // 奥行き
+    );
+
+    outerOffset_ = VGet(
+        0.0f,
+        80.0f,
+        0.0f
+    );
+
+    // =========================
+    // ゴミ箱の中に入れる空洞
+    // この範囲にいる時は押し戻さない
+    // =========================
+    innerHalf_ = VGet(
+        155.0f,   // 内側の横幅
+        100.0f,   // 内側の高さ
+        70.0f     // 内側の奥行き
+    );
+
+    innerOffset_ = VGet(
+        0.0f,
+        85.0f,
+        0.0f
+    );
+}
+
+void Trashcan::Update(void)
+{
+    UpdateAnimation();
+}
+
+void Trashcan::Update(Player& player)
+{
+    if (CanInteract(player) &&
+        InputManager::GetInstance().IsTrgDown(KEY_INPUT_F))
+    {
+        auto& snd = SoundManager::GetInstance();
+
+        if (state_ == TrashcanState::Closed ||
+            state_ == TrashcanState::Closing)
+        {
+            state_ = TrashcanState::Opening;
+
+            snd.SetSEVolume(255);
+            snd.PlaySE(SoundManager::SE::DOOROP);
+        }
+        else if (state_ == TrashcanState::Open ||
+            state_ == TrashcanState::Opening)
+        {
+            state_ = TrashcanState::Closing;
+
+            snd.SetSEVolume(255);
+            snd.PlaySE(SoundManager::SE::DOOROP);
+        }
+    }
+
+    UpdateAnimation();
+
+    // 先に中にいるかを保存
+    bool isInsideBeforeCollision =
+        IsPlayerInsideInner(player);
+
+    // ゴミ箱本体の押し戻し
+    CheckPlayerCollision(player);
+
+    // 中にいて、閉じているなら隠れる
+    if ((isInsideBeforeCollision || IsPlayerInsideInner(player)) &&
+        IsClosedState())
+    {
+        player.SetHiddenInTrashcan(true);
+    }
+}
+
+void Trashcan::UpdateAnimation(void)
+{
+    if (animAttachIndex_ == -1)
+    {
+        return;
+    }
+
+    switch (state_)
+    {
+    case TrashcanState::Opening:
+        animTime_ += animSpeed_;
+
+        if (animTime_ >= animTotalTime_)
+        {
+            animTime_ = animTotalTime_;
+            state_ = TrashcanState::Open;
+        }
+        break;
+
+    case TrashcanState::Closing:
+        animTime_ -= animSpeed_;
+
+        if (animTime_ <= 0.0f)
+        {
+            animTime_ = 0.0f;
+            state_ = TrashcanState::Closed;
+        }
+        break;
+
+    case TrashcanState::Closed:
+    case TrashcanState::Open:
+        break;
+    }
+
+    MV1SetAttachAnimTime(
+        trans_.modelId,
+        animAttachIndex_,
+        animTime_
+    );
+}
+
+void Trashcan::Draw(void)
+{
+    trans_.Update();
+
+    MV1DrawModel(trans_.modelId);
+}
+
+bool Trashcan::CanInteract(const Player& player) const
+{
+    VECTOR playerPos = player.GetPos();
+
+    VECTOR trashPos = trans_.pos;
+
+    VECTOR diff = VSub(playerPos, trashPos);
+    diff.y = 0.0f;
+
+    float distance = VSize(diff);
+
+    return distance <= interactDistance_;
+}
+
+bool Trashcan::DrawInteractUI(const Player& player) const
+{
+    if (!CanInteract(player))
+    {
+        return false;
+    }
+
+    int screenW, screenH;
+
+    GetDrawScreenSize(
+        &screenW,
+        &screenH
+    );
+
+    const int boxW = 260;
+    const int boxH = 60;
+
+    int x = screenW / 2 - boxW / 2;
+    int y = screenH / 2 - boxH / 2;
+
+    const char* text = "";
+
+    switch (state_)
+    {
+    case TrashcanState::Closed:
+    case TrashcanState::Closing:
+        text = "F 開ける";
+        break;
+
+    case TrashcanState::Open:
+    case TrashcanState::Opening:
+        text = "F 閉める";
+        break;
+    }
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_ALPHA,
+        170
+    );
+
+    DrawBox(
+        x,
+        y,
+        x + boxW,
+        y + boxH,
+        GetColor(0, 0, 0),
+        TRUE
+    );
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
+
+    DrawBox(
+        x,
+        y,
+        x + boxW,
+        y + boxH,
+        GetColor(255, 255, 255),
+        FALSE
+    );
+
+    DrawString(
+        x + 85,
+        y + 20,
+        text,
+        GetColor(255, 255, 255)
+    );
+
+    return true;
+}
+
+static void ResolvePlayerAABB(
+    Player& player,
+    const VECTOR& boxCenter,
+    const VECTOR& boxHalf,
+    float playerRadius
+)
+{
+    VECTOR playerPos = player.GetPos();
+
+    float minX = boxCenter.x - boxHalf.x;
+    float maxX = boxCenter.x + boxHalf.x;
+
+    float minZ = boxCenter.z - boxHalf.z;
+    float maxZ = boxCenter.z + boxHalf.z;
+
+    float minY = boxCenter.y - boxHalf.y;
+    float maxY = boxCenter.y + boxHalf.y;
+
+    float playerBottomY = playerPos.y;
+    float playerTopY = playerPos.y + 150.0f;
+
+    if (playerBottomY > maxY || playerTopY < minY)
+    {
+        return;
+    }
+
+    float closestX = playerPos.x;
+
+    if (closestX < minX)
+    {
+        closestX = minX;
+    }
+    else if (closestX > maxX)
+    {
+        closestX = maxX;
+    }
+
+    float closestZ = playerPos.z;
+
+    if (closestZ < minZ)
+    {
+        closestZ = minZ;
+    }
+    else if (closestZ > maxZ)
+    {
+        closestZ = maxZ;
+    }
+
+    float diffX = playerPos.x - closestX;
+    float diffZ = playerPos.z - closestZ;
+
+    float distSq =
+        diffX * diffX +
+        diffZ * diffZ;
+
+    if (distSq > playerRadius * playerRadius)
+    {
+        return;
+    }
+
+    float dist = sqrtf(distSq);
+
+    if (dist < 0.001f)
+    {
+        float pushLeft = fabsf(playerPos.x - minX);
+        float pushRight = fabsf(maxX - playerPos.x);
+        float pushFront = fabsf(playerPos.z - minZ);
+        float pushBack = fabsf(maxZ - playerPos.z);
+
+        float minPush = pushLeft;
+        VECTOR pushDir = VGet(-1.0f, 0.0f, 0.0f);
+
+        if (pushRight < minPush)
+        {
+            minPush = pushRight;
+            pushDir = VGet(1.0f, 0.0f, 0.0f);
+        }
+
+        if (pushFront < minPush)
+        {
+            minPush = pushFront;
+            pushDir = VGet(0.0f, 0.0f, -1.0f);
+        }
+
+        if (pushBack < minPush)
+        {
+            minPush = pushBack;
+            pushDir = VGet(0.0f, 0.0f, 1.0f);
+        }
+
+        player.SetPos(
+            VAdd(
+                playerPos,
+                VScale(pushDir, playerRadius)
+            )
+        );
+
+        return;
+    }
+
+    float push = playerRadius - dist;
+
+    VECTOR pushDir =
+        VGet(
+            diffX / dist,
+            0.0f,
+            diffZ / dist
+        );
+
+    player.SetPos(
+        VAdd(
+            playerPos,
+            VScale(pushDir, push)
+        )
+    );
+}
+
+void Trashcan::CheckPlayerCollision(Player& player)
+{
+    VECTOR outerCenter =
+        VAdd(
+            trans_.pos,
+            outerOffset_
+        );
+
+    VECTOR innerCenter =
+        VAdd(
+            trans_.pos,
+            innerOffset_
+        );
+
+    // 壁の厚み
+    float wallX =
+        outerHalf_.x - innerHalf_.x;
+
+    float wallZ =
+        outerHalf_.z - innerHalf_.z;
+
+    if (wallX < 10.0f)
+    {
+        wallX = 10.0f;
+    }
+
+    if (wallZ < 10.0f)
+    {
+        wallZ = 10.0f;
+    }
+
+    // =========================
+    // 左壁
+    // =========================
+    VECTOR leftWallCenter =
+        VGet(
+            outerCenter.x - innerHalf_.x - wallX * 0.5f,
+            outerCenter.y,
+            outerCenter.z
+        );
+
+    VECTOR leftWallHalf =
+        VGet(
+            wallX * 0.5f,
+            outerHalf_.y,
+            outerHalf_.z
+        );
+
+    // =========================
+    // 右壁
+    // =========================
+    VECTOR rightWallCenter =
+        VGet(
+            outerCenter.x + innerHalf_.x + wallX * 0.5f,
+            outerCenter.y,
+            outerCenter.z
+        );
+
+    VECTOR rightWallHalf =
+        VGet(
+            wallX * 0.5f,
+            outerHalf_.y,
+            outerHalf_.z
+        );
+
+    // =========================
+    // 奥壁
+    // 今回は +Z 側を奥として扱う
+    // =========================
+    VECTOR backWallCenter =
+        VGet(
+            outerCenter.x,
+            outerCenter.y,
+            outerCenter.z + innerHalf_.z + wallZ * 0.5f
+        );
+
+    VECTOR backWallHalf =
+        VGet(
+            innerHalf_.x,
+            outerHalf_.y,
+            wallZ * 0.5f
+        );
+
+    // =========================
+    // 前壁
+    // 閉じている時だけ当たり判定あり
+    // 開いている時はここを通って中に入れる
+    // =========================
+    bool isPlayerInside =
+        IsPlayerInsideInner(player);
+
+    bool frontWallActive =
+        (state_ == TrashcanState::Closed ||
+            state_ == TrashcanState::Closing) &&
+        !isPlayerInside;
+    VECTOR frontWallCenter =
+        VGet(
+            outerCenter.x,
+            outerCenter.y,
+            outerCenter.z - innerHalf_.z - wallZ * 0.5f
+        );
+
+    VECTOR frontWallHalf =
+        VGet(
+            innerHalf_.x,
+            outerHalf_.y,
+            wallZ * 0.5f
+        );
+
+    ResolvePlayerAABB(
+        player,
+        leftWallCenter,
+        leftWallHalf,
+        playerRadius_
+    );
+
+    ResolvePlayerAABB(
+        player,
+        rightWallCenter,
+        rightWallHalf,
+        playerRadius_
+    );
+
+    ResolvePlayerAABB(
+        player,
+        backWallCenter,
+        backWallHalf,
+        playerRadius_
+    );
+
+    if (frontWallActive)
+    {
+        ResolvePlayerAABB(
+            player,
+            frontWallCenter,
+            frontWallHalf,
+            playerRadius_
+        );
+    }
+}
+
+
+#ifdef _DEBUG
+static void DrawDebugBox3D(
+    const VECTOR& center,
+    const VECTOR& half,
+    int color
+)
+{
+    float minX = center.x - half.x;
+    float maxX = center.x + half.x;
+
+    float minY = center.y - half.y;
+    float maxY = center.y + half.y;
+
+    float minZ = center.z - half.z;
+    float maxZ = center.z + half.z;
+
+    VECTOR p000 = VGet(minX, minY, minZ);
+    VECTOR p100 = VGet(maxX, minY, minZ);
+    VECTOR p110 = VGet(maxX, minY, maxZ);
+    VECTOR p010 = VGet(minX, minY, maxZ);
+
+    VECTOR p001 = VGet(minX, maxY, minZ);
+    VECTOR p101 = VGet(maxX, maxY, minZ);
+    VECTOR p111 = VGet(maxX, maxY, maxZ);
+    VECTOR p011 = VGet(minX, maxY, maxZ);
+
+    DrawLine3D(p000, p100, color);
+    DrawLine3D(p100, p110, color);
+    DrawLine3D(p110, p010, color);
+    DrawLine3D(p010, p000, color);
+
+    DrawLine3D(p001, p101, color);
+    DrawLine3D(p101, p111, color);
+    DrawLine3D(p111, p011, color);
+    DrawLine3D(p011, p001, color);
+
+    DrawLine3D(p000, p001, color);
+    DrawLine3D(p100, p101, color);
+    DrawLine3D(p110, p111, color);
+    DrawLine3D(p010, p011, color);
+}
+
+void Trashcan::DebugDrawCollision(void) const
+{
+    SetUseLighting(FALSE);
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+
+    VECTOR outerCenter =
+        VAdd(
+            trans_.pos,
+            outerOffset_
+        );
+
+    VECTOR innerCenter =
+        VAdd(
+            trans_.pos,
+            innerOffset_
+        );
+
+    float wallX =
+        outerHalf_.x - innerHalf_.x;
+
+    float wallZ =
+        outerHalf_.z - innerHalf_.z;
+
+    if (wallX < 10.0f)
+    {
+        wallX = 10.0f;
+    }
+
+    if (wallZ < 10.0f)
+    {
+        wallZ = 10.0f;
+    }
+
+    VECTOR leftWallCenter =
+        VGet(
+            outerCenter.x - innerHalf_.x - wallX * 0.5f,
+            outerCenter.y,
+            outerCenter.z
+        );
+
+    VECTOR leftWallHalf =
+        VGet(
+            wallX * 0.5f,
+            outerHalf_.y,
+            outerHalf_.z
+        );
+
+    VECTOR rightWallCenter =
+        VGet(
+            outerCenter.x + innerHalf_.x + wallX * 0.5f,
+            outerCenter.y,
+            outerCenter.z
+        );
+
+    VECTOR rightWallHalf =
+        VGet(
+            wallX * 0.5f,
+            outerHalf_.y,
+            outerHalf_.z
+        );
+
+    VECTOR backWallCenter =
+        VGet(
+            outerCenter.x,
+            outerCenter.y,
+            outerCenter.z + innerHalf_.z + wallZ * 0.5f
+        );
+
+    VECTOR backWallHalf =
+        VGet(
+            innerHalf_.x,
+            outerHalf_.y,
+            wallZ * 0.5f
+        );
+
+    VECTOR frontWallCenter =
+        VGet(
+            outerCenter.x,
+            outerCenter.y,
+            outerCenter.z - innerHalf_.z - wallZ * 0.5f
+        );
+
+    VECTOR frontWallHalf =
+        VGet(
+            innerHalf_.x,
+            outerHalf_.y,
+            wallZ * 0.5f
+        );
+
+    // 外側全体：紫
+    DrawDebugBox3D(
+        outerCenter,
+        outerHalf_,
+        GetColor(255, 0, 255)
+    );
+
+    // 中に入れる空洞：水色
+    DrawDebugBox3D(
+        innerCenter,
+        innerHalf_,
+        GetColor(0, 255, 255)
+    );
+
+    // 実際に当たり判定がある壁：黄色
+    DrawDebugBox3D(
+        leftWallCenter,
+        leftWallHalf,
+        GetColor(255, 255, 0)
+    );
+
+    DrawDebugBox3D(
+        rightWallCenter,
+        rightWallHalf,
+        GetColor(255, 255, 0)
+    );
+
+    DrawDebugBox3D(
+        backWallCenter,
+        backWallHalf,
+        GetColor(255, 255, 0)
+    );
+
+    if (state_ == TrashcanState::Closed ||
+        state_ == TrashcanState::Closing)
+    {
+        DrawDebugBox3D(
+            frontWallCenter,
+            frontWallHalf,
+            GetColor(255, 80, 80)
+        );
+    }
+
+    SetWriteZBuffer3D(TRUE);
+    SetUseZBuffer3D(TRUE);
+    SetUseLighting(TRUE);
+}
+#endif
+
+bool Trashcan::IsClosedState(void) const
+{
+    return state_ == TrashcanState::Closed ||
+        state_ == TrashcanState::Closing;
+}
+
+bool Trashcan::IsPlayerInsideInner(const Player& player) const
+{
+    VECTOR playerPos = player.GetPos();
+
+    VECTOR innerCenter =
+        VAdd(
+            trans_.pos,
+            innerOffset_
+        );
+
+    float innerMinX = innerCenter.x - innerHalf_.x;
+    float innerMaxX = innerCenter.x + innerHalf_.x;
+
+    float innerMinY = innerCenter.y - innerHalf_.y;
+    float innerMaxY = innerCenter.y + innerHalf_.y;
+
+    float innerMinZ = innerCenter.z - innerHalf_.z;
+    float innerMaxZ = innerCenter.z + innerHalf_.z;
+
+    float playerBottomY = playerPos.y;
+    float playerTopY = playerPos.y + 150.0f;
+
+    return
+        playerPos.x >= innerMinX &&
+        playerPos.x <= innerMaxX &&
+        playerPos.z >= innerMinZ &&
+        playerPos.z <= innerMaxZ &&
+        playerBottomY <= innerMaxY &&
+        playerTopY >= innerMinY;
+}

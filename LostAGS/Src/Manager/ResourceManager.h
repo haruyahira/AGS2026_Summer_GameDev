@@ -40,6 +40,7 @@ public:
 		DESKTOPPC, // デスクトップPC
 		SINK, // シンク
 		BUTTON, // ボタン
+		TRASHCAN, // ゴミ箱
 
 
 		RETURN_POINT,

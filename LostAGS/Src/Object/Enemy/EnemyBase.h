@@ -140,8 +140,12 @@ protected:
     VECTOR lastKnownPlayerPos_;
 
     bool isPlayerAttackHit_;
+    int footstepSeHandle_;
 
-    private:
+    void InitFootstep3DSound(void);
+    void ReleaseFootstep3DSound(void);
+    void UpdateFootstepSound(Player* player, const VECTOR& beforePos);
+private:
         static int chasingEnemyCount_;
 
         void SetChasing(bool chasing);
@@ -153,11 +157,12 @@ protected:
         float footstepInterval_;
         float footstepRange_;
 
-        void UpdateFootstepSound(Player* player, const VECTOR& beforePos);
 
 #ifdef _DEBUG
         void DrawEnemyFootstepDebug(void) const;
 #endif
+
+           
 
      
 };

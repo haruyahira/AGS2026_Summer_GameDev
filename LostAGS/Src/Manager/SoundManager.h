@@ -1,4 +1,5 @@
 #pragma once
+#include <DxLib.h>
 #include <map>
 
 class SoundManager
@@ -53,6 +54,12 @@ public:
 
     void StopSE(SE se);
     void StopAllSound();
+
+    int Create3DSE(SE se, float radius);
+    void Delete3DSE(int& handle);
+    void Play3DSE(int handle, const VECTOR& pos);
+    void Set3DListener(const VECTOR& pos, const VECTOR& target);
+    void Set3DSERadius(int handle, float radius);
 private:
 
     SoundManager();

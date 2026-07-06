@@ -2,6 +2,7 @@
 #include "EnemyNormal.h"
 #include "EnemyBase.h"
 #include "../Stage/Stage.h"
+#include "../../Manager/SoundManager.h"
 
 EnemyManager::EnemyManager(void) {}
 
@@ -80,10 +81,10 @@ void EnemyManager::Init(void)
 	{ 0, 4, },  // 1
 	{ 7, 8, 9 },        // 2
 	{ 0, 8 },        // 3
-	{ 5, 7, 12 },     // 4
+	{ 5, 7, 12, 34 },     // 4
 	{ 4, 6, 12 },        // 5
 	{ 4, 5 },        // 6
-	{ 0, 4, 8 },        // 7
+	{ 0, 4, 8, 34 },        // 7
 	{ 2, 3, 7, 9 },        // 8
 	{ 2, 8 }, // 9
 	{ 0, 3, 7, 9 }, // 10
@@ -145,13 +146,22 @@ void EnemyManager::Init(void)
 	}
 
 }
-
 void EnemyManager::Update(Player* player)
 {
-	// すべての敵のUpdateをループで回す（今回は中身空っぽですが構造として）
+	VECTOR cameraPos = GetCameraPosition();
+	VECTOR cameraTarget = GetCameraTarget();
+
+	SoundManager::GetInstance().Set3DListener(
+		cameraPos,
+		cameraTarget
+	);
+
 	for (auto enemy : enemies_)
 	{
-		if (enemy) enemy->Update(player);
+		if (enemy)
+		{
+			enemy->Update(player);
+		}
 	}
 }
 

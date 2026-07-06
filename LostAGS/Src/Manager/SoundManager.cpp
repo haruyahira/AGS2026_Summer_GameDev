@@ -1,6 +1,8 @@
 #include "SoundManager.h"
 #include "ResourceManager.h"
+#include "../Application.h"
 #include <DxLib.h>
+#include <string>
 #include <algorithm>
 
 SoundManager& SoundManager::GetInstance()
@@ -34,7 +36,6 @@ void SoundManager::Init()
     
     bgms_[BGM::CLEAR] =
         res.Load(ResourceManager::SRC::CLEAR_BGM).handleId_;
-
 
     // SE
     ses_[SE::WALK] =
@@ -156,4 +157,91 @@ void SoundManager::StopAllSound()
     }
 
     currentBGM_ = -1;
+}
+
+int SoundManager::Create3DSE(SE se, float radius)
+{
+    std::string path;
+
+    switch (se)
+    {
+    case SE::E_WALK:
+        path = Application::PATH_SOUND + "Se/EnemyWalk.mp3";
+        break;
+
+    case SE::WALK:
+        path = Application::PATH_SOUND + "Se/Walk.mp3";
+        break;
+
+    default:
+        return -1;
+    }
+
+    // この後に読み込む音を3Dサウンドとして作る
+    SetCreate3DSoundFlag(TRUE);
+
+    int handle = LoadSoundMem(path.c_str());
+
+    // 必ず戻す
+    SetCreate3DSoundFlag(FALSE);
+
+    if (handle == -1)
+    {
+
+        return -1;
+    }
+
+    Set3DRadiusSoundMem(radius, handle);
+    ChangeVolumeSoundMem(seVolume_, handle);
+
+
+    return handle;
+}
+
+void SoundManager::Delete3DSE(int& handle)
+{
+    if (handle != -1)
+    {
+        DeleteSoundMem(handle);
+        handle = -1;
+    }
+}
+
+void SoundManager::Play3DSE(int handle, const VECTOR& pos)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    Set3DPositionSoundMem(pos, handle);
+
+    ChangeVolumeSoundMem(seVolume_, handle);
+
+    PlaySoundMem(
+        handle,
+        DX_PLAYTYPE_BACK,
+        TRUE
+    );
+}
+
+void SoundManager::Set3DListener(const VECTOR& pos, const VECTOR& target)
+{
+    Set3DSoundOneMetre(100.0f);
+
+    Set3DSoundListenerPosAndFrontPos_UpVecY(
+        pos,
+        target
+    );
+}
+
+
+void SoundManager::Set3DSERadius(int handle, float radius)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    Set3DRadiusSoundMem(radius, handle);
 }

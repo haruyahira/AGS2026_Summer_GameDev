@@ -57,6 +57,8 @@ Player::Player(void)
 
 	// 追加
 	isStand_ = true;
+	isHiddenInTrashcan_ = false;
+	isForcedProneByTrashcan_ = false;
 
 }
 
@@ -476,7 +478,17 @@ void Player::UpdateCommon(void)
 	// ---------------------------
 	if (!isAttacking_)
 	{
-		if (isPronePress)
+		// ゴミ箱に隠れている、またはゴミ箱によって強制しゃがみ中なら
+		// Cキーを離していても立たせない
+		if (isHiddenInTrashcan_ || isForcedProneByTrashcan_)
+		{
+			if (!IsProne())
+			{
+				currentAnimType_ = -1;
+				ChangeState(STATE::PRONE);
+			}
+		}
+		else if (isPronePress)
 		{
 			// 押している間は常にしゃがみ
 			if (!IsProne())
@@ -494,7 +506,6 @@ void Player::UpdateCommon(void)
 					ChangeState(STATE::PLAY);
 				}
 			}
-
 		}
 	}
 
@@ -1574,6 +1585,13 @@ void Player::SetFirstPerson(void)
 
 bool Player::IsHiddenUnderFurniture() const
 {
+
+	// ゴミ箱の中に入って閉じている時
+		if (isHiddenInTrashcan_)
+		{
+			return true;
+		}
+
 	// うつ伏せ中だけ隠れる
 	if (!IsProne())
 	{
@@ -2038,4 +2056,69 @@ bool Player::IsUnderFurnitureXZ() const
 	}
 
 	return false;
+}
+
+void Player::SetHiddenInTrashcan(bool isHidden)
+{
+	isHiddenInTrashcan_ = isHidden;
+}
+
+bool Player::IsHiddenInTrashcan(void) const
+{
+	return isHiddenInTrashcan_;
+}
+
+void Player::ApplyTrashcanHideState(void)
+{
+	// =========================
+	// ゴミ箱に隠れている時
+	// =========================
+	if (isHiddenInTrashcan_)
+	{
+		// ゴミ箱によって強制しゃがみにした記録
+		isForcedProneByTrashcan_ = true;
+
+		// 攻撃中ならキャンセルしてもOK
+		if (isAttacking_)
+		{
+			isAttacking_ = false;
+			attackTimer_ = 0.0f;
+		}
+
+		// 立っているなら強制しゃがみ
+		if (!IsProne())
+		{
+			currentAnimType_ = -1;
+			ChangeState(STATE::PRONE);
+		}
+
+		// 足音停止
+		isFootstepActive_ = false;
+		footstepRange_ = 0.0f;
+		footstepTimer_ = 0.0f;
+
+		auto& snd = SoundManager::GetInstance();
+		snd.StopSE(SoundManager::SE::WALK);
+		snd.StopSE(SoundManager::SE::RUN);
+
+		return;
+	}
+
+	// =========================
+	// ゴミ箱から出た時
+	// =========================
+	if (isForcedProneByTrashcan_)
+	{
+		isForcedProneByTrashcan_ = false;
+
+		// ゴミ箱によってしゃがまされていたなら解除
+		if (IsProne())
+		{
+			if (CheckCanStand())
+			{
+				currentAnimType_ = -1;
+				ChangeState(STATE::PLAY);
+			}
+		}
+	}
 }

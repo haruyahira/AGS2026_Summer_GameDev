@@ -1,6 +1,6 @@
 #include <DxLib.h>
 #include <math.h>
-
+#include "../../Application.h"
 #include "../../Utility/AsoUtility.h"
 #include "../Common/AnimationController.h"
 #include "../Furniture/Furniture.h"
@@ -73,6 +73,7 @@ EnemyBase::EnemyBase(void) : ActorBase()
     footstepTimer_ = 0.0f;
     footstepInterval_ = 0.45f;
     footstepRange_ = 0.0f;
+    footstepSeHandle_ = -1;
 #ifdef _DEBUG
     debugFootstepHearRange_ = footstepHearRangeNormal_;
     debugCanHearFootstep_ = false;
@@ -86,6 +87,8 @@ EnemyBase::~EnemyBase(void)
     {
         SetChasing(false);
     }
+
+    ReleaseFootstep3DSound();
 
     HpManager::GetInstance().UnregisterHP(this);
 
@@ -1105,6 +1108,13 @@ void EnemyBase::ResetChasingEnemyCount()
 
 void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
 {
+    (void)player;
+
+    if (footstepSeHandle_ == -1)
+    {
+        return;
+    }
+
     VECTOR diff =
         VSub(transform_.pos, beforePos);
 
@@ -1113,7 +1123,7 @@ void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
     float moveDistance =
         VSize(diff);
 
-    // ほぼ動いていないなら足音なし
+    // ほぼ動いていない、または攻撃中なら足音なし
     if (moveDistance < 0.5f || isAttacking_)
     {
         isFootstepActive_ = false;
@@ -1124,17 +1134,21 @@ void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
 
     isFootstepActive_ = true;
 
-    // 追跡中は足音を速く、大きめにする
     if (isChasing_)
     {
         footstepInterval_ = 0.28f;
-        footstepRange_ = 450.0f;
+        footstepRange_ = 900.0f;
     }
     else
     {
         footstepInterval_ = 0.45f;
-        footstepRange_ = 280.0f;
+        footstepRange_ = 500.0f;
     }
+
+    SoundManager::GetInstance().Set3DSERadius(
+        footstepSeHandle_,
+        footstepRange_
+    );
 
     footstepTimer_ +=
         SceneManager::GetInstance().GetDeltaTime();
@@ -1146,51 +1160,32 @@ void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
 
     footstepTimer_ = 0.0f;
 
-    int volume = 180;
+    VECTOR soundPos = transform_.pos;
+    soundPos.y += 30.0f;
 
-    // プレイヤーから遠い敵の足音は小さくする
-    if (player != nullptr)
+    SoundManager::GetInstance().Play3DSE(
+        footstepSeHandle_,
+        soundPos
+    );
+}
+
+void EnemyBase::InitFootstep3DSound(void)
+{
+    if (footstepSeHandle_ != -1)
     {
-        VECTOR playerPos =
-            player->GetTransform().pos;
-
-        VECTOR toPlayer =
-            VSub(playerPos, transform_.pos);
-
-        toPlayer.y = 0.0f;
-
-        float dist =
-            VSize(toPlayer);
-
-        const float maxHearDistance = 1200.0f;
-
-        if (dist > maxHearDistance)
-        {
-            return;
-        }
-
-        float rate =
-            1.0f - dist / maxHearDistance;
-
-        if (rate < 0.0f)
-        {
-            rate = 0.0f;
-        }
-
-        if (rate > 1.0f)
-        {
-            rate = 1.0f;
-        }
-
-        volume =
-            40 + static_cast<int>(rate * 180.0f);
+        return;
     }
 
-    auto& snd =
-        SoundManager::GetInstance();
+    footstepSeHandle_ =
+        SoundManager::GetInstance().Create3DSE(
+            SoundManager::SE::E_WALK,
+            900.0f
+        );
+}
 
-    snd.SetSEVolume(volume);
-
-    // SoundManager側の名前に合わせて変更してください
-    snd.PlaySE(SoundManager::SE::E_WALK);
+void EnemyBase::ReleaseFootstep3DSound(void)
+{
+    SoundManager::GetInstance().Delete3DSE(
+        footstepSeHandle_
+    );
 }

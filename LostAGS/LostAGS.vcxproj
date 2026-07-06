@@ -205,6 +205,7 @@
     <ClCompile Include="Src\Shader\PostEffect\PostEffect.cpp" />
     <ClCompile Include="Src\Utility\AsoUtility.cpp" />
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
+    <ClCompile Include="Src\Object\Furniture\Trashcan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Shader\RimLightEffect.h" />
@@ -271,6 +272,7 @@
     <ClInclude Include="Src\Shader\PostEffect\PostEffect.h" />
     <ClInclude Include="Src\Utility\AsoUtility.h" />
     <ClInclude Include="Src\Utility\ColorUtility.h" />
+    <ClInclude Include="Src\Object\Furniture\Trashcan.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Src\Shader\ItemRimLightPS.hlsl">

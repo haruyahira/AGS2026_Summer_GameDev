@@ -86,6 +86,10 @@ void EnemyNormal::Init(void)
 
     InitHP(maxHp_, 10.0f);
 
+    // ’Ç‰ÁF“G‚Ì3D‘«‰¹
+    InitFootstep3DSound();
+
+
     ChangeAnimation(static_cast<int>(ANIM_TYPE::IDLE));
 
     // Å‰‚Ì–Ú“I’n‚ğŒˆ‚ß‚é

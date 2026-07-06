@@ -23,6 +23,7 @@
 #include "../Furniture/Freezer.h"
 #include "../Furniture/Book.h"
 #include "../Furniture/Door.h"
+#include "../Furniture/Trashcan.h"
 #include "../Furniture/Button.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
@@ -169,6 +170,11 @@ void Stage::Update(void)
 	}
 
 	// 家具
+    // ゴミ箱隠れ状態を毎フレームリセット
+	if (player_ != nullptr)
+	{
+		player_->SetHiddenInTrashcan(false);
+	}
 
 	for (auto furniture : furnitures_)
 	{
@@ -177,11 +183,24 @@ void Stage::Update(void)
 		if (door != nullptr)
 		{
 			door->Update(*player_);
+			continue;
 		}
-		else
+
+		Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
+
+		if (trashcan != nullptr)
 		{
-			furniture->Update();
+			trashcan->Update(*player_);
+			continue;
 		}
+
+		furniture->Update();
+	}
+
+	// 家具判定が終わった後に、ゴミ箱隠れ状態を反映する
+	if (player_ != nullptr)
+	{
+		player_->ApplyTrashcanHideState();
 	}
 
 
@@ -324,6 +343,7 @@ void Stage::Draw(void)
 #ifdef _DEBUG
 	DebugDrawItemPickupCheck();
 	DebugDrawPickupRange();
+
 	if (player_ != nullptr)
 	{
 		for (auto furniture : furnitures_)
@@ -338,9 +358,16 @@ void Stage::Draw(void)
 			if (door != nullptr)
 			{
 				door->DebugDrawInteractRange(*player_);
-
-				// 追加：扉の当たり判定を可視化
 				door->DebugDrawCollision();
+				continue;
+			}
+
+			Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
+
+			if (trashcan != nullptr)
+			{
+				trashcan->DebugDrawCollision();
+				continue;
 			}
 		}
 	}
@@ -376,14 +403,26 @@ void Stage::DrawUI(void) const
 
 		Door* door = dynamic_cast<Door*>(furniture);
 
-		if (door == nullptr)
+		if (door != nullptr)
 		{
+			if (door->DrawInteractUI(*player_))
+			{
+				return;
+			}
+
 			continue;
 		}
 
-		if (door->DrawInteractUI(*player_))
+		Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
+
+		if (trashcan != nullptr)
 		{
-			return;
+			if (trashcan->DrawInteractUI(*player_))
+			{
+				return;
+			}
+
+			continue;
 		}
 	}
 
@@ -785,6 +824,13 @@ void Stage::MakeMainStage(void)
 	}
 
 
+	// ゴミ箱
+	CreateFurniture({
+	ResourceManager::SRC::TRASHCAN,
+	{ -3700.0f, -100.0f, -550.0f},
+	{ 1.0f, 0.618f, 1.0f },
+	{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+		});
 
 	// ロッカー--------------------------------------------
 	for (int i = 0; i < 13; i++)
@@ -1156,6 +1202,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 		// 強制脱出ボタンとして記録
 		escapeButton_ = dynamic_cast<Button*>(f);
 		escapeButtonPos_ = VGet(data.pos.x, data.pos.y, data.pos.z);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::TRASHCAN)
+	{
+		f = new Trashcan(&trans);
 	}
 
 	if (f == nullptr)

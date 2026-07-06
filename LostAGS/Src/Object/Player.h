@@ -143,6 +143,12 @@ public:
 
 	bool IsUnderFurnitureXZ() const;
 
+	void SetHiddenInTrashcan(bool isHidden);
+	bool IsHiddenInTrashcan(void) const;
+
+	void ApplyTrashcanHideState(void);
+
+
 private:
 
 	void PlayAnimation(ANIM_TYPE animType, bool isLoop = true);
@@ -285,6 +291,10 @@ private:
 	// ‘«‰¹
 	bool isFootstepActive_;
 	float footstepRange_;
+
+	bool isHiddenInTrashcan_;
+	bool isForcedProneByTrashcan_;
+
 
 	static constexpr float FOOTSTEP_RANGE_WALK = 180.0f;
 	static constexpr float FOOTSTEP_RANGE_RUN = 320.0f;
