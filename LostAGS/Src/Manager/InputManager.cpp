@@ -81,6 +81,8 @@ void InputManager::Init(void)
     Add(KEY_INPUT_LSHIFT);
     Add(KEY_INPUT_TAB);
 
+    Add(KEY_INPUT_LCONTROL);
+    Add(KEY_INPUT_RCONTROL);
     Add(KEY_INPUT_BACKSLASH);
     Add(KEY_INPUT_LALT);
     Add(KEY_INPUT_RETURN);

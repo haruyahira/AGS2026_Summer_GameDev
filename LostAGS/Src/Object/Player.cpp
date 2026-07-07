@@ -435,6 +435,7 @@ void Player::UpdateCommon(void)
 	// 通常・うつ伏せホールド
 	bool isPronePress =
 		ins.IsPress(KEY_INPUT_C) ||
+		ins.IsPress(KEY_INPUT_LCONTROL) ||
 		ins.IsPadBtnNew(
 			InputManager::JOYPAD_NO::PAD1,
 			InputManager::JOYPAD_BTN::R_STICK_PUSH);

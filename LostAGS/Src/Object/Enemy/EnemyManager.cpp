@@ -119,10 +119,10 @@ void EnemyManager::Init(void)
 	};
 
 
-	testEnemy->SetPatrolPoints(points);
-	testEnemy->SetPatrolLinks(links);
-	testEnemy->SetPos(points[5]);
-	enemies_.push_back(testEnemy);
+	//testEnemy->SetPatrolPoints(points);
+	//testEnemy->SetPatrolLinks(links);
+	//testEnemy->SetPos(points[5]);
+	//enemies_.push_back(testEnemy);
 
 	debugPatrolPoints_ = points;
 	debugPatrolLinks_ = links;
@@ -133,17 +133,17 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	for (int i = 0; i < 4; i++)
-	{
-		EnemyNormal* enemy = new EnemyNormal();
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	EnemyNormal* enemy = new EnemyNormal();
 
-		enemy->Init();
+	//	enemy->Init();
 
-		enemy->SetPatrolPoints(points);
-		enemy->SetPatrolLinks(links);
+	//	enemy->SetPatrolPoints(points);
+	//	enemy->SetPatrolLinks(links);
 
-		enemies_.push_back(enemy);
-	}
+	//	enemies_.push_back(enemy);
+	//}
 
 }
 void EnemyManager::Update(Player* player)

@@ -772,12 +772,12 @@ void Stage::MakeMainStage(void)
 		CreateFurniture(wallData);
 	}
 
-	// 本棚
+	// 棚
 	CreateFurniture({
 	ResourceManager::SRC::SHELF,
-	{ -1545.0f, -100.0f, 330.0f },
-	{ 1.0f, 0.5f, 1.0f },
-	{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+	{ -1481.0f, -100.0f, -1200.0f },
+	{ 7.9f, 0.7f, 1.5f },
+	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
 	// 本棚-------------------------------------------

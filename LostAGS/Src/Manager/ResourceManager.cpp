@@ -76,7 +76,7 @@ void ResourceManager::Init(void)
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1"));
 	// íI
 	resourcesMap_.emplace(SRC::SHELF,
-		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1"));
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Shelf.mv1"));
 	// ÉçÉbÉJÅ[
 	resourcesMap_.emplace(SRC::LOCKER,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Locker.mv1"));	

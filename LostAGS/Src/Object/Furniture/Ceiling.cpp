@@ -64,7 +64,7 @@ void Ceiling::Update(void)
     bool changed = false;
 
     // Cキーで操作などにした方がWallと被らなくて安全
-    if (CheckHitKey(KEY_INPUT_C))
+    if (CheckHitKey(KEY_INPUT_C) || CheckHitKey(KEY_INPUT_RCONTROL))
     {
         // Shift → 位置移動
         if (CheckHitKey(KEY_INPUT_LSHIFT))
