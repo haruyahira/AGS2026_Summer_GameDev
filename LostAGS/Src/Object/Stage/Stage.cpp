@@ -19,6 +19,7 @@
 #include "../Furniture/Ceiling.h"
 #include "../Furniture/StoneDevice.h"
 #include "../Furniture/BookShelf.h"
+#include "../Furniture/Shelf.h"
 #include "../Furniture/Locker.h"
 #include "../Furniture/Freezer.h"
 #include "../Furniture/Book.h"
@@ -773,6 +774,14 @@ void Stage::MakeMainStage(void)
 
 	// 本棚
 	CreateFurniture({
+	ResourceManager::SRC::SHELF,
+	{ -1545.0f, -100.0f, 330.0f },
+	{ 1.0f, 0.5f, 1.0f },
+	{0.0f, AsoUtility::Deg2RadF(0.0f), 0.0f }
+		});
+
+	// 本棚-------------------------------------------
+	CreateFurniture({
 	ResourceManager::SRC::BOOKSLF,
 	{ -1445.0f, -100.0f, 330.0f },
 	{ 0.93f, 0.5f, 1.0f },
@@ -1175,6 +1184,10 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	else if (data.modelSrc == ResourceManager::SRC::BOOKSLF)
 	{
 		f = new BookShelf(&trans);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::SHELF)
+	{
+		f = new Shelf(&trans);
 	}
 	else if (data.modelSrc == ResourceManager::SRC::LOCKER)
 	{

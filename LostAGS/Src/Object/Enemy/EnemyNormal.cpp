@@ -20,7 +20,7 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
 
     animType_ = ANIM_TYPE::IDLE;
 
-    radius_ = 10.0f;
+    radius_ = 5.0f;
 
     targetIndex_ = 0;
 

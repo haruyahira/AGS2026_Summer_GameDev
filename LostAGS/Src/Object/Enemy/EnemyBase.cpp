@@ -4,6 +4,7 @@
 #include "../../Utility/AsoUtility.h"
 #include "../Common/AnimationController.h"
 #include "../Furniture/Furniture.h"
+#include "../Furniture/Door.h"
 #include "../Player.h"
 #include "../Common/Hp/HpManager.h"
 #include "../../Manager/SoundManager.h"
@@ -62,7 +63,7 @@ EnemyBase::EnemyBase(void) : ActorBase()
     alertDuration_ = 20.0f;
 
     // Enemy側の足音検知範囲
-    footstepHearRangeNormal_ = 250.0f;
+    footstepHearRangeNormal_ = 350.0f;
     footstepHearRangeAlert_ = 500.0f;
 
     lastHeardPos_ = VGet(0.0f, 0.0f, 0.0f);
@@ -502,6 +503,49 @@ bool EnemyBase::CollisionFurniture(Player* player, VECTOR beforePos)
     {
         if (f == nullptr)
         {
+            continue;
+        }
+
+        // -------------------------------------------------
+        // 追加：扉専用処理
+        // -------------------------------------------------
+        Door* door = dynamic_cast<Door*>(f);
+
+        if (door != nullptr)
+        {
+            const float OPEN_MARGIN = 80.0f;
+
+            bool isNearDoor =
+                door->IsEnemyNearDoor(
+                    transform_.pos,
+                    radius_,
+                    bottomY,
+                    topY,
+                    OPEN_MARGIN
+                );
+
+            // 敵が扉の近くにいる時だけ開ける
+            if (isNearDoor)
+            {
+                door->OpenByEnemy();
+            }
+
+            // 完全に開いているなら通れる
+            if (door->IsPassableForEnemy())
+            {
+                continue;
+            }
+
+            // 閉まっている / 開き途中なら押し戻す
+            if (door->ResolveEnemyCollision(
+                transform_.pos,
+                radius_,
+                bottomY,
+                topY))
+            {
+                return true;
+            }
+
             continue;
         }
 

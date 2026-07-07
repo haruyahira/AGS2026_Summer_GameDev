@@ -114,7 +114,7 @@ void Door::Init()
 // 先にサイズを設定する
     doorWidth_ = 120.0f;
     doorHeight_ = 260.0f;
-    doorThickness_ = 40.0f;
+    doorThickness_ = 30.0f;
 
     playerRadius_ = 35.0f;
 
@@ -907,4 +907,135 @@ void Door::DebugDrawCollision() const
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
     SetUseLighting(TRUE);
+}
+
+void Door::OpenByEnemy(void)
+{
+    // 閉まっている、または閉まり中なら開ける
+    if (state_ == DoorState::Closed ||
+        state_ == DoorState::Closing)
+    {
+        state_ = DoorState::Opening;
+
+        auto& snd = SoundManager::GetInstance();
+        snd.SetSEVolume(255);
+        snd.PlaySE(SoundManager::SE::DOOROP);
+    }
+}
+
+bool Door::IsPassableForEnemy(void) const
+{
+    // 完全に開いたら敵は通れる
+    return state_ == DoorState::Open;
+}
+
+bool Door::ResolveEnemyCollision(
+    VECTOR& enemyPos,
+    float enemyRadius,
+    float bottomY,
+    float topY
+) const
+{
+    if (!isCollisionActive_)
+    {
+        return false;
+    }
+
+    // 完全に開いているなら当たり判定なし
+    if (IsPassableForEnemy())
+    {
+        return false;
+    }
+
+    // 高さ判定
+    float doorBottom = collision_.center.y - collision_.half.y;
+    float doorTop = collision_.center.y + collision_.half.y;
+
+    if (topY < doorBottom || bottomY > doorTop)
+    {
+        return false;
+    }
+
+    VECTOR closest =
+        ClosestPointOnDoorXZ(
+            enemyPos,
+            collision_
+        );
+
+    float dx = enemyPos.x - closest.x;
+    float dz = enemyPos.z - closest.z;
+
+    float distSq = dx * dx + dz * dz;
+    float radiusSq = enemyRadius * enemyRadius;
+
+    if (distSq > radiusSq)
+    {
+        return false;
+    }
+
+    float dist = sqrtf(distSq);
+
+    // 完全に重なった時の保険
+    if (dist < 0.001f)
+    {
+        VECTOR pushDir = collision_.axisZ;
+
+        enemyPos = VAdd(
+            enemyPos,
+            VScale(pushDir, enemyRadius)
+        );
+
+        return true;
+    }
+
+    float push = enemyRadius - dist;
+
+    VECTOR pushDir =
+        VGet(
+            dx / dist,
+            0.0f,
+            dz / dist
+        );
+
+    enemyPos =
+        VAdd(
+            enemyPos,
+            VScale(pushDir, push)
+        );
+
+    return true;
+}
+
+bool Door::IsEnemyNearDoor(
+    const VECTOR& enemyPos,
+    float enemyRadius,
+    float bottomY,
+    float topY,
+    float margin
+) const
+{
+    // 高さ判定
+    float doorBottom = collision_.center.y - collision_.half.y;
+    float doorTop = collision_.center.y + collision_.half.y;
+
+    if (topY < doorBottom || bottomY > doorTop)
+    {
+        return false;
+    }
+
+    VECTOR closest =
+        ClosestPointOnDoorXZ(
+            enemyPos,
+            collision_
+        );
+
+    float dx = enemyPos.x - closest.x;
+    float dz = enemyPos.z - closest.z;
+
+    float distSq = dx * dx + dz * dz;
+
+    float checkRadius =
+        enemyRadius + margin;
+
+    return distSq <= checkRadius * checkRadius;
 }

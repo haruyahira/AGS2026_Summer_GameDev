@@ -32,6 +32,7 @@ public:
 		F_G,
 		F_F,
 		BOOKSLF, // 本棚
+		SHELF, // 棚
 		LOCKER, // ロッカー
 		FREEZER, // 冷凍庫
 		BOOK, // 本
@@ -43,12 +44,14 @@ public:
 		TRASHCAN, // ゴミ箱
 
 
+
 		RETURN_POINT,
 		// アイテム
-		LAPTOP,
-		WATCH,
-		BOOK168,
-		SMARTPHONE,
+		LAPTOP,// ノートPC
+		WATCH, // 腕時計
+		BOOK168, // １６８Book
+		SMARTPHONE, // スマートフォン
+		CREDITCARD, // クレジットカード
 
 
 		// Sound

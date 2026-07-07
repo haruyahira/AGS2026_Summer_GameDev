@@ -74,6 +74,9 @@ void ResourceManager::Init(void)
 	// 本棚
 	resourcesMap_.emplace(SRC::BOOKSLF,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1"));
+	// 棚
+	resourcesMap_.emplace(SRC::SHELF,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/BookShelf.mv1"));
 	// ロッカー
 	resourcesMap_.emplace(SRC::LOCKER,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/Locker.mv1"));	

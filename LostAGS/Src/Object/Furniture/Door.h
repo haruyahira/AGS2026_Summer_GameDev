@@ -39,6 +39,22 @@ public:
     bool DrawInteractUI(const Player& player) const;
     void DebugDrawInteractRange(const Player& player) const;
     void DebugDrawCollision() const;
+    void OpenByEnemy(void);
+    bool IsPassableForEnemy(void) const;
+    bool ResolveEnemyCollision(
+        VECTOR& enemyPos,
+        float enemyRadius,
+        float bottomY,
+        float topY
+    ) const;
+    bool IsEnemyNearDoor(
+        const VECTOR& enemyPos,
+        float enemyRadius,
+        float bottomY,
+        float topY,
+        float margin
+    ) const;
+
 
 private:
     void UpdateAnimation();

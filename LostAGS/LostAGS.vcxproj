@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\Shelf.cpp" />
     <ClCompile Include="Src\Shader\RimLightEffect.cpp" />
     <ClCompile Include="Src\Object\Furniture\Button.cpp" />
     <ClCompile Include="Src\Object\Furniture\Door.cpp" />
@@ -208,6 +209,7 @@
     <ClCompile Include="Src\Object\Furniture\Trashcan.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\Shelf.h" />
     <ClInclude Include="Src\Shader\RimLightEffect.h" />
     <ClInclude Include="Src\Object\Furniture\Button.h" />
     <ClInclude Include="Src\Object\Furniture\Door.h" />
