@@ -270,4 +270,8 @@ private:
         const VECTOR& lightPos
     ) const;
 
+    bool IsNearEscapeButton(void) const;
+
+    void DrawEscapeButtonUI(void) const;
+
 };

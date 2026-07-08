@@ -24,6 +24,7 @@
 #include "../Furniture/Freezer.h"
 #include "../Furniture/Book.h"
 #include "../Furniture/Door.h"
+#include "../Furniture/ShelfDoor.h"
 #include "../Furniture/Trashcan.h"
 #include "../Furniture/Button.h"
 #include "../../Shader/Light/LightManager.h"
@@ -157,9 +158,6 @@ void Stage::Init(void)
 	isEscapeTimerStarted_ = false;
 	isEmergencyEscape_ = false;
 	isResultChanged_ = false;
-
-
-
 }
 
 void Stage::Update(void)
@@ -184,6 +182,14 @@ void Stage::Update(void)
 		if (door != nullptr)
 		{
 			door->Update(*player_);
+			continue;
+		}
+
+		ShelfDoor* shelfDorr = dynamic_cast<ShelfDoor*>(furniture);
+
+		if (shelfDorr != nullptr)
+		{
+			shelfDorr->Update(*player_);
 			continue;
 		}
 
@@ -362,6 +368,14 @@ void Stage::Draw(void)
 				door->DebugDrawCollision();
 				continue;
 			}
+			ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(furniture);
+
+			if (shelfDoor != nullptr)
+			{
+				shelfDoor->DebugDrawInteractRange(*player_);
+				shelfDoor->DebugDrawCollision();
+				continue;
+			}
 
 			Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
 
@@ -389,6 +403,7 @@ void Stage::DrawUI(void) const
 	DrawItemUI();
 	DrawInventoryUI();
 	DrawPickupUI();
+	DrawEscapeButtonUI();
 
 	if (player_ == nullptr)
 	{
@@ -407,6 +422,18 @@ void Stage::DrawUI(void) const
 		if (door != nullptr)
 		{
 			if (door->DrawInteractUI(*player_))
+			{
+				return;
+			}
+
+			continue;
+		}
+
+		ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(furniture);
+
+		if (shelfDoor != nullptr)
+		{
+			if (shelfDoor->DrawInteractUI(*player_))
 			{
 				return;
 			}
@@ -788,6 +815,45 @@ void Stage::MakeMainStage(void)
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
 
+	// ドア付き棚------------------------------------------------
+	struct ShelfDoorData {
+		VECTOR pos;
+		float rotY;
+	};
+
+	ShelfDoorData shelfDoors[] = {
+		{{-1775.0f, -100.0f,  95.0f}, 90.0f},
+		{{-1775.0f, -100.0f,  680.0f}, 90.0f},
+		{{-2440.0f, -100.0f,  82.0f}, 90.0f},
+		{{-2440.0f, -100.0f,  546.0f}, 90.0f},
+		{{-2990.0f, -100.0f,  647.0f}, 90.0f},
+		{{-2940.0f, -100.0f,  -529.0f}, 90.0f},
+		{{-2940.0f, -100.0f,  -765.0f}, 90.0f},
+		{{-2450.0f, -100.0f,  -732.0f}, 90.0f},
+		{{-2450.0f, -100.0f,  -465.0f}, 90.0f},
+
+
+		{{-2280.0f, -100.0f,  42.0f}, -90.0f},
+		{{-2280.0f, -100.0f,  546.0f}, -90.0f},
+		{{-2990.0f, -100.0f,  147.0f}, -90.0f},
+		{{-2770.0f, -100.0f,  -529.0f}, -90.0f},
+		{{-2770.0f, -100.0f,  -765.0f}, -90.0f},
+		{{-2300.0f, -100.0f,  -732.0f}, -90.0f},
+		{{-2300.0f, -100.0f,  -465.0f}, -90.0f},
+	};
+
+	for (auto& s : shelfDoors)
+	{
+		CreateFurniture({
+			ResourceManager::SRC::SHELFDOOR,
+			Vector3(s.pos.x, s.pos.y, s.pos.z),
+			Vector3(0.5f, 0.32f, 0.5f),
+			Vector3{ 0.0f, AsoUtility::Deg2RadF(s.rotY), 0.0f }
+			});
+
+		watchSpawnPoints_.push_back(VGet(s.pos.x, -80.0f, s.pos.z)); // 腕時計
+	}
+
 	
 	// 本棚の本
 	// i = 行, j = 列
@@ -881,7 +947,7 @@ void Stage::MakeMainStage(void)
 	{ 0.0f, AsoUtility::Deg2RadF(90.0f), 0.0f },
 	1.0f, -1.0f
 		});
-
+	
 	// ドア------------------------------------------------------
 	CreateFurniture({ // 厨房のドア
 	ResourceManager::SRC::DOOR,
@@ -964,7 +1030,7 @@ void Stage::MakeMainStage(void)
 
 	// アイテムランダム生成
 	CreateRandomLaptopItemsFromSpawnPoints(1); // ノートPC
-	CreateRandomWatchItemsFromSpawnPoints(3); // 腕時計
+	CreateRandomWatchItemsFromSpawnPoints(30); // 腕時計
 
 
 	// 天井ライト
@@ -1208,6 +1274,13 @@ void Stage::CreateFurniture(const FurnitureData& data)
 			&trans,data.rot.y,data.doorHingeSide,data.doorOpenSign
 		);
 	}
+	else if (data.modelSrc == ResourceManager::SRC::SHELFDOOR)
+	{
+
+		f = new ShelfDoor(
+			&trans, data.rot.y, data.doorHingeSide, data.doorOpenSign
+		);
+	}
 	else if (data.modelSrc == ResourceManager::SRC::BUTTON)
 	{
 		f = new Button(&trans);
@@ -1441,7 +1514,7 @@ void Stage::UpdateItemPickup(void)
 
 
 	if (
-		ins.IsTrgDown(KEY_INPUT_F) ||
+		ins.IsTrgDown(KEY_INPUT_E) ||
 		ins.IsPadBtnTrgDown(
 			InputManager::JOYPAD_NO::PAD1,
 			InputManager::JOYPAD_BTN::LEFT)
@@ -1520,33 +1593,33 @@ void Stage::DrawItemUI(void) const
 {
 
 	stoneDevice_->DrawUI();
-	if (lookingItemIndex_ != -1)
-	{
-		Item* item = items_[lookingItemIndex_];
+	//if (lookingItemIndex_ != -1)
+	//{
+	//	Item* item = items_[lookingItemIndex_];
 
-		if (item != nullptr)
-		{
-			if (isItemMax_)
-			{
-				DrawString(
-					20,
-					130,
-					"これ以上アイテムを持てません",
-					GetColor(255, 80, 80)
-				);
-			}
-			else
-			{
-				DrawFormatString(
-					20,
-					130,
-					GetColor(255, 255, 255),
-					"F 拾う：%s",
-					item->GetName()
-				);
-			}
-		}
-	}
+	//	if (item != nullptr)
+	//	{
+	//		if (isItemMax_)
+	//		{
+	//			DrawString(
+	//				20,
+	//				130,
+	//				"これ以上アイテムを持てません",
+	//				GetColor(255, 80, 80)
+	//			);
+	//		}
+	//		else
+	//		{
+	//			DrawFormatString(
+	//				20,
+	//				130,
+	//				GetColor(255, 255, 255),
+	//				"F 拾う：%s",
+	//				item->GetName()
+	//			);
+	//		}
+	//	}
+	//}
 
 	int x = 20;
 	int y = 160;
@@ -2645,13 +2718,24 @@ bool Stage::IsPickupLineBlocked(const VECTOR& from, const VECTOR& to) const
 			continue;
 		}
 
-		// 壁とドアだけを遮蔽物にする
 		Wall* wall = dynamic_cast<Wall*>(f);
 		Door* door = dynamic_cast<Door*>(f);
+		ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(f);
 
-		if (wall == nullptr && door == nullptr)
+		if (wall == nullptr &&
+			door == nullptr &&
+			shelfDoor == nullptr)
 		{
 			continue;
+		}
+
+		// 棚ドアが開いているなら遮蔽物にしない
+		if (shelfDoor != nullptr)
+		{
+			if (shelfDoor->IsOpen())
+			{
+				continue;
+			}
 		}
 
 		int modelId = f->GetModelId();
@@ -3701,7 +3785,7 @@ void Stage::DrawPickupUI(void) const
 	DrawString(
 		keyBoxX + 17,
 		keyBoxY + 14,
-		"F",
+		"E ",
 		mainColor
 	);
 
@@ -3751,4 +3835,137 @@ const std::vector<LightBlocker*>& Stage::GetLightBlockersByLightPos(
 
 	// 客席
 	return hallBlockers_;
+}
+
+bool Stage::IsNearEscapeButton(void) const
+{
+	if (player_ == nullptr)
+	{
+		return false;
+	}
+
+	if (escapeButton_ == nullptr)
+	{
+		return false;
+	}
+
+	VECTOR playerPos = player_->GetPos();
+
+	VECTOR toButton = VSub(escapeButtonPos_, playerPos);
+	toButton.y = 0.0f;
+
+	float distance = VSize(toButton);
+
+	const float INTERACT_RANGE = 160.0f;
+
+	return distance <= INTERACT_RANGE;
+}
+
+void Stage::DrawEscapeButtonUI(void) const
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	if (escapeButton_ == nullptr)
+	{
+		return;
+	}
+
+	if (isEscapeButtonActivated_)
+	{
+		return;
+	}
+
+	if (!IsNearEscapeButton())
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	const int boxW = 460;
+	const int boxH = 90;
+
+	const int boxX = screenW / 2 - boxW / 2;
+	const int boxY = screenH - 360;
+
+	float t = GetNowCount() / 1000.0f;
+	float blink = (sinf(t * 6.0f) + 1.0f) * 0.5f;
+
+	int borderAlpha = 140 + (int)(blink * 100.0f);
+
+	// 背景
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(20, 10, 10),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// 枠
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, borderAlpha);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(255, 80, 80),
+		FALSE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// タイトル
+	DrawString(
+		boxX + 25,
+		boxY + 18,
+		"脱出ボタン",
+		GetColor(255, 220, 120)
+	);
+
+	// 左クリック枠
+	int keyBoxX = boxX + boxW - 200;
+	int keyBoxY = boxY + 25;
+
+	const char* keyText = "左クリック";
+	const char* actionText = "脱出";
+
+	int keyTextW = GetDrawStringWidth(keyText, strlen(keyText));
+
+	const int paddingX = 16;
+	const int keyBoxW = keyTextW + paddingX * 2;
+	const int keyBoxH = 42;
+
+	DrawBox(
+		keyBoxX,
+		keyBoxY,
+		keyBoxX + keyBoxW,
+		keyBoxY + keyBoxH,
+		GetColor(255, 255, 255),
+		FALSE
+	);
+
+	DrawString(
+		keyBoxX + paddingX,
+		keyBoxY + 12,
+		keyText,
+		GetColor(255, 255, 255)
+	);
+
+	DrawString(
+		keyBoxX + keyBoxW + 14,
+		keyBoxY + 12,
+		actionText,
+		GetColor(255, 255, 255)
+	);
 }

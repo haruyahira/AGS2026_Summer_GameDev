@@ -33,6 +33,7 @@ public:
 		F_F,
 		BOOKSLF, // 本棚
 		SHELF, // 棚
+		SHELFDOOR, // 扉つきの棚
 		LOCKER, // ロッカー
 		FREEZER, // 冷凍庫
 		BOOK, // 本
