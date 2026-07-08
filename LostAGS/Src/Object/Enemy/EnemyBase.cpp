@@ -117,10 +117,16 @@ void EnemyBase::Update(Player* player)
     debugCanHearFootstep_ = false;
 #endif
 
-    // 攻撃インターバル更新
+    float dt = SceneManager::GetInstance().GetDeltaTime();
+
     if (attackIntervalTimer_ > 0.0f)
     {
-        attackIntervalTimer_ -= 1.0f;
+        attackIntervalTimer_ -= dt;
+
+        if (attackIntervalTimer_ < 0.0f)
+        {
+            attackIntervalTimer_ = 0.0f;
+        }
     }
 
     // 警戒タイマー更新
@@ -239,12 +245,20 @@ void EnemyBase::Update(Player* player)
     }
     else
     {
-        // 視野内、近距離、インターバル終了なら攻撃
-        if (isChasing_ &&
-            IsPlayerInAttackRange(player) &&
-            attackIntervalTimer_ <= 0.0f)
+        if (isChasing_ && IsPlayerInAttackRange(player))
         {
-            StartAttack(player);
+            // 攻撃範囲内なら近づかない
+            LookAtPosition(player->GetTransform().pos);
+
+            // 攻撃可能なら攻撃
+            if (attackIntervalTimer_ <= 0.0f)
+            {
+                StartAttack(player);
+            }
+            else
+            {
+               
+            }
         }
         else if (isChasing_)
         {
@@ -848,12 +862,12 @@ void EnemyBase::Damage(int damage)
     }
 
 #ifdef _DEBUG
-    //printfDx("Enemy Damage : %d\n", damage);
+    printfDx("Enemy Damage : %d  HP : %d\n", damage, GetHP());
 #endif
 
+    // ここで死んだ時だけ倒す
     if (HpManager::GetInstance().IsDead(this))
     {
-
         // 追跡中だった敵が死んだら追跡数を減らす
         if (isChasing_)
         {
@@ -861,10 +875,25 @@ void EnemyBase::Damage(int damage)
         }
 
         isDead_ = true;
+
+        isAttacking_ = false;
+        isAttackHit_ = false;
+        isHearingFootstep_ = false;
+        isFootstepActive_ = false;
+
+        transform_.pos.y = groundY_;
+
+        // 死亡時だけX軸90度で寝かせる
+        transform_.quaRotLocal =
+            Quaternion::Euler({
+                AsoUtility::Deg2RadF(90.0f),
+                AsoUtility::Deg2RadF(180.0f),
+                0.0f
+                });
+
+        transform_.Update();
     }
 }
-
-
 VECTOR EnemyBase::GetPos(void) const
 {
     return transform_.pos;

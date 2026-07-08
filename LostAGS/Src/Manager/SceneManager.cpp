@@ -1,5 +1,7 @@
 #include <chrono>
 #include <DxLib.h>
+#include <string>
+#include <cmath>
 #include <EffekseerForDXLib.h>
 #include "../Common/Fader.h"
 #include "../Scene/TitleScene.h"
@@ -633,90 +635,350 @@ int SceneManager::GetMainScreen(void)
 
 void SceneManager::DrawLoadingScreen(void)
 {
-
 	SetDrawScreen(DX_SCREEN_BACK);
 	ClearDrawScreen();
 
 	const int screenW = Application::SCREEN_SIZE_X;
 	const int screenH = Application::adjustedSizeY_;
 
-	int white = GetColor(255, 255, 255);
-	int gray = GetColor(140, 140, 140);
-	int blue = GetColor(80, 180, 255);
+	const int now = GetNowCount();
+	const float time = now / 1000.0f;
 
-	// 背景
-	DrawBox(
-		0,
-		0,
-		screenW,
-		screenH,
-		GetColor(0, 0, 0),
-		TRUE
-	);
 
-	int centerX = screenW / 2;
-	int centerY = screenH / 2;
+	auto Lerp = [](int a, int b, float t )   {
+		return static_cast<int>(a + (b - a) * t);
+};
+	auto LerpColor = [&](int r1, int g1, int b1, int r2, int g2, int b2, float t)
+		{
+			return GetColor(
+				Lerp(r1, r2, t),
+				Lerp(g1, g2, t),
+				Lerp(b1, b2, t)
+			);
+		};
 
-	// Loading のドットアニメーション
-	int dotCount = static_cast<int>((GetNowCount() / 300) % 4);
-
-	DrawString(centerX - 80, centerY - 40, "Loading", white);
-
-	for (int i = 0; i < dotCount; i++)
+	// =========================
+	// 背景グラデーション
+	// =========================
+	for (int y = 0; y < screenH; y += 3)
 	{
-		DrawString(centerX + 20 + i * 16, centerY - 40, ".", white);
+		float rate = static_cast<float>(y) / static_cast<float>(screenH);
+
+		int color = LerpColor(
+			2, 4, 8,
+			10, 22, 28,
+			rate
+		);
+
+		DrawBox(
+			0,
+			y,
+			screenW,
+			y + 3,
+			color,
+			TRUE
+		);
 	}
 
-	// 残りロード数
-	int loadNum = GetASyncLoadNum();
+	// =========================
+	// 暗いビネット風
+	// =========================
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 70);
 
-	DrawFormatString(
-		centerX - 100,
-		centerY,
-		gray,
-		"Now Loading Files : %d",
-		loadNum
-	);
+	for (int i = 0; i < 8; i++)
+	{
+		DrawBox(
+			i * 18,
+			i * 12,
+			screenW - i * 18,
+			screenH - i * 12,
+			GetColor(0, 0, 0),
+			FALSE
+		);
+	}
 
-	// 簡単なバー背景
-	int barX = centerX - 150;
-	int barY = centerY + 50;
-	int barW = 300;
-	int barH = 16;
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// =========================
+	// 走査線
+	// =========================
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+
+	for (int y = 0; y < screenH; y += 6)
+	{
+		DrawLine(
+			0,
+			y,
+			screenW,
+			y,
+			GetColor(0, 255, 180)
+		);
+	}
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// =========================
+	// 中央パネル
+	// =========================
+	const int panelW = 720;
+	const int panelH = 300;
+	const int panelX = screenW / 2 - panelW / 2;
+	const int panelY = screenH / 2 - panelH / 2;
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
 
 	DrawBox(
-		barX,
-		barY,
-		barX + barW,
-		barY + barH,
-		GetColor(60, 60, 60),
+		panelX,
+		panelY,
+		panelX + panelW,
+		panelY + panelH,
+		GetColor(5, 12, 16),
 		TRUE
 	);
 
-	// 動く光
-	int moveX = barX + static_cast<int>((GetNowCount() / 5) % barW);
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
+	// 外枠
 	DrawBox(
-		moveX,
-		barY,
-		moveX + 40,
-		barY + barH,
-		blue,
-		TRUE
-	);
-
-	// 枠
-	DrawBox(
-		barX,
-		barY,
-		barX + barW,
-		barY + barH,
-		white,
+		panelX,
+		panelY,
+		panelX + panelW,
+		panelY + panelH,
+		GetColor(40, 180, 160),
 		FALSE
 	);
 
+	DrawBox(
+		panelX + 5,
+		panelY + 5,
+		panelX + panelW - 5,
+		panelY + panelH - 5,
+		GetColor(20, 80, 90),
+		FALSE
+	);
+
+	// 角の装飾
+	const int corner = 45;
+	const int accent = GetColor(100, 255, 220);
+
+	DrawLine(panelX, panelY, panelX + corner, panelY, accent, 3);
+	DrawLine(panelX, panelY, panelX, panelY + corner, accent, 3);
+
+	DrawLine(panelX + panelW, panelY, panelX + panelW - corner, panelY, accent, 3);
+	DrawLine(panelX + panelW, panelY, panelX + panelW, panelY + corner, accent, 3);
+
+	DrawLine(panelX, panelY + panelH, panelX + corner, panelY + panelH, accent, 3);
+	DrawLine(panelX, panelY + panelH, panelX, panelY + panelH - corner, accent, 3);
+
+	DrawLine(panelX + panelW, panelY + panelH, panelX + panelW - corner, panelY + panelH, accent, 3);
+	DrawLine(panelX + panelW, panelY + panelH, panelX + panelW, panelY + panelH - corner, accent, 3);
+
+	// =========================
+	// タイトル
+	// =========================
+	const char* title = "SYSTEM LOADING";
+	int titleW = GetDrawStringWidth(title, strlen(title));
+
+	DrawString(
+		screenW / 2 - titleW / 2,
+		panelY + 35,
+		title,
+		GetColor(150, 255, 230)
+	);
+
+	const char* subTitle = "Connecting security network...";
+	int subTitleW = GetDrawStringWidth(subTitle, strlen(subTitle));
+
+	DrawString(
+		screenW / 2 - subTitleW / 2,
+		panelY + 70,
+		subTitle,
+		GetColor(120, 170, 170)
+	);
+
+	// =========================
+	// 回転するローディングリング
+	// =========================
+	const int centerX = screenW / 2;
+	const int centerY = panelY + 150;
+
+	const int ringRadius = 42;
+	const int dotCount = 16;
+
+	for (int i = 0; i < dotCount; i++)
+	{
+		float angle =
+			time * 3.5f +
+			DX_TWO_PI_F * static_cast<float>(i) / static_cast<float>(dotCount);
+
+		float blink =
+			(sinf(time * 4.0f + i * 0.5f) + 1.0f) * 0.5f;
+
+		int alpha = 60 + static_cast<int>(blink * 180.0f);
+
+		int x = centerX + static_cast<int>(cosf(angle) * ringRadius);
+		int y = centerY + static_cast<int>(sinf(angle) * ringRadius);
+
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+		DrawCircle(
+			x,
+			y,
+			5,
+			GetColor(80, 255, 220),
+			TRUE
+		);
+	}
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// 中央のコア
+	float coreBlink = (sinf(time * 5.0f) + 1.0f) * 0.5f;
+	int coreAlpha = 120 + static_cast<int>(coreBlink * 100.0f);
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, coreAlpha);
+
+	DrawCircle(
+		centerX,
+		centerY,
+		18,
+		GetColor(70, 220, 255),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	DrawCircle(
+		centerX,
+		centerY,
+		18,
+		GetColor(180, 255, 255),
+		FALSE
+	);
+
+	// =========================
+	// ローディングバー
+	// =========================
+	const int barW = 520;
+	const int barH = 18;
+	const int barX = screenW / 2 - barW / 2;
+	const int barY = panelY + 225;
+
+	DrawBox(
+		barX,
+		barY,
+		barX + barW,
+		barY + barH,
+		GetColor(10, 30, 35),
+		TRUE
+	);
+
+	DrawBox(
+		barX,
+		barY,
+		barX + barW,
+		barY + barH,
+		GetColor(50, 160, 150),
+		FALSE
+	);
+
+	// 流れる光
+	int sweepW = 120;
+	int sweepX =
+		barX - sweepW +
+		static_cast<int>(fmodf(time * 260.0f, static_cast<float>(barW + sweepW)));
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+
+	DrawBox(
+		sweepX,
+		barY + 2,
+		sweepX + sweepW,
+		barY + barH - 2,
+		GetColor(80, 255, 220),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// =========================
+	// ロード中テキスト
+	// =========================
+	int dotCountText = static_cast<int>((now / 350) % 4);
+
+	char loadingText[128] = "Loading";
+	for (int i = 0; i < dotCountText; i++)
+	{
+		strcat_s(loadingText, ".");
+	}
+
+	int loadingTextW = GetDrawStringWidth(loadingText, strlen(loadingText));
+
+	DrawString(
+		screenW / 2 - loadingTextW / 2,
+		barY + 38,
+		loadingText,
+		GetColor(220, 255, 250)
+	);
+
+	// =========================
+	// ロード数表示
+	// =========================
+	int loadNum = GetASyncLoadNum();
+
+	char fileText[128];
+	sprintf_s(fileText, "Now Loading Files : %d", loadNum);
+
+	int fileTextW = GetDrawStringWidth(fileText, strlen(fileText));
+
+	DrawString(
+		screenW / 2 - fileTextW / 2,
+		barY + 68,
+		fileText,
+		GetColor(120, 170, 170)
+	);
+
+	// =========================
+	// Tips
+	// =========================
+	const char* tips[] =
+	{
+		"TIP : 足音を抑えると敵に気づかれにくい。",
+		"TIP : 暗い場所では懐中電灯の使い方が重要。",
+		"TIP : 5分経過後、緊急脱出モードに移行する。",
+		"TIP : アイテムは持てる数に限りがある。",
+		"TIP : ゴミ箱や机の下を使って敵の視線を切れる。"
+	};
+
+	int tipIndex = static_cast<int>((now / 4000) % 5);
+	const char* tipText = tips[tipIndex];
+
+	int tipTextW = GetDrawStringWidth(tipText, strlen(tipText));
+
+	DrawString(
+		screenW / 2 - tipTextW / 2,
+		panelY + panelH + 28,
+		tipText,
+		GetColor(180, 220, 210)
+	);
+
+	// =========================
+	// 下部の小さい演出テキスト
+	// =========================
+	const char* footer = "PLEASE WAIT...";
+	int footerW = GetDrawStringWidth(footer, strlen(footer));
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
+
+	DrawString(
+		screenW / 2 - footerW / 2,
+		screenH - 50,
+		footer,
+		GetColor(120, 255, 220)
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
 	// ロード画面を1回描画した
 	isLoadingDrawn_ = true;
-
 }

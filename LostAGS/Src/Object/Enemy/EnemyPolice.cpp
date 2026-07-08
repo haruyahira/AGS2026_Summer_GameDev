@@ -9,11 +9,11 @@
 #include "../Common/AnimationController.h"
 #include "../Player.h"
 #include "../../Application.h"
-#include "EnemyNormal.h"
+#include "EnemyPolice.h"
 
-EnemyNormal::EnemyNormal(void) : EnemyBase()
+EnemyPolice::EnemyPolice(void) : EnemyBase()
 {
-    speed_ = 300.0f;
+    speed_ = 350.0f;
 
     waitTimer_ = 0.0f;
     isWaiting_ = false;
@@ -59,20 +59,20 @@ EnemyNormal::EnemyNormal(void) : EnemyBase()
     bodyHeight_ = 130.0f;
     bodyCenterOffsetY_ = 65.0f;
 
-    maxHp_ = 84;
-    attackPower_ = 1;
+    maxHp_ = 168;
+    attackPower_ = 2;
 }
 
-EnemyNormal::~EnemyNormal(void)
+EnemyPolice::~EnemyPolice(void)
 {
 
 }
 
-void EnemyNormal::Init(void)
+void EnemyPolice::Init(void)
 {
     // モデルの基本設定
     transform_.SetModel(resMng_.LoadModelDuplicate(
-        ResourceManager::SRC::ENEMYNORMAL));
+        ResourceManager::SRC::ENEMYPOLICE));
 
     MV1SetAmbColorScale(
         transform_.modelId,
@@ -105,7 +105,7 @@ void EnemyNormal::Init(void)
     DecideNextTarget();
 }
 
-void EnemyNormal::Draw(void)
+void EnemyPolice::Draw(void)
 {
     // モデル、当たり判定、視野、攻撃判定はBaseで描画
     EnemyBase::Draw();
@@ -150,7 +150,7 @@ void EnemyNormal::Draw(void)
 #endif
 }
 
-void EnemyNormal::SetPatrolPoints(const std::vector<VECTOR>& points)
+void EnemyPolice::SetPatrolPoints(const std::vector<VECTOR>& points)
 {
     patrolPoints_ = points;
 
@@ -163,12 +163,12 @@ void EnemyNormal::SetPatrolPoints(const std::vector<VECTOR>& points)
     }
 }
 
-void EnemyNormal::SetPatrolLinks(const std::vector<std::vector<int>>& links)
+void EnemyPolice::SetPatrolLinks(const std::vector<std::vector<int>>& links)
 {
     patrolLinks_ = links;
 }
 
-void EnemyNormal::UpdateWander(Player* player)
+void EnemyPolice::UpdateWander(Player* player)
 {
     if (patrolPoints_.empty())
     {
@@ -269,7 +269,7 @@ void EnemyNormal::UpdateWander(Player* player)
         Quaternion::AngleAxis(angleY, AsoUtility::AXIS_Y);
 }
 
-void EnemyNormal::UpdateChase(Player* player)
+void EnemyPolice::UpdateChase(Player* player)
 {
     if (player == nullptr)
     {
@@ -321,7 +321,7 @@ void EnemyNormal::UpdateChase(Player* player)
         Quaternion::AngleAxis(angleY, AsoUtility::AXIS_Y);
 }
 
-void EnemyNormal::StartAttack(Player* player)
+void EnemyPolice::StartAttack(Player* player)
 {
     if (player == nullptr)
     {
@@ -371,7 +371,7 @@ void EnemyNormal::StartAttack(Player* player)
     // プレイヤーと同じく、攻撃開始時に次の手へ切り替える
     isRightAttack_ = !isRightAttack_;
 }
-void EnemyNormal::UpdateAttack(Player* player)
+void EnemyPolice::UpdateAttack(Player* player)
 {
     attackTimer_ -= SceneManager::GetInstance().GetDeltaTime();
 
@@ -406,7 +406,7 @@ void EnemyNormal::UpdateAttack(Player* player)
         PlayAnimation(ANIM_TYPE::IDLE, true);
     }
 }
-VECTOR EnemyNormal::GetAttackPos(void) const
+VECTOR EnemyPolice::GetAttackPos(void) const
 {
     // 右パンチ中
     if (animType_ == ANIM_TYPE::HIT_R)
@@ -433,7 +433,7 @@ VECTOR EnemyNormal::GetAttackPos(void) const
     return transform_.pos;
 }
 
-void EnemyNormal::DecideNextTarget(void)
+void EnemyPolice::DecideNextTarget(void)
 {
     if (patrolPoints_.empty())
     {
@@ -480,7 +480,7 @@ void EnemyNormal::DecideNextTarget(void)
     targetIndex_ = nextTarget;
 }
 
-void EnemyNormal::InitAnimation(void)
+void EnemyPolice::InitAnimation(void)
 {
     std::string path = Application::PATH_MODEL + "Enemy/";
 
@@ -501,7 +501,7 @@ void EnemyNormal::InitAnimation(void)
     // 右攻撃
     animationController_->Add(
         static_cast<int>(ANIM_TYPE::HIT_R),
-        Application::PATH_MODEL+"Player/Hit_R.mv1",
+        Application::PATH_MODEL + "Player/Hit_R.mv1",
         30.0f);
 
     // 左攻撃
@@ -511,7 +511,7 @@ void EnemyNormal::InitAnimation(void)
         30.0f);
 }
 
-void EnemyNormal::InitAttackFrame(void)
+void EnemyPolice::InitAttackFrame(void)
 {
     rightHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.R");
     leftHandFrame_ = MV1SearchFrame(transform_.modelId, "Hand.L");
@@ -528,17 +528,17 @@ void EnemyNormal::InitAttackFrame(void)
     }
 }
 
-int EnemyNormal::GetAnimType(void) const
+int EnemyPolice::GetAnimType(void) const
 {
     return static_cast<int>(animType_);
 }
-void EnemyNormal::SetPos(const VECTOR& pos)
+void EnemyPolice::SetPos(const VECTOR& pos)
 {
     transform_.pos = pos;
     transform_.Update();
 }
 
-void EnemyNormal::PlayAnimation(ANIM_TYPE animType, bool isLoop)
+void EnemyPolice::PlayAnimation(ANIM_TYPE animType, bool isLoop)
 {
     if (animationController_ == nullptr)
     {

@@ -144,6 +144,8 @@ void ResourceManager::Init(void)
 	resourcesMap_.emplace(SRC::PLAYER_SHADOW, res);
 	res = new RES(RES_T::MODEL, PATH_MDL + "Enemy/Enemy.mv1"); // “G
 	resourcesMap_.emplace(SRC::ENEMYNORMAL, res);
+	res = new RES(RES_T::MODEL, PATH_MDL + "Enemy/EnemyPolice.mv1"); // “G
+	resourcesMap_.emplace(SRC::ENEMYPOLICE, res);
 
 
 	//============

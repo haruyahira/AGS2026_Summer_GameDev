@@ -4,11 +4,11 @@
 
 class Player;
 
-class EnemyNormal : public EnemyBase
+class EnemyPolice : public EnemyBase
 {
 public:
-    EnemyNormal(void);
-    virtual ~EnemyNormal(void);
+    EnemyPolice(void);
+    virtual ~EnemyPolice(void);
 
     void Init(void) override;
     void Draw(void) override;

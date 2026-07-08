@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Enemy\EnemyPolice.cpp" />
     <ClCompile Include="Src\Object\Furniture\ShelfDoor.cpp" />
     <ClCompile Include="Src\Object\Furniture\Shelf.cpp" />
     <ClCompile Include="Src\Shader\RimLightEffect.cpp" />
@@ -210,6 +211,7 @@
     <ClCompile Include="Src\Object\Furniture\Trashcan.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Enemy\EnemyPolice.h" />
     <ClInclude Include="Src\Object\Furniture\ShelfDoor.h" />
     <ClInclude Include="Src\Object\Furniture\Shelf.h" />
     <ClInclude Include="Src\Shader\RimLightEffect.h" />

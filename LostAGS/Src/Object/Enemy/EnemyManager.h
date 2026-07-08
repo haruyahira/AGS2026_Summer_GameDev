@@ -24,4 +24,7 @@ private:
 	std::vector<std::vector<int>> debugPatrolLinks_;
 	Stage* stage_ = nullptr;
 	bool isDrawDebugPatrol_ = true;
+	bool isPoliceSpawned_ = false;
+
+	void SpawnPoliceEnemies(void);
 };

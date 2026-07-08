@@ -51,7 +51,7 @@ Stage::Stage(Player* player)
 	miniMapScreen_ = -1;
 	isMiniMapVisible_ = false;
 
-	escapeTimeLimit_ = 300 * 1000;
+	escapeTimeLimit_ = 3* 1000;
 	emergencyEscapeTime_ = 60 * 1000;
 	escapeStartTime_ = 0;
 
@@ -64,7 +64,16 @@ Stage::Stage(Player* player)
 		itemCount_[i] = 0;
 		registeredItemCount_[i] = 0;
 		stolenItemCount_[i] = 0;
+
+		lastRegisterItemCounts_[i] = 0;
 	}
+
+	isRegisterItemUIVisible_ = false;
+	registerItemUIStartTime_ = 0;
+	registerItemUIDuration_ = 2500; // 2.5秒表示
+
+	lastRegisterItemCount_ = 0;
+	lastRegisterMoney_ = 0;
 }
 Stage::~Stage(void)
 {
@@ -404,6 +413,10 @@ void Stage::DrawUI(void) const
 	DrawInventoryUI();
 	DrawPickupUI();
 	DrawEscapeButtonUI();
+	// アイテム登録完了UI
+	DrawRegisterItemUI();
+	 DrawStoneDeviceRegisterUI();
+
 
 	if (player_ == nullptr)
 	{
@@ -1545,11 +1558,35 @@ bool Stage::HasAnyItem(void) const
 
 void Stage::RegisterItemsToStoneDevice(void)
 {
+	int totalCount = 0;
+	int totalMoney = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+
+		lastRegisterItemCounts_[i] = itemCount_[i];
+
+		totalCount += itemCount_[i];
+		totalMoney += itemCount_[i] * GetItemPrice(type);
+	}
+
+	if (totalCount <= 0)
+	{
+		return;
+	}
+
 	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
 	{
 		registeredItemCount_[i] += itemCount_[i];
 		itemCount_[i] = 0;
 	}
+
+	lastRegisterItemCount_ = totalCount;
+	lastRegisterMoney_ = totalMoney;
+
+	isRegisterItemUIVisible_ = true;
+	registerItemUIStartTime_ = GetNowCount();
 }
 void Stage::UpdateStoneDeviceRegister(void)
 {
@@ -1593,33 +1630,6 @@ void Stage::DrawItemUI(void) const
 {
 
 	stoneDevice_->DrawUI();
-	//if (lookingItemIndex_ != -1)
-	//{
-	//	Item* item = items_[lookingItemIndex_];
-
-	//	if (item != nullptr)
-	//	{
-	//		if (isItemMax_)
-	//		{
-	//			DrawString(
-	//				20,
-	//				130,
-	//				"これ以上アイテムを持てません",
-	//				GetColor(255, 80, 80)
-	//			);
-	//		}
-	//		else
-	//		{
-	//			DrawFormatString(
-	//				20,
-	//				130,
-	//				GetColor(255, 255, 255),
-	//				"F 拾う：%s",
-	//				item->GetName()
-	//			);
-	//		}
-	//	}
-	//}
 
 	int x = 20;
 	int y = 160;
@@ -1715,31 +1725,6 @@ void Stage::DrawItemUI(void) const
 		);
 
 		y += 20;
-	}
-
-	if (stoneDevice_ != nullptr)
-	{
-		if (stoneDevice_->IsActive() && stoneDevice_->IsNearPlayer())
-		{
-			if (HasAnyItem())
-			{
-				DrawString(
-					20,
-					80,
-					"Fキーでアイテム転送",
-					GetColor(255, 255, 255)
-				);
-			}
-			else
-			{
-				DrawString(
-					20,
-					80,
-					"転送できるアイテムがありません",
-					GetColor(180, 180, 180)
-				);
-			}
-		}
 	}
 
 	if (escapeButton_ != nullptr && !isEscapeButtonActivated_)
@@ -3967,5 +3952,345 @@ void Stage::DrawEscapeButtonUI(void) const
 		keyBoxY + 12,
 		actionText,
 		GetColor(255, 255, 255)
+	);
+}
+
+bool Stage::IsEmergencyEscape(void) const
+{
+	return isEmergencyEscape_;
+}
+
+void Stage::DrawRegisterItemUI(void) const
+{
+	if (!isRegisterItemUIVisible_)
+	{
+		return;
+	}
+
+	int nowTime = GetNowCount();
+	int elapsed = nowTime - registerItemUIStartTime_;
+
+	if (elapsed >= registerItemUIDuration_)
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	float rate =
+		(float)elapsed / (float)registerItemUIDuration_;
+
+	// 後半でフェードアウト
+	float alphaRate = 1.0f;
+
+	if (rate > 0.65f)
+	{
+		alphaRate = 1.0f - ((rate - 0.65f) / 0.35f);
+	}
+
+	if (alphaRate < 0.0f)
+	{
+		alphaRate = 0.0f;
+	}
+
+	int alpha = (int)(220.0f * alphaRate);
+
+	const int boxW = 620;
+	const int boxH = 155;
+
+	int boxX = screenW / 2 - boxW / 2;
+	int boxY = screenH / 2 + 120;
+
+	// 少し上にスライドして出る
+	int slideOffset = 20 - (int)(20.0f * rate);
+	boxY += slideOffset;
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+	// 背景
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(5, 18, 22),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	int frameColor = GetColor(90, 255, 220);
+	int subFrameColor = GetColor(30, 120, 130);
+
+	// 外枠
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		frameColor,
+		FALSE
+	);
+
+	DrawBox(
+		boxX + 5,
+		boxY + 5,
+		boxX + boxW - 5,
+		boxY + boxH - 5,
+		subFrameColor,
+		FALSE
+	);
+
+	// タイトル
+	const char* title = "ITEM TRANSFER COMPLETE";
+	int titleW = GetDrawStringWidth(title, strlen(title));
+
+	DrawString(
+		screenW / 2 - titleW / 2,
+		boxY + 18,
+		title,
+		GetColor(130, 255, 230)
+	);
+
+	// メインメッセージ
+	const char* msg = "アイテムを転送しました";
+	int msgW = GetDrawStringWidth(msg, strlen(msg));
+
+	DrawString(
+		screenW / 2 - msgW / 2,
+		boxY + 50,
+		msg,
+		GetColor(255, 255, 255)
+	);
+
+	// 登録数
+	DrawFormatString(
+		boxX + 45,
+		boxY + 88,
+		GetColor(210, 255, 240),
+		"登録数：%d",
+		lastRegisterItemCount_
+	);
+
+	// 金額
+	DrawFormatString(
+		boxX + 260,
+		boxY + 88,
+		GetColor(255, 230, 120),
+		"換金予定額：%d円",
+		lastRegisterMoney_
+	);
+
+	// 下部アクセントライン
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+	DrawBox(
+		boxX + 35,
+		boxY + boxH - 25,
+		boxX + boxW - 35,
+		boxY + boxH - 21,
+		GetColor(80, 255, 220),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+}
+
+void Stage::DrawStoneDeviceRegisterUI(void) const
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	if (stoneDevice_ == nullptr)
+	{
+		return;
+	}
+
+	if (!stoneDevice_->IsActive())
+	{
+		return;
+	}
+
+	if (!stoneDevice_->IsNearPlayer())
+	{
+		return;
+	}
+
+	int screenW, screenH;
+	GetDrawScreenSize(&screenW, &screenH);
+
+	// アイテムを見ている時は拾うUIを優先
+	bool isLookingItem = lookingItemIndex_ != -1;
+
+	bool hasItem = HasAnyItem();
+
+	int totalItemCount = GetTotalItemCount();
+
+	int registerMoney = 0;
+
+	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
+	{
+		Item::TYPE type = (Item::TYPE)i;
+		registerMoney += itemCount_[i] * GetItemPrice(type);
+	}
+
+	// UI位置
+	const int boxW = 560;
+	const int boxH = 120;
+
+	int boxX = screenW / 2 - boxW / 2;
+	int boxY = screenH - 370;
+
+	float t = GetNowCount() / 1000.0f;
+	float blink = (sinf(t * 5.0f) + 1.0f) * 0.5f;
+
+	int borderAlpha = 140 + (int)(blink * 90.0f);
+
+	int mainColor = GetColor(120, 255, 220);
+	int warningColor = GetColor(255, 220, 90);
+	int disableColor = GetColor(150, 150, 150);
+
+	if (!hasItem)
+	{
+		mainColor = disableColor;
+	}
+
+	if (isLookingItem)
+	{
+		mainColor = warningColor;
+	}
+
+	// 背景
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		GetColor(5, 15, 20),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	// 枠
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, borderAlpha);
+
+	DrawBox(
+		boxX,
+		boxY,
+		boxX + boxW,
+		boxY + boxH,
+		mainColor,
+		FALSE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	DrawBox(
+		boxX + 5,
+		boxY + 5,
+		boxX + boxW - 5,
+		boxY + boxH - 5,
+		GetColor(30, 80, 90),
+		FALSE
+	);
+
+	// タイトル
+	DrawString(
+		boxX + 24,
+		boxY + 16,
+		"STONE DEVICE",
+		mainColor
+	);
+
+	// 状態表示
+	if (isLookingItem)
+	{
+		DrawString(
+			boxX + 24,
+			boxY + 48,
+			"アイテムを見ているため登録できません",
+			warningColor
+		);
+
+		DrawString(
+			boxX + 24,
+			boxY + 76,
+			"視線を外すとFキーで登録できます",
+			GetColor(220, 220, 220)
+		);
+
+		return;
+	}
+
+	if (!hasItem)
+	{
+		DrawString(
+			boxX + 24,
+			boxY + 50,
+			"登録できるアイテムがありません",
+			GetColor(180, 180, 180)
+		);
+
+		DrawString(
+			boxX + 24,
+			boxY + 78,
+			"アイテムを拾ってから再度アクセスしてください",
+			GetColor(150, 150, 150)
+		);
+
+		return;
+	}
+
+	// Fキー表示
+	const int keyBoxX = boxX + 24;
+	const int keyBoxY = boxY + 52;
+	const int keyBoxW = 48;
+	const int keyBoxH = 42;
+
+	DrawBox(
+		keyBoxX,
+		keyBoxY,
+		keyBoxX + keyBoxW,
+		keyBoxY + keyBoxH,
+		GetColor(255, 255, 255),
+		FALSE
+	);
+
+	DrawString(
+		keyBoxX + 17,
+		keyBoxY + 12,
+		"F",
+		GetColor(255, 255, 255)
+	);
+
+	DrawString(
+		keyBoxX + 64,
+		keyBoxY + 12,
+		"アイテムを登録",
+		GetColor(255, 255, 255)
+	);
+
+	// 所持アイテム数
+	DrawFormatString(
+		boxX + 300,
+		boxY + 48,
+		GetColor(210, 255, 240),
+		"所持アイテム：%d個",
+		totalItemCount
+	);
+
+	// 登録予定金額
+	DrawFormatString(
+		boxX + 300,
+		boxY + 76,
+		GetColor(255, 230, 120),
+		"登録予定額：%d円",
+		registerMoney
 	);
 }

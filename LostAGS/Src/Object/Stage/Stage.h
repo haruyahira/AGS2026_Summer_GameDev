@@ -90,6 +90,8 @@ public:
 
     int GetUsedInventorySlotCount(void) const;
     bool IsPickupLineBlocked(const VECTOR& from, const VECTOR& to) const;
+public:
+    bool IsEmergencyEscape(void) const;
 
 private:
 
@@ -273,5 +275,17 @@ private:
     bool IsNearEscapeButton(void) const;
 
     void DrawEscapeButtonUI(void) const;
+
+    // ƒAƒCƒeƒ€“o˜^Š®—¹UI
+    bool isRegisterItemUIVisible_;
+    int registerItemUIStartTime_;
+    int registerItemUIDuration_;
+
+    int lastRegisterItemCount_;
+    int lastRegisterMoney_;
+    int lastRegisterItemCounts_[(int)Item::TYPE::MAX];
+
+    void DrawRegisterItemUI(void) const;
+    void DrawStoneDeviceRegisterUI(void) const;
 
 };

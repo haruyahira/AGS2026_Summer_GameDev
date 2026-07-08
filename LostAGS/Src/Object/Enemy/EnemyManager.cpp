@@ -1,6 +1,7 @@
 #include "EnemyManager.h"
 #include "EnemyNormal.h"
 #include "EnemyBase.h"
+#include "EnemyPolice.h"
 #include "../Stage/Stage.h"
 #include "../../Manager/SoundManager.h"
 
@@ -18,7 +19,10 @@ EnemyManager::~EnemyManager(void)
 
 void EnemyManager::Init(void)
 {
+
 	EnemyBase::ResetChasingEnemyCount();
+
+	isPoliceSpawned_ = false;
 
 	//// ƒeƒXƒg—p‚ÉA•’Ê‚Ì“G(EnemyNormal)‚ğ1‘Ì¶¬‚µ‚Ä”z—ñ‚É’Ç‰Á
 	EnemyNormal* testEnemy = new EnemyNormal();
@@ -119,10 +123,10 @@ void EnemyManager::Init(void)
 	};
 
 
-	//testEnemy->SetPatrolPoints(points);
-	//testEnemy->SetPatrolLinks(links);
-	//testEnemy->SetPos(points[5]);
-	//enemies_.push_back(testEnemy);
+	testEnemy->SetPatrolPoints(points);
+	testEnemy->SetPatrolLinks(links);
+	testEnemy->SetPos(points[5]);
+	enemies_.push_back(testEnemy);
 
 	debugPatrolPoints_ = points;
 	debugPatrolLinks_ = links;
@@ -155,6 +159,18 @@ void EnemyManager::Update(Player* player)
 		cameraPos,
 		cameraTarget
 	);
+
+	// =========================
+	// ‹Ù‹}’Eoƒ‚[ƒh‚É‚È‚Á‚½‚çŒx@“G‚ğˆê“x‚¾‚¯o‚·
+	// =========================
+	if (stage_ != nullptr)
+	{
+		if (stage_->IsEmergencyEscape() && !isPoliceSpawned_)
+		{
+			isPoliceSpawned_ = true;
+			SpawnPoliceEnemies();
+		}
+	}
 
 	for (auto enemy : enemies_)
 	{
@@ -285,4 +301,29 @@ void EnemyManager::Draw(void)
 void EnemyManager::SetStage(Stage* stage)
 {
 	stage_ = stage;
+}
+
+
+void EnemyManager::SpawnPoliceEnemies(void)
+{
+	std::vector<VECTOR> spawnPoints =
+	{
+		{ -3430.0f, -98.0f,  900.0f },   // ˜L‰º•t‹ß
+		{ -3600.0f, -98.0f, -100.0f },   // ’EoƒGƒŠƒA•t‹ß
+		{ -1700.0f, -98.0f,  900.0f },   // ‹xŒeºE˜L‰º‘¤
+	};
+
+	for (int i = 0; i < 3; i++)
+	{
+		EnemyPolice* police = new EnemyPolice();
+
+		police->Init();
+
+		police->SetPatrolPoints(debugPatrolPoints_);
+		police->SetPatrolLinks(debugPatrolLinks_);
+
+		police->SetPos(spawnPoints[i]);
+
+		enemies_.push_back(police);
+	}
 }
