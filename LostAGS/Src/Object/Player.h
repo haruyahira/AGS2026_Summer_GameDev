@@ -304,6 +304,16 @@ private:
 	// 足音
 	float footstepTimer_;
 	float footstepInterval_;
+	private:
+
+		// ダメージエフェクト
+		bool isDamageEffect_;
+		float damageEffectTimer_;
+		float damageEffectTime_;
+
+		void StartDamageEffect();
+		void UpdateDamageEffect();
+		void DrawDamageEffect();
 
 #ifdef _DEBUG
 	void DrawFootstepDebug() const;

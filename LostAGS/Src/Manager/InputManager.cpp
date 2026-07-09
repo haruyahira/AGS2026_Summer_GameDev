@@ -341,7 +341,14 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     // =====================================================
     // XInput
     // DualSense 以外は XInput を優先
-    // =====================================================
+ // =====================================================
+// XInput
+// Xboxコントローラーも PS 配置として扱う
+// TOP   = △ = Y
+// LEFT  = □ = X
+// RIGHT = ○ = B
+// DOWN  = × = A
+// =====================================================
     XINPUT_STATE x;
     ZeroMemory(&x, sizeof(x));
 
@@ -350,55 +357,45 @@ InputManager::JOYPAD_IN_STATE InputManager::GetJPadInputState(JOYPAD_NO no)
     {
         int idx;
 
-        // Y
+        // △ / Y
         idx = static_cast<int>(JOYPAD_BTN::TOP);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_Y];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_Y];
 
-        // X
+        // □ / X
         idx = static_cast<int>(JOYPAD_BTN::LEFT);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_X];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_X];
 
-        // B
+        // ○ / B
         idx = static_cast<int>(JOYPAD_BTN::RIGHT);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_B];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_B];
 
-        // A
+        // × / A
         idx = static_cast<int>(JOYPAD_BTN::DOWN);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_A];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_A];
 
-        // LB
+        // L1 / LB
         idx = static_cast<int>(JOYPAD_BTN::L_BUTTON);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_LEFT_SHOULDER];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_LEFT_SHOULDER];
 
-        // RB
+        // R1 / RB
         idx = static_cast<int>(JOYPAD_BTN::R_BUTTON);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_RIGHT_SHOULDER];
 
-        // LT
+        // L2 / LT
         idx = static_cast<int>(JOYPAD_BTN::L_TRIGGER);
-        ret.ButtonsNew[idx] =
-            x.LeftTrigger;
+        ret.ButtonsNew[idx] = x.LeftTrigger;
 
-        // RT
+        // R2 / RT
         idx = static_cast<int>(JOYPAD_BTN::R_TRIGGER);
-        ret.ButtonsNew[idx] =
-            x.RightTrigger;
+        ret.ButtonsNew[idx] = x.RightTrigger;
 
         // L3
         idx = static_cast<int>(JOYPAD_BTN::L_STICK_PUSH);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_LEFT_THUMB];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_LEFT_THUMB];
 
         // R3
         idx = static_cast<int>(JOYPAD_BTN::R_STICK_PUSH);
-        ret.ButtonsNew[idx] =
-            x.Buttons[XINPUT_BUTTON_RIGHT_THUMB];
+        ret.ButtonsNew[idx] = x.Buttons[XINPUT_BUTTON_RIGHT_THUMB];
 
         // 左スティック
         ret.AKeyLX = x.ThumbLX;

@@ -233,10 +233,8 @@ void Camera::ProcessRot(void)
 
 
 	// =============================
-	 // 右スティック視点移動
-	 // =============================
-
-	const int DEAD_ZONE = 100;
+	// 右スティック視点移動
+	// =============================
 
 	int rx =
 		ins.GetPadAKeyRX(
@@ -246,43 +244,76 @@ void Camera::ProcessRot(void)
 		ins.GetPadAKeyRY(
 			InputManager::JOYPAD_NO::PAD1);
 
+	// コントローラーの種類を取得
+	auto padType =
+		ins.GetJPadType(
+			InputManager::JOYPAD_NO::PAD1);
+
+	// デフォルトは Xbox / XInput 用
+	int deadZone = 8000;
+	float stickMax = 32767.0f;
+
+	// DualSense は DirectInput 用
+	if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
+	{
+		deadZone = 100;
+		stickMax = 1000.0f;
+	}
+
 	// デッドゾーン
-	if (abs(rx) < DEAD_ZONE)
+	if (abs(rx) < deadZone)
 	{
 		rx = 0;
 	}
 
-	if (abs(ry) < DEAD_ZONE)
+	if (abs(ry) < deadZone)
 	{
 		ry = 0;
 	}
 
 	if (rx != 0 || ry != 0)
 	{
-		// -1.0 ～ 1.0
 		float stickX =
-			static_cast<float>(rx) / 1000.0f;
+			static_cast<float>(rx) / stickMax;
 
 		float stickY =
-			static_cast<float>(ry) / 1000.0f;
+			static_cast<float>(ry) / stickMax;
 
-		// 感度
-		const float padSensitivity = 0.03f;
+		// -1.0 ～ 1.0 に制限
+		if (stickX > 1.0f) stickX = 1.0f;
+		if (stickX < -1.0f) stickX = -1.0f;
+
+		if (stickY > 1.0f) stickY = 1.0f;
+		if (stickY < -1.0f) stickY = -1.0f;
+
+		const float padSensitivity = 0.04f;
 
 		// 横
-		angles_.y +=
-			stickX * padSensitivity;
+		angles_.y += stickX * padSensitivity;
 
 		// 縦
-		angles_.x -=
-			stickY * padSensitivity;
+		// プレステは元の挙動を維持
+		if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
+		{
+			angles_.x -= stickY * padSensitivity;
+		}
+		else
+		{
+			// Xboxで上下が逆ならこっち
+			angles_.x += stickY * padSensitivity;
+		}
 	}
 
-	// --- 角度の制限 (リミッター) ---
-	if (angles_.x > LIMIT_X_UP_RAD)  angles_.x = LIMIT_X_UP_RAD;
-	if (angles_.x < -LIMIT_X_DW_RAD) angles_.x = -LIMIT_X_DW_RAD;
+	// --- 角度の制限 ---
+	if (angles_.x > LIMIT_X_UP_RAD)
+	{
+		angles_.x = LIMIT_X_UP_RAD;
+	}
 
-	
+	if (angles_.x < -LIMIT_X_DW_RAD)
+	{
+		angles_.x = -LIMIT_X_DW_RAD;
+	}
 }
 
 void Camera::SetBeforeDrawFixedPoint(void)

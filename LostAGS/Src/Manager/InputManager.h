@@ -116,6 +116,9 @@ public:
     // デバッグ確認用：ボタンの生値を取得
     int GetPadButtonValue(JOYPAD_NO no, JOYPAD_BTN btn) const;
     DINPUT_JOYSTATE GetJPadDInputState(JOYPAD_NO no);
+    JOYPAD_TYPE GetJPadType(JOYPAD_NO no);
+
+
 private:
 
     struct Info
@@ -164,8 +167,6 @@ private:
 
     const InputManager::Info& Find(int key) const;
     const InputManager::MouseInfo& FindMouse(int key) const;
-
-    JOYPAD_TYPE GetJPadType(JOYPAD_NO no);
 
     
     XINPUT_STATE GetJPadXInputState(JOYPAD_NO no);

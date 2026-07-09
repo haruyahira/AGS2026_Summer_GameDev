@@ -861,10 +861,6 @@ void EnemyBase::Damage(int damage)
         return;
     }
 
-#ifdef _DEBUG
-    printfDx("Enemy Damage : %d  HP : %d\n", damage, GetHP());
-#endif
-
     // ‚±‚±‚ÅŽ€‚ñ‚¾Žž‚¾‚¯“|‚·
     if (HpManager::GetInstance().IsDead(this))
     {

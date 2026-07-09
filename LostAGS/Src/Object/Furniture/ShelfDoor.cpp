@@ -180,8 +180,15 @@ void ShelfDoor::Update(Player& player)
 {
     bool canInteract = CanInteract(player);
 
-    if (canInteract &&
-        InputManager::GetInstance().IsTrgDown(KEY_INPUT_F))
+    auto& ins = InputManager::GetInstance();
+
+    bool isOpenTrigger =
+        ins.IsTrgDown(KEY_INPUT_F) ||
+        ins.IsPadBtnTrgDown(
+            InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::LEFT);
+
+    if (canInteract && isOpenTrigger)
     {
         auto& snd = SoundManager::GetInstance();
 

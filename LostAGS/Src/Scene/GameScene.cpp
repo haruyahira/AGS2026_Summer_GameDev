@@ -182,7 +182,7 @@ void GameScene::Update(void)
 			ins.IsTrgDown(KEY_INPUT_F) ||
 			ins.IsPadBtnTrgDown(
 				InputManager::JOYPAD_NO::PAD1,
-				InputManager::JOYPAD_BTN::LEFT)
+				InputManager::JOYPAD_BTN::DOWN)
 			)
 		{
 			step_ = STEP::PLAY;
@@ -357,15 +357,18 @@ void GameScene::DrawIntroUI(void) const
 
 	const char* messages[] =
 	{
-		"指定された場所へ到着した。",
+		"指定された場所へ到着しました。",
 		"",
-		"店内へ侵入し、価値のある物品を回収しろ。",
+		"価値のある物品を回収しろ。",
 		"",
 		"制限時間は5分。",
 		"時間内に脱出装置まで戻れなければ、",
 		"通常の脱出手段は停止する。",
 		"",
-		"これは、引き返せない危険な依頼だ。"
+		"これは、引き返せない危険な依頼だ。",
+		"",
+		"",
+		"脱出する際は、初期地点にある赤い装置を殴って起動"
 	};
 
 	const int messageCount = sizeof(messages) / sizeof(messages[0]);

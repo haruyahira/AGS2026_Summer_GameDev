@@ -63,26 +63,6 @@ void Ceiling::Update(void)
     auto& ins = InputManager::GetInstance();
     bool changed = false;
 
-    // Cキーで操作などにした方がWallと被らなくて安全
-    if (CheckHitKey(KEY_INPUT_C) || CheckHitKey(KEY_INPUT_RCONTROL))
-    {
-        // Shift → 位置移動
-        if (CheckHitKey(KEY_INPUT_LSHIFT))
-        {
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { slideX += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { slideX -= 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { slideZ += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { slideZ -= 1.0f; changed = true; }
-        }
-        else
-        {
-            if (ins.IsTrgDown(KEY_INPUT_UP)) { floorD += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_DOWN)) { floorD -= 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_RIGHT)) { floorW += 1.0f; changed = true; }
-            if (ins.IsTrgDown(KEY_INPUT_LEFT)) { floorW -= 1.0f; changed = true; }
-        }
-    }
-
     if (changed)
     {
         Init();

@@ -55,11 +55,14 @@ Player::Player(void)
 	footstepInterval_ = 20.0f;
 	wasFallingBeforeCollision_ = false;
 
-	// 追加
 	isStand_ = true;
 	isHiddenInTrashcan_ = false;
 	isForcedProneByTrashcan_ = false;
 
+	// 追加：ダメージエフェクト
+	isDamageEffect_ = false;
+	damageEffectTimer_ = 0.0f;
+	damageEffectTime_ = 0.35f;
 }
 
 Player::~Player(void)
@@ -150,6 +153,9 @@ void Player::Update(void)
 
 	UpdateFlashLight();
 
+	// ダメージエフェクト更新
+	UpdateDamageEffect();
+
 	//SetFirstPerson();
 	/*capsule_->Update();*/
 	// すべてのカプセルの座標更新
@@ -209,6 +215,9 @@ void Player::Draw(void)
 
 
 	hpUI_.DrawPlayerHP(this, 0, 40, "Player");
+
+	// 画面赤フラッシュ
+	DrawDamageEffect();
 
 }
 
@@ -655,18 +664,50 @@ void Player::ProcessMove(void)
 	// -----------------------------
 	// コントローラ左スティック移動
 	// -----------------------------
-	const int DEAD_ZONE = 300;
 
 	int lx = ins.GetPadAKeyLX(InputManager::JOYPAD_NO::PAD1);
 	int ly = ins.GetPadAKeyLY(InputManager::JOYPAD_NO::PAD1);
 
-	if (abs(lx) < DEAD_ZONE) lx = 0;
-	if (abs(ly) < DEAD_ZONE) ly = 0;
+	// コントローラーの種類を取得
+	auto padType =
+		ins.GetJPadType(InputManager::JOYPAD_NO::PAD1);
+
+	// 基本は Xbox / XInput 用
+	int deadZone = 8000;
+	float stickMax = 32767.0f;
+
+	// PS5 DualSense は DirectInput 扱いなので値が小さい
+	if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
+	{
+		deadZone = 300;
+		stickMax = 1000.0f;
+	}
+
+	// デッドゾーン
+	if (abs(lx) < deadZone)
+	{
+		lx = 0;
+	}
+
+	if (abs(ly) < deadZone)
+	{
+		ly = 0;
+	}
 
 	if (lx != 0 || ly != 0)
 	{
-		float stickX = static_cast<float>(lx) / 1000.0f;
-		float stickY = static_cast<float>(ly) / 1000.0f;
+		float stickX =
+			static_cast<float>(lx) / stickMax;
+
+		float stickY =
+			static_cast<float>(ly) / stickMax;
+
+		// 念のため -1.0 ～ 1.0 に制限
+		if (stickX > 1.0f) stickX = 1.0f;
+		if (stickX < -1.0f) stickX = -1.0f;
+
+		if (stickY > 1.0f) stickY = 1.0f;
+		if (stickY < -1.0f) stickY = -1.0f;
 
 		VECTOR padDir = AsoUtility::VECTOR_ZERO;
 
@@ -677,15 +718,25 @@ void Player::ProcessMove(void)
 		);
 
 		// 前後
-		// 多くの環境ではスティック上がマイナスなので -stickY
-		padDir = VAdd(
-			padDir,
-			VScale(cameraRot.GetForward(), -stickY)
-		);
+		if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
+		{
+			// プレステは元の挙動を維持
+			padDir = VAdd(
+				padDir,
+				VScale(cameraRot.GetForward(), -stickY)
+			);
+		}
+		else
+		{
+			// Xboxで前後が逆だったので反転
+			padDir = VAdd(
+				padDir,
+				VScale(cameraRot.GetForward(), stickY)
+			);
+		}
 
 		dir = VAdd(dir, padDir);
 	}
-
 	// 斜め移動で速くなりすぎないよう正規化
 	if (!AsoUtility::EqualsVZero(dir))
 	{
@@ -1658,14 +1709,15 @@ bool Player::Damage(int damage)
 		return false;
 	}
 
+	// ダメージエフェクト開始
+	StartDamageEffect();
+
 	if (HpManager::GetInstance().IsDead(this))
 	{
 		isDead_ = true;
 		ChangeState(STATE::NONE);
 
-		// 追加：一回でも死んだことを記録する
 		SceneManager::GetInstance().SetPlayerDeadOnce(true);
-
 	}
 
 	return true;
@@ -2122,4 +2174,73 @@ void Player::ApplyTrashcanHideState(void)
 			}
 		}
 	}
+}
+
+void Player::StartDamageEffect()
+{
+	isDamageEffect_ = true;
+	damageEffectTimer_ = damageEffectTime_;
+
+	// プレイヤーモデルを赤くする
+	MV1SetDifColorScale(
+		transform_.modelId,
+		GetColorF(1.0f, 0.25f, 0.25f, 1.0f)
+	);
+}
+
+void Player::UpdateDamageEffect()
+{
+	if (!isDamageEffect_)
+	{
+		return;
+	}
+
+	damageEffectTimer_ -= scnMng_.GetDeltaTime();
+
+	if (damageEffectTimer_ <= 0.0f)
+	{
+		damageEffectTimer_ = 0.0f;
+		isDamageEffect_ = false;
+
+		// 色を元に戻す
+		MV1SetDifColorScale(
+			transform_.modelId,
+			GetColorF(1.0f, 1.0f, 1.0f, 1.0f)
+		);
+	}
+}
+
+
+void Player::DrawDamageEffect()
+{
+	if (!isDamageEffect_)
+	{
+		return;
+	}
+
+	// 残り時間の割合
+	float rate = damageEffectTimer_ / damageEffectTime_;
+
+	if (rate < 0.0f) rate = 0.0f;
+	if (rate > 1.0f) rate = 1.0f;
+
+	// 透明度
+	int alpha = static_cast<int>(180.0f * rate);
+
+	// 画面サイズ
+	int screenW = Application::SCREEN_SIZE_X;
+	int screenH = Application::adjustedSizeY_;
+
+	SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+
+	DrawBox(
+		0,
+		0,
+		screenW,
+		screenH,
+		GetColor(255, 0, 0),
+		TRUE
+	);
+
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }

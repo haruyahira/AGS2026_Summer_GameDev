@@ -686,7 +686,7 @@ void Stage::MakeMainStage(void)
 	{
 		ResourceManager::SRC::WALL,
 		{ -4300.0f, -100.0f, -1120.0f },
-		{ 0.45f, 1.0f, 0.5f },
+		{ 1.45f, 1.0f, 0.5f },
 		{ 0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 	},
 
@@ -1530,7 +1530,7 @@ void Stage::UpdateItemPickup(void)
 		ins.IsTrgDown(KEY_INPUT_E) ||
 		ins.IsPadBtnTrgDown(
 			InputManager::JOYPAD_NO::PAD1,
-			InputManager::JOYPAD_BTN::LEFT)
+			InputManager::JOYPAD_BTN::TOP)
 		)
 
 	{

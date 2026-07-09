@@ -4,13 +4,15 @@
 #include "../Player.h"
 
 Trashcan::Trashcan(const Transform* trans)
-    : Furniture(NAME::BOOKSLF, trans)
+    : Furniture(NAME::TRANSCAN, trans)
 {
 }
 
 void Trashcan::Init()
 {
     colliders_.clear();
+
+
 
     animAttachIndex_ = MV1AttachAnim(trans_.modelId, 0);
 
@@ -75,8 +77,17 @@ void Trashcan::Update(void)
 
 void Trashcan::Update(Player& player)
 {
-    if (CanInteract(player) &&
-        InputManager::GetInstance().IsTrgDown(KEY_INPUT_F))
+    bool canInteract = CanInteract(player);
+
+    auto& ins = InputManager::GetInstance();
+
+    bool isInteractTrigger =
+        ins.IsTrgDown(KEY_INPUT_F) ||
+        ins.IsPadBtnTrgDown(
+            InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::LEFT);
+
+    if (canInteract && isInteractTrigger)
     {
         auto& snd = SoundManager::GetInstance();
 
