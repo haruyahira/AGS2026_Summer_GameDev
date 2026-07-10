@@ -98,6 +98,6 @@ private:
 
 	// 配列
 	std::vector<Telop> telops_; // 複数のテロップを管理する動的配列
-	
+	float stickInputWait_;
 
 };

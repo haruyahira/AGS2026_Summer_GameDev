@@ -58,12 +58,12 @@ if (!isActive_)
 
 int nowTime = GetNowCount();
 int elapsedTime = nowTime - startTime_;
-
-// 5分経過したら沈み始める
-if (elapsedTime >= LIMIT_TIME_MS && !isSinking_)
-{
-    StartSinking();
-}
+//
+//// 5分経過したら沈み始める
+//if (elapsedTime >= LIMIT_TIME_MS && !isSinking_)
+//{
+//    StartSinking();
+//}
 
 // 沈んでいる間
 if (isSinking_)
@@ -157,15 +157,6 @@ void StoneDevice::DrawTimer(void) const
     int remainSec = remainTime / 1000;
     int minute = remainSec / 60;
     int second = remainSec % 60;
-
-    DrawFormatString(
-        20,
-        105,
-        GetColor(255, 255, 0),
-        "装置消滅まで %d:%02d",
-        minute,
-        second
-    );
 }
 
 void StoneDevice::DrawUI(void) 

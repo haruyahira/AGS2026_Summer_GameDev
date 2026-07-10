@@ -51,7 +51,7 @@ Stage::Stage(Player* player)
 	miniMapScreen_ = -1;
 	isMiniMapVisible_ = false;
 
-	escapeTimeLimit_ = 3* 1000;
+	escapeTimeLimit_ = 300* 1000;
 	emergencyEscapeTime_ = 60 * 1000;
 	escapeStartTime_ = 0;
 
@@ -135,11 +135,11 @@ void Stage::Init(void)
 {
 	SRand(GetNowCount());
 
-	// HLSLライト用
-	bool isLightEffectOk = lightEffect_.Init(
-		"Data/Shader/Light3DVS.cso",
-		"Data/Shader/Light3DPS.cso"
-	);
+	//// HLSLライト用
+	//bool isLightEffectOk = lightEffect_.Init(
+	//	"Data/Shader/Light3DVS.cso",
+	//	"Data/Shader/Light3DPS.cso"
+	//);
 	//rimLightEffect_.Init(
 	//	"Data/Shader/ItemRimLightPS.cso"
 	//);
@@ -167,6 +167,7 @@ void Stage::Init(void)
 	isEscapeTimerStarted_ = false;
 	isEmergencyEscape_ = false;
 	isResultChanged_ = false;
+
 }
 
 void Stage::Update(void)
@@ -1631,111 +1632,6 @@ void Stage::DrawItemUI(void) const
 
 	stoneDevice_->DrawUI();
 
-	int x = 20;
-	int y = 160;
-
-	DrawFormatString(
-		x,
-		y,
-		GetColor(255, 255, 255),
-		"インベントリ：%d / %d",
-		GetUsedInventorySlotCount(),
-		MAX_ITEM_COUNT
-
-	);
-
-	y += 25;
-
-	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
-	{
-		const char* name = "不明";
-
-		switch ((Item::TYPE)i)
-		{
-		case Item::TYPE::LAPTOP:
-			name = "ノートPC";
-			break;
-		case Item::TYPE::WATCH:
-			name = "腕時計";
-			break;
-		case Item::TYPE::BOOK168:
-			name = "I６８同人誌";
-			break;
-		case Item::TYPE::MEDICINE:
-			name = "薬";
-			break;
-		default:
-			name = "不明";
-			break;
-		}
-
-		DrawFormatString(
-			x,
-			y,
-			GetColor(255, 255, 255),
-			"%s：%d",
-			name,
-			itemCount_[i]
-		);
-
-		y += 20;
-	}
-
-	y += 10;
-
-	DrawString(
-		x,
-		y,
-		"登録済みアイテム",
-		GetColor(100, 255, 255)
-	);
-
-	y += 25;
-
-	for (int i = 0; i < (int)Item::TYPE::MAX; i++)
-	{
-		const char* name = "不明";
-
-		switch ((Item::TYPE)i)
-		{
-		case Item::TYPE::LAPTOP:
-			name = "ノートPC";
-			break;
-		case Item::TYPE::WATCH:
-			name = "腕時計";
-			break;
-		case Item::TYPE::BOOK168:
-			name = "I６８同人誌";
-			break;
-		case Item::TYPE::MEDICINE:
-			name = "薬";
-			break;
-		default:
-			name = "不明";
-			break;
-		}
-
-		DrawFormatString(
-			x,
-			y,
-			GetColor(100, 255, 255),
-			"%s：%d",
-			name,
-			registeredItemCount_[i]
-		);
-
-		y += 20;
-	}
-
-	if (escapeButton_ != nullptr && !isEscapeButtonActivated_)
-	{
-		DrawString(
-			20,
-			105,
-			"脱出ボタンを殴ると脱出",
-			GetColor(255, 220, 80)
-		);
-	}
 }
 
 int Stage::GetTotalItemCount(void) const
@@ -2196,7 +2092,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetRenderTargetToShader(1, outlineRTNormal_);
 	SetRenderTargetToShader(2, outlineRTDepth_);
 
-	lightEffect_.Begin();
+	//lightEffect_.Begin();
 
 	for (const auto& s : stages_)
 	{
@@ -2232,7 +2128,7 @@ void Stage::DrawOpaqueSceneForOutline(
 
 
 
-	lightEffect_.End();
+//	lightEffect_.End();
 
 	// MRT解除
 	SetRenderTargetToShader(1, -1);

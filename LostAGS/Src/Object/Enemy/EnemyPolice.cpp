@@ -495,7 +495,7 @@ void EnemyPolice::InitAnimation(void)
 
     animationController_->Add(
         static_cast<int>(ANIM_TYPE::RUN),
-        path + "Run.mv1",
+        path + "Walk.mv1",
         30.0f);
 
     // ‰EUŒ‚

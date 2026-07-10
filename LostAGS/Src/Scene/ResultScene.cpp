@@ -30,44 +30,54 @@ void ResultScene::Init(void)
     targetMoney_ = sceneMng.GetTargetMoney();
     needMoney_ = sceneMng.GetNeedMoney();
 
-
     SetMouseDispFlag(TRUE);
     InputManager::GetInstance().SetFixMouse(false);
 }
+
 void ResultScene::Update(void)
 {
     InputManager& ins = InputManager::GetInstance();
+    SceneManager& sceneMng = SceneManager::GetInstance();
 
-    if (
+    // 決定入力
+    bool isDecide =
         ins.IsTrgDown(KEY_INPUT_SPACE) ||
         ins.IsPadBtnTrgDown(
             InputManager::JOYPAD_NO::PAD1,
-            InputManager::JOYPAD_BTN::DOWN)
-        )
+            InputManager::JOYPAD_BTN::DOWN
+        );
+
+    if (!isDecide)
     {
-
-        if (SceneManager::GetInstance().CanGoNextDay())
-        {
-            // 次の日へ
-            SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
-            return;
-        }
-
-        // 最終日終了時
-        if (SceneManager::GetInstance().IsGameClear())
-        {
-            // 一回も死んでいない && 目標金額達成
-            SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMECLEAR);
-            return;
-        }
-        else
-        {
-            // 条件未達成ならゲームオーバー
-            SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMEOVER);
-            return;
-        }
+        return;
     }
+
+    // まだ残り日数があるなら次の日へ
+    if (sceneMng.CanGoNextDay())
+    {
+        sceneMng.ChangeScene(
+            SceneManager::SCENE_ID::GAME
+        );
+        return;
+    }
+
+    // ここに来たら、すべての日程が終了している
+
+    // 条件達成ならゲームクリア
+    if (sceneMng.IsGameClear())
+    {
+        sceneMng.ChangeScene(
+            SceneManager::SCENE_ID::GAMECLEAR
+        );
+        return;
+    }
+
+    // 条件未達成ならゲームオーバー
+    sceneMng.ChangeScene(
+        SceneManager::SCENE_ID::GAMEOVER
+    );
 }
+
 void ResultScene::Draw(void)
 {
     int white = GetColor(255, 255, 255);
@@ -146,7 +156,7 @@ void ResultScene::Draw(void)
         DrawString(
             220,
             430,
-            "Space：次の日へ",
+            "Space / ×：次の日へ",
             white
         );
     }
@@ -162,7 +172,7 @@ void ResultScene::Draw(void)
         DrawString(
             220,
             430,
-            "Space：結果へ",
+            "Space / ×：結果へ",
             white
         );
     }

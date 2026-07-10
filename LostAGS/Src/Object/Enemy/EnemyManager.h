@@ -3,6 +3,7 @@
 #include <vector>
 
 class EnemyBase;
+class EnemyPolice;
 class Stage;
 class Player;
 
@@ -22,9 +23,11 @@ private:
 private:
 	std::vector<VECTOR> debugPatrolPoints_;
 	std::vector<std::vector<int>> debugPatrolLinks_;
+	std::vector<EnemyPolice*> policeEnemies_;
 	Stage* stage_ = nullptr;
 	bool isDrawDebugPatrol_ = true;
 	bool isPoliceSpawned_ = false;
 
 	void SpawnPoliceEnemies(void);
+	void CreatePoliceEnemies(void);
 };

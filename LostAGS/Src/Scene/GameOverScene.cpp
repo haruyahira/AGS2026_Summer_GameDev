@@ -37,7 +37,7 @@ void GameOverScene::Update(void)
         ins.GetPadAKeyLY(
             InputManager::JOYPAD_NO::PAD1);
 
-    const int DEAD_ZONE = 500;
+    const int DEAD_ZONE = 8000;
 
     if (stickInputWait_ <= 0.0f)
     {

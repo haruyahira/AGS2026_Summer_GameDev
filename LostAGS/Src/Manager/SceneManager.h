@@ -130,7 +130,7 @@ private:
 	int resultStolenMoney_;   // ¡‰ñ“‚ñ‚¾‹àŠz
 	int resultTotalMoney_;    // —İŒv‹àŠz
 
-	int targetMoney_ = 100000;     // –Ú•W‹àŠz
+	int targetMoney_ = 1000000;     // –Ú•W‹àŠz
 	bool isPlayerDeadOnce_ = false; // ˆê‰ñ‚Å‚à€‚ñ‚¾‚©
 
 

@@ -122,14 +122,10 @@ void EnemyManager::Init(void)
 
 	};
 
-
-	testEnemy->SetPatrolPoints(points);
-	testEnemy->SetPatrolLinks(links);
-	testEnemy->SetPos(points[5]);
-	enemies_.push_back(testEnemy);
-
 	debugPatrolPoints_ = points;
 	debugPatrolLinks_ = links;
+
+
 	
 	//enemy2->SetPatrolPoints(points);
 	//enemy2->SetPatrolLinks(links);
@@ -137,7 +133,7 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	/*for (int i = 0; i < 500; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		EnemyNormal* enemy = new EnemyNormal();
 
@@ -147,7 +143,9 @@ void EnemyManager::Init(void)
 		enemy->SetPatrolLinks(links);
 
 		enemies_.push_back(enemy);
-	}*/
+	}
+
+	CreatePoliceEnemies();
 
 }
 void EnemyManager::Update(Player* player)
@@ -174,10 +172,17 @@ void EnemyManager::Update(Player* player)
 
 	for (auto enemy : enemies_)
 	{
-		if (enemy)
+		if (enemy == nullptr)
 		{
-			enemy->Update(player);
+			continue;
 		}
+
+		if (!enemy->IsActive())
+		{
+			continue;
+		}
+
+		enemy->Update(player);
 	}
 }
 
@@ -194,13 +199,17 @@ void EnemyManager::Draw(void)
 			continue;
 		}
 
+		if (!enemy->IsActive())
+		{
+			continue;
+		}
+
 		bool isBlocked = false;
 
 		if (stage_ != nullptr)
 		{
 			VECTOR enemyPos = enemy->GetPos();
 
-			// 敵の足元ではなく、体の中心あたりを見る
 			enemyPos.y += 60.0f;
 
 			isBlocked = stage_->IsLineBlocked(
@@ -306,11 +315,24 @@ void EnemyManager::SetStage(Stage* stage)
 
 void EnemyManager::SpawnPoliceEnemies(void)
 {
+	for (auto police : policeEnemies_)
+	{
+		if (police == nullptr)
+		{
+			continue;
+		}
+
+		police->SetActive(true);
+	}
+}
+
+void EnemyManager::CreatePoliceEnemies(void)
+{
 	std::vector<VECTOR> spawnPoints =
 	{
-		{ -3430.0f, -98.0f,  900.0f },   // 廊下付近
-		{ -3600.0f, -98.0f, -100.0f },   // 脱出エリア付近
-		{ -1700.0f, -98.0f,  900.0f },   // 休憩室・廊下側
+		{ -4240.0f, -98.0f,  900.0f },
+		{ -4240.0f, -98.0f,  900.0f },
+		{ -4240.0f, -98.0f,  900.0f },
 	};
 
 	for (int i = 0; i < 3; i++)
@@ -324,6 +346,10 @@ void EnemyManager::SpawnPoliceEnemies(void)
 
 		police->SetPos(spawnPoints[i]);
 
+		// 最初は非表示・非更新
+		police->SetActive(false);
+
 		enemies_.push_back(police);
+		policeEnemies_.push_back(police);
 	}
 }

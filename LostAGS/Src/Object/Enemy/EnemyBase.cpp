@@ -75,6 +75,7 @@ EnemyBase::EnemyBase(void) : ActorBase()
     footstepInterval_ = 0.45f;
     footstepRange_ = 0.0f;
     footstepSeHandle_ = -1;
+    isActive_ = true;
 #ifdef _DEBUG
     debugFootstepHearRange_ = footstepHearRangeNormal_;
     debugCanHearFootstep_ = false;
@@ -105,6 +106,10 @@ void EnemyBase::Update(void)
 
 void EnemyBase::Update(Player* player)
 {
+    if (!isActive_)
+    {
+            return;
+    }
     // 死亡チェック
     if (isDead_)
     {
@@ -297,6 +302,11 @@ void EnemyBase::Update(Player* player)
 }
 void EnemyBase::Draw(void)
 {
+    if (!isActive_)
+    {
+            return;
+    }
+
     MV1DrawModel(transform_.modelId);
 
 #ifdef _DEBUG

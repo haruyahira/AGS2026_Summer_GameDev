@@ -26,6 +26,8 @@ public:
 
     VECTOR GetPos(void) const;
     static void ResetChasingEnemyCount();
+    void SetActive(bool isActive) { isActive_ = isActive; }
+    bool IsActive(void) const { return isActive_; }
 
 protected:
     // “G‚²‚Æ‚ÌŒÂ«
@@ -74,6 +76,7 @@ protected:
 
     bool isDead_;
     bool isChasing_;
+    bool isActive_;
 
     float viewRange_;
     float viewHalfAngleRad_;

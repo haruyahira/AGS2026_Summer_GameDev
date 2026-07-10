@@ -12,10 +12,10 @@
 
 TitleScene::TitleScene(void)
 {
-	
 	angleTime_ = 0.0f;
 	currentAngle_ = 0.0f;
-    fadeCount_ = 0.0f;
+	fadeCount_ = 0.0f;
+
 	imgPandaX_ = 0;
 	imgPandaY_ = 0;
 
@@ -24,8 +24,9 @@ TitleScene::TitleScene(void)
 	imgTitleRedpanda_ = -1;
 	imgTitleSelect_ = -1;
 
+	drawIndex_ = 1;
+	stickInputWait_ = 0.0f;
 }
-
 TitleScene::~TitleScene(void)
 {
 }
@@ -45,7 +46,9 @@ void TitleScene::Init(void)
 	// 選択肢の当たり判定用矩形を初期化
 	InitSelect();
 
-	
+	drawIndex_ = 1;
+	stickInputWait_ = 0.0f;
+	fadeCount_ = RESET_FADE;
 
 	fontHandle_ = CreateFontToHandle("ＭＳ Ｐゴシック", 64, 3, DX_FONTTYPE_ANTIALIASING_8X8);
 	
@@ -160,51 +163,130 @@ void TitleScene::UpdateRedpanda(void)
 
 void TitleScene::UpdateSelect(void)
 {
-	// マウス座標の取得
-	Vector2 mousePos = InputManager::GetInstance().GetMousePos();
-	// 表示インデックスをリセット（基本は「誰も選択されていない(0)」）
-	drawIndex_ = 0;
+	InputManager& ins = InputManager::GetInstance();
+	SceneManager& sceneMng = SceneManager::GetInstance();
 
-	// 3つのボタンをループで判定
-	for (int i = 0; i < 3; i++) {
-		if (mousePos.x >= btnRects_[i].x && mousePos.x <= btnRects_[i].x + btnRects_[i].w &&
-			mousePos.y >= btnRects_[i].y && mousePos.y <= btnRects_[i].y + btnRects_[i].h)
+	// 左スティック入力の連続移動待ち時間
+	stickInputWait_ -= sceneMng.GetDeltaTime();
+
+	// 左スティックY軸
+	int ly = ins.GetPadAKeyLY(InputManager::JOYPAD_NO::PAD1);
+
+	const int DEAD_ZONE = 8000;
+
+	// =========================
+	// パッド・キーボード選択
+	// =========================
+	if (stickInputWait_ <= 0.0f)
+	{
+		// 下入力
+		if (
+			ins.IsTrgDown(KEY_INPUT_DOWN) ||
+			ly < -DEAD_ZONE
+			)
 		{
-			drawIndex_ = i + 1; // マウスが乗っていたら 1, 2, 3 のいずれかになる
+			drawIndex_++;
+
+			if (drawIndex_ > 3)
+			{
+				drawIndex_ = 1;
+			}
+
+			fadeCount_ = RESET_FADE;
+			stickInputWait_ = 0.2f;
+		}
+		// 上入力
+		else if (
+			ins.IsTrgDown(KEY_INPUT_UP) ||
+			ly > DEAD_ZONE
+			)
+		{
+			drawIndex_--;
+
+			if (drawIndex_ < 1)
+			{
+				drawIndex_ = 3;
+			}
+
+			fadeCount_ = RESET_FADE;
+			stickInputWait_ = 0.2f;
+		}
+	}
+
+	// =========================
+	// マウス選択
+	// =========================
+	Vector2 mousePos = InputManager::GetInstance().GetMousePos();
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (
+			mousePos.x >= btnRects_[i].x &&
+			mousePos.x <= btnRects_[i].x + btnRects_[i].w &&
+			mousePos.y >= btnRects_[i].y &&
+			mousePos.y <= btnRects_[i].y + btnRects_[i].h
+			)
+		{
+			drawIndex_ = i + 1;
 			break;
 		}
-		
 	}
 
-	if (drawIndex_ > 0) {
-		// マウスが乗っている間、サイン波などでふわふわさせる
+	// =========================
+	// フェード更新
+	// =========================
+	if (drawIndex_ > 0)
+	{
 		fadeCount_ += RAISE＿FADE;
 	}
-	else {
-		fadeCount_ = RESET_FADE; // 離れたらリセット
+	else
+	{
+		fadeCount_ = RESET_FADE;
 	}
 
-	// クリック判定
-	InputManager& ins = InputManager::GetInstance();
+	// =========================
+	// 決定
+	// =========================
+	bool isDecide =
+		ins.IsTrgDown(KEY_INPUT_SPACE) ||
+		ins.IsTrgDown(KEY_INPUT_RETURN) ||
+		ins.IsTrgMouseLeft() ||
+		ins.IsPadBtnTrgDown(
+			InputManager::JOYPAD_NO::PAD1,
+			InputManager::JOYPAD_BTN::DOWN
+		);
 
-	// マウスの左ボタンが押された瞬間をチェック
-	if (ins.IsTrgMouseLeft())
+	if (!isDecide)
 	{
-		// 1番目（スタート）
-		if (drawIndex_ == 1) {
-			SoundManager::GetInstance().StopAllSound();
-			SceneManager::GetInstance().ResetGameResultData();
-			SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
-		}
-		// 2番目（ランキング）
-		else if (drawIndex_ == 2) {
-			// 
-		}
-		// 3番目（終了）
-		else if (drawIndex_ == 3) {
-			// DXライブラリの終了メッセージを送る
-			PostQuitMessage(0);
-		}
+		return;
+	}
+
+	// START
+	if (drawIndex_ == 1)
+	{
+		SoundManager::GetInstance().StopAllSound();
+		SceneManager::GetInstance().ResetGameResultData();
+		SceneManager::GetInstance().ChangeScene(
+			SceneManager::SCENE_ID::GAME
+		);
+		return;
+	}
+
+	// RANKING
+	if (drawIndex_ == 2)
+	{
+		// ランキング画面を作ったらここに遷移を書く
+		// SceneManager::GetInstance().ChangeScene(
+		//     SceneManager::SCENE_ID::RANKING
+		// );
+		return;
+	}
+
+	// EXIT
+	if (drawIndex_ == 3)
+	{
+		PostQuitMessage(0);
+		return;
 	}
 }
 
