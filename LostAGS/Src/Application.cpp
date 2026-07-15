@@ -1,4 +1,5 @@
 #include <DxLib.h>
+#include <Windows.h>
 #include <EffekseerForDXLib.h>
 #include "Common/FpsController.h"
 #include "Manager/InputManager.h"
@@ -69,12 +70,35 @@ void Application::Init(void)
 
 	// FPS
 	fpsController_ = std::make_unique<FpsController>(168.0f);
-	// デバックコンソールスタート
+	// デバッグコンソールスタート
 	InitDebugConsole();
 	DebugLog("Application Init Start\n");
+
+	// 現在の作業フォルダーを確認
+	char currentDirectory[MAX_PATH] = {};
+
+	DWORD result = GetCurrentDirectoryA(
+		MAX_PATH,
+		currentDirectory
+	);
+
+	if (result == 0)
+	{
+		DebugLog("作業フォルダーの取得に失敗しました\n");
+	}
+	else
+	{
+		DebugLog(
+			"作業フォルダー: %s\n",
+			currentDirectory
+		);
+	}
+
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
+
 	isInitFail_ = false;
+
 	if (DxLib_Init() == -1)
 	{
 		isInitFail_ = true;

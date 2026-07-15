@@ -1,4 +1,6 @@
 #include <DxLib.h>
+#include <Windows.h>
+
 #include "Application.h"
 
 
@@ -22,6 +24,7 @@ int WINAPI WinMain(
 	*/
 {
 
+
 	// インスタンスの生成
 	Application::CreateInstance();
 
@@ -36,6 +39,8 @@ int WINAPI WinMain(
 
 	// 実行
 	app.Run();
+
+
 
 	// 解放
 	app.Destroy();
