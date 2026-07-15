@@ -135,14 +135,14 @@ void Stage::Init(void)
 {
 	SRand(GetNowCount());
 
-	//// HLSLライト用
-	//bool isLightEffectOk = lightEffect_.Init(
-	//	"Data/Shader/Light3DVS.cso",
-	//	"Data/Shader/Light3DPS.cso"
-	//);
-	//rimLightEffect_.Init(
-	//	"Data/Shader/ItemRimLightPS.cso"
-	//);
+	// HLSLライト用
+	bool isLightEffectOk = lightEffect_.Init(
+		"Data/Shader/Light3DVS.cso",
+		"Data/Shader/Light3DPS.cso"
+	);
+	rimLightEffect_.Init(
+		"Data/Shader/ItemRimLightPS.cso"
+	);
 
 
 	// ポストエフェクト輪郭線用
@@ -2092,7 +2092,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetRenderTargetToShader(1, outlineRTNormal_);
 	SetRenderTargetToShader(2, outlineRTDepth_);
 
-	//lightEffect_.Begin();
+	lightEffect_.Begin();
 
 	for (const auto& s : stages_)
 	{
@@ -2128,7 +2128,7 @@ void Stage::DrawOpaqueSceneForOutline(
 
 
 
-//	lightEffect_.End();
+	lightEffect_.End();
 
 	// MRT解除
 	SetRenderTargetToShader(1, -1);
