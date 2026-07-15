@@ -1,4 +1,5 @@
 #include <DxLib.h>
+#include <functional>
 #include "../Utility/AsoUtility.h"
 #include "../Application.h"
 #include "../Manager/SceneManager.h"
@@ -232,19 +233,29 @@ void GameScene::Update(void)
 
 void GameScene::Draw(void)
 {
-	if (stage_ == nullptr || player_ == nullptr || enemyMng_ == nullptr)
+	if (stage_ == nullptr ||
+		player_ == nullptr ||
+		enemyMng_ == nullptr)
 	{
 		return;
 	}
 
-	stage_->Draw();
-
-
-
-	// ŠJŽn’¼Œã‚Í“G‚ð•`‚©‚È‚¢
-	if (!isHideEnemyAtStart_)
+	if (isHideEnemyAtStart_)
 	{
-		enemyMng_->Draw();
+		// ŠJŽn’¼Œã‚Í‹ó‚Ì•`‰æˆ—‚ð“n‚·
+		stage_->Draw(
+			std::function<void()>()
+		);
+	}
+	else
+	{
+		// EnemyManager::Draw‚ðStage‚Ö“n‚·
+		stage_->Draw(
+			std::bind(
+				&EnemyManager::Draw,
+				enemyMng_.get()
+			)
+		);
 	}
 }
 
