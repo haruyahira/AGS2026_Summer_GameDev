@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <DxLib.h>
+#include <functional>
 
 #include "../../Manager/ResourceManager.h"
 #include "../../Utility/AsoUtility.h"
@@ -60,6 +61,17 @@ public:
     };
 
     void StartEscapeTimer(void);
+public:
+    void Draw(
+        const std::function<void()>& drawEnemy
+    );
+
+private:
+    void DrawOpaqueSceneForOutline(
+        const VECTOR& cameraPos,
+        const VECTOR& cameraTarget,
+        const std::function<void()>& drawEnemy
+    );
 
 public:
 
@@ -68,7 +80,7 @@ public:
 
     void Init(void);
     void Update(void);
-    void Draw(void);
+  /*  void Draw(void);*/
 
     void DrawUI(void) const;
 

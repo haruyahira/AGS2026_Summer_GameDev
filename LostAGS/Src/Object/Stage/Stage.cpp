@@ -306,93 +306,93 @@ void Stage::Update(void)
 	}
 
 }
-void Stage::Draw(void)
-{
-	// SceneManager が設定している描画先を保存する
-	// 通常は mainScrenn_ が入っている
-	int oldScreen = GetDrawScreen();
-
-	VECTOR cameraPos = GetCameraPosition();
-	VECTOR cameraTarget = GetCameraTarget();
-
-	// 描画直前の正しいカメラ方向でライトを更新
-	UpdateFlashLightForShader(cameraPos, cameraTarget);
-
-	// ステージ専用RTに、
-	// 不透明物、半透明物、ライト、輪郭線用情報を描画
-	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
-
-	// 完成したアウトライン付きステージ画像を、
-	// 元の描画先に描く
-	DrawPostOutline(oldScreen);
-
-	// =========================
-	// Stage外の3D描画用に状態を戻す
-	// =========================
-
-	SetDrawScreen(oldScreen);
-
-	SetCameraNearFar(10.0f, 7000);
-	SetupCamera_Perspective(DX_PI_F / 3.0f);
-	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
-
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(TRUE);
-	SetUseBackCulling(TRUE);
-	SetUseLighting(TRUE);
-
-	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-	SetUseVertexShader(-1);
-	SetUsePixelShader(-1);
-
-	SetUseTextureToShader(0, -1);
-	SetUseTextureToShader(1, -1);
-	SetUseTextureToShader(2, -1);
-
-
-#ifdef _DEBUG
-	DebugDrawItemPickupCheck();
-	DebugDrawPickupRange();
-
-	if (player_ != nullptr)
-	{
-		for (auto furniture : furnitures_)
-		{
-			if (furniture == nullptr)
-			{
-				continue;
-			}
-
-			Door* door = dynamic_cast<Door*>(furniture);
-
-			if (door != nullptr)
-			{
-				door->DebugDrawInteractRange(*player_);
-				door->DebugDrawCollision();
-				continue;
-			}
-			ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(furniture);
-
-			if (shelfDoor != nullptr)
-			{
-				shelfDoor->DebugDrawInteractRange(*player_);
-				shelfDoor->DebugDrawCollision();
-				continue;
-			}
-
-			Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
-
-			if (trashcan != nullptr)
-			{
-				trashcan->DebugDrawCollision();
-				continue;
-			}
-		}
-	}
-#endif
-
-}
+//void Stage::Draw(void)
+//{
+//	// SceneManager が設定している描画先を保存する
+//	// 通常は mainScrenn_ が入っている
+//	int oldScreen = GetDrawScreen();
+//
+//	VECTOR cameraPos = GetCameraPosition();
+//	VECTOR cameraTarget = GetCameraTarget();
+//
+//	// 描画直前の正しいカメラ方向でライトを更新
+//	UpdateFlashLightForShader(cameraPos, cameraTarget);
+//
+//	// ステージ専用RTに、
+//	// 不透明物、半透明物、ライト、輪郭線用情報を描画
+//	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
+//
+//	// 完成したアウトライン付きステージ画像を、
+//	// 元の描画先に描く
+//	DrawPostOutline(oldScreen);
+//
+//	// =========================
+//	// Stage外の3D描画用に状態を戻す
+//	// =========================
+//
+//	SetDrawScreen(oldScreen);
+//
+//	SetCameraNearFar(10.0f, 7000);
+//	SetupCamera_Perspective(DX_PI_F / 3.0f);
+//	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
+//
+//	SetUseZBuffer3D(TRUE);
+//	SetWriteZBuffer3D(TRUE);
+//	SetUseBackCulling(TRUE);
+//	SetUseLighting(TRUE);
+//
+//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+//
+//	SetUseVertexShader(-1);
+//	SetUsePixelShader(-1);
+//
+//	SetUseTextureToShader(0, -1);
+//	SetUseTextureToShader(1, -1);
+//	SetUseTextureToShader(2, -1);
+//
+//
+//#ifdef _DEBUG
+//	DebugDrawItemPickupCheck();
+//	DebugDrawPickupRange();
+//
+//	if (player_ != nullptr)
+//	{
+//		for (auto furniture : furnitures_)
+//		{
+//			if (furniture == nullptr)
+//			{
+//				continue;
+//			}
+//
+//			Door* door = dynamic_cast<Door*>(furniture);
+//
+//			if (door != nullptr)
+//			{
+//				door->DebugDrawInteractRange(*player_);
+//				door->DebugDrawCollision();
+//				continue;
+//			}
+//			ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(furniture);
+//
+//			if (shelfDoor != nullptr)
+//			{
+//				shelfDoor->DebugDrawInteractRange(*player_);
+//				shelfDoor->DebugDrawCollision();
+//				continue;
+//			}
+//
+//			Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
+//
+//			if (trashcan != nullptr)
+//			{
+//				trashcan->DebugDrawCollision();
+//				continue;
+//			}
+//		}
+//	}
+//#endif
+//
+//}
 
 
 void Stage::DrawUI(void) const
@@ -2059,185 +2059,6 @@ void Stage::ReleasePostOutline(void)
 	}
 }
 
-void Stage::DrawOpaqueSceneForOutline(
-	const VECTOR& cameraPos,
-	const VECTOR& cameraTarget)
-{
-	if (outlineRTColor_ == -1 ||
-		outlineRTNormal_ == -1 ||
-		outlineRTDepth_ == -1)
-	{
-		return;
-	}
-
-	SetDrawScreen(outlineRTColor_);
-	ClearDrawScreen();
-
-	// RTに描く時も、保存したプレイヤーカメラを使う
-	SetCameraNearFar(10.0f, 7000.0f);
-	SetupCamera_Perspective(DX_PI_F / 3.0f);
-	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
-
-	FillGraph(outlineRTNormal_, 0, 0, 0, 0);
-	FillGraph(outlineRTDepth_, 1.0f, 0, 0, 0);
-
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(TRUE);
-
-	SetRenderTargetToShader(1, outlineRTNormal_);
-	SetRenderTargetToShader(2, outlineRTDepth_);
-
-	lightEffect_.Begin();
-
-	for (const auto& s : stages_)
-	{
-		s.second->Draw();
-	}
-
-	for (auto f : furnitures_)
-	{
-		if (f == nullptr)
-		{
-			continue;
-		}
-
-		f->Draw();
-	}
-
-	
-
-	if (stoneDevice_ != nullptr)
-	{
-		stoneDevice_->Draw();
-	}
-
-	for (auto item : items_)
-	{
-		if (item == nullptr)
-		{
-			continue;
-		}
-
-		item->Draw();
-	}
-
-
-
-	lightEffect_.End();
-
-	// MRT解除
-	SetRenderTargetToShader(1, -1);
-	SetRenderTargetToShader(2, -1);
-
-
-
-	// =================================
-	// ここからはRTColorに通常描画する
-	// =================================
-
-	// 天井ライト本体
-	SetDrawBright(255, 235, 190);
-
-	for (auto l : ceilingLights_)
-	{
-		if (l != nullptr)
-		{
-			l->Draw();
-		}
-	}
-
-	SetDrawBright(255, 255, 255);
-
-	// =========================
-	// ガラス家具 半透明描画
-	// =========================
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(FALSE);
-	SetUseBackCulling(FALSE);
-
-	MV1SetSemiTransDrawMode(
-		DX_SEMITRANSDRAWMODE_ALWAYS
-	);
-
-	SetDrawBlendMode(
-		DX_BLENDMODE_ALPHA,
-		255
-	);
-
-	SetDrawBright(140, 160, 180);
-
-	for (auto f : glassFurnitures_)
-	{
-		if (f != nullptr)
-		{
-			f->Draw();
-		}
-	}
-
-	// =========================
-    // アイテム白点滅
-    // =========================
-	for (auto item : items_)
-	{
-		if (item == nullptr)
-		{
-			continue;
-		}
-
-		item->DrawWhiteBlink();
-	}
-
-	SetDrawBright(255, 255, 255);
-
-	SetDrawBlendMode(
-		DX_BLENDMODE_NOBLEND,
-		0
-	);
-
-	MV1SetSemiTransDrawMode(
-		DX_SEMITRANSDRAWMODE_NOT_SEMITRANS_ONLY
-	);
-
-	SetUseBackCulling(TRUE);
-	SetWriteZBuffer3D(TRUE);
-
-	// =========================
-	// 天井ライトの光の柱
-	// =========================
-	DrawCeilingLightBeams();
-
-	// =========================
-	// 天井ライト発光
-	// =========================
-	for (auto l : ceilingLights_)
-	{
-		if (l != nullptr)
-		{
-			l->DrawGlow();
-		}
-	}
-
-	// =========================
-	// RT描画後の状態リセット
-	// =========================
-	SetRenderTargetToShader(1, -1);
-	SetRenderTargetToShader(2, -1);
-
-	SetUseVertexShader(-1);
-	SetUsePixelShader(-1);
-
-	SetUseTextureToShader(0, -1);
-	SetUseTextureToShader(1, -1);
-	SetUseTextureToShader(2, -1);
-
-	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-
-	SetUseBackCulling(TRUE);
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(TRUE);
-	SetUseLighting(TRUE);
-}
-
 void Stage::DrawPostOutline(int outputScreen)
 {
 	if (outlineRTColor_ < 0)
@@ -2245,89 +2066,183 @@ void Stage::DrawPostOutline(int outputScreen)
 		return;
 	}
 
-	// 重要：
-	// DX_SCREEN_BACKに直接描かない。
-	// SceneManagerが指定していた描画先に描く。
+	// SceneManagerが設定していた描画先へ戻す
 	SetDrawScreen(outputScreen);
 
+	// シェーダーの読み込みに失敗している場合は、
+	// カラーRTをそのまま表示する
 	if (outlinePostPS_ < 0 ||
 		outlineRTNormal_ < 0 ||
 		outlineRTDepth_ < 0)
 	{
-		DrawGraph(0, 0, outlineRTColor_, FALSE);
+		DrawGraph(
+			0,
+			0,
+			outlineRTColor_,
+			FALSE
+		);
+
 		return;
 	}
 
-	int w, h;
-	GetDrawScreenSize(&w, &h);
+	int screenW = 0;
+	int screenH = 0;
 
-	// 2Dポリゴン描画用の状態にする
+	GetDrawScreenSize(
+		&screenW,
+		&screenH
+	);
+
+	// =========================
+	// 2Dポストエフェクト用の状態
+	// =========================
+
 	SetUseZBuffer3D(FALSE);
 	SetWriteZBuffer3D(FALSE);
 	SetUseBackCulling(FALSE);
 	SetUseLighting(FALSE);
-	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
 
 	SetUseVertexShader(-1);
 
-	SetUseTextureToShader(0, outlineRTColor_);
-	SetUseTextureToShader(1, outlineRTNormal_);
-	SetUseTextureToShader(2, outlineRTDepth_);
+	// 各レンダーターゲットをシェーダーへ渡す
+	SetUseTextureToShader(
+		0,
+		outlineRTColor_
+	);
 
-	SetUsePixelShader(outlinePostPS_);
+	SetUseTextureToShader(
+		1,
+		outlineRTNormal_
+	);
 
-	VERTEX2DSHADER v[6];
+	SetUseTextureToShader(
+		2,
+		outlineRTDepth_
+	);
+
+	SetUsePixelShader(
+		outlinePostPS_
+	);
+
+	// =========================
+	// 画面全体を覆うポリゴン
+	// =========================
+
+	VERTEX2DSHADER vertex[6];
 
 	for (int i = 0; i < 6; i++)
 	{
-		v[i].rhw = 1.0f;
-		v[i].dif = GetColorU8(255, 255, 255, 255);
-		v[i].spc = GetColorU8(0, 0, 0, 0);
+		vertex[i].rhw = 1.0f;
+
+		vertex[i].dif =
+			GetColorU8(
+				255,
+				255,
+				255,
+				255
+			);
+
+		vertex[i].spc =
+			GetColorU8(
+				0,
+				0,
+				0,
+				0
+			);
 	}
 
-	// 1枚目の三角形
-	v[0].pos = VGet(0.0f, 0.0f, 0.0f);
-	v[0].u = 0.0f;
-	v[0].v = 0.0f;
-	v[0].su = 0.0f;
-	v[0].sv = 0.0f;
+	// 左上
+	vertex[0].pos =
+		VGet(
+			0.0f,
+			0.0f,
+			0.0f
+		);
 
-	v[1].pos = VGet(0.0f, static_cast<float>(h), 0.0f);
-	v[1].u = 0.0f;
-	v[1].v = 1.0f;
-	v[1].su = 0.0f;
-	v[1].sv = 1.0f;
+	vertex[0].u = 0.0f;
+	vertex[0].v = 0.0f;
+	vertex[0].su = 0.0f;
+	vertex[0].sv = 0.0f;
 
-	v[2].pos = VGet(static_cast<float>(w), static_cast<float>(h), 0.0f);
-	v[2].u = 1.0f;
-	v[2].v = 1.0f;
-	v[2].su = 1.0f;
-	v[2].sv = 1.0f;
+	// 左下
+	vertex[1].pos =
+		VGet(
+			0.0f,
+			static_cast<float>(screenH),
+			0.0f
+		);
 
-	// 2枚目の三角形
-	v[3].pos = VGet(0.0f, 0.0f, 0.0f);
-	v[3].u = 0.0f;
-	v[3].v = 0.0f;
-	v[3].su = 0.0f;
-	v[3].sv = 0.0f;
+	vertex[1].u = 0.0f;
+	vertex[1].v = 1.0f;
+	vertex[1].su = 0.0f;
+	vertex[1].sv = 1.0f;
 
-	v[4].pos = VGet(static_cast<float>(w), static_cast<float>(h), 0.0f);
-	v[4].u = 1.0f;
-	v[4].v = 1.0f;
-	v[4].su = 1.0f;
-	v[4].sv = 1.0f;
+	// 右下
+	vertex[2].pos =
+		VGet(
+			static_cast<float>(screenW),
+			static_cast<float>(screenH),
+			0.0f
+		);
 
-	v[5].pos = VGet(static_cast<float>(w), 0.0f, 0.0f);
-	v[5].u = 1.0f;
-	v[5].v = 0.0f;
-	v[5].su = 1.0f;
-	v[5].sv = 0.0f;
+	vertex[2].u = 1.0f;
+	vertex[2].v = 1.0f;
+	vertex[2].su = 1.0f;
+	vertex[2].sv = 1.0f;
+
+	// 左上
+	vertex[3].pos =
+		VGet(
+			0.0f,
+			0.0f,
+			0.0f
+		);
+
+	vertex[3].u = 0.0f;
+	vertex[3].v = 0.0f;
+	vertex[3].su = 0.0f;
+	vertex[3].sv = 0.0f;
+
+	// 右下
+	vertex[4].pos =
+		VGet(
+			static_cast<float>(screenW),
+			static_cast<float>(screenH),
+			0.0f
+		);
+
+	vertex[4].u = 1.0f;
+	vertex[4].v = 1.0f;
+	vertex[4].su = 1.0f;
+	vertex[4].sv = 1.0f;
+
+	// 右上
+	vertex[5].pos =
+		VGet(
+			static_cast<float>(screenW),
+			0.0f,
+			0.0f
+		);
+
+	vertex[5].u = 1.0f;
+	vertex[5].v = 0.0f;
+	vertex[5].su = 1.0f;
+	vertex[5].sv = 0.0f;
 
 	DrawPrimitive2DToShader(
-		v,
+		vertex,
 		6,
 		DX_PRIMTYPE_TRIANGLELIST
 	);
+
+	// =========================
+	// シェーダーとテクスチャ解除
+	// =========================
 
 	SetUseTextureToShader(0, -1);
 	SetUseTextureToShader(1, -1);
@@ -2335,15 +2250,20 @@ void Stage::DrawPostOutline(int outputScreen)
 
 	SetUsePixelShader(-1);
 
-	// 状態を戻す
+	// =========================
+	// 3D描画状態へ戻す
+	// =========================
+
 	SetUseLighting(TRUE);
 	SetUseBackCulling(TRUE);
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
-	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
 }
-
-
 void Stage::UpdateFlashLightForShader(
 	const VECTOR& cameraPos,
 	const VECTOR& cameraTarget
@@ -4567,4 +4487,320 @@ void Stage::DrawFlashLightUI(void) const
 		mouseColor,
 		1
 	);
+}
+
+void Stage::Draw(
+	const std::function<void()>& drawEnemy
+)
+{
+	int oldScreen = GetDrawScreen();
+
+	VECTOR cameraPos = GetCameraPosition();
+	VECTOR cameraTarget = GetCameraTarget();
+
+	UpdateFlashLightForShader(
+		cameraPos,
+		cameraTarget
+	);
+
+	DrawOpaqueSceneForOutline(
+		cameraPos,
+		cameraTarget,
+		drawEnemy
+	);
+
+	DrawPostOutline(oldScreen);
+
+	SetDrawScreen(oldScreen);
+
+	SetCameraNearFar(10.0f, 7000.0f);
+	SetupCamera_Perspective(DX_PI_F / 3.0f);
+
+	SetCameraPositionAndTarget_UpVecY(
+		cameraPos,
+		cameraTarget
+	);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+}
+
+void Stage::DrawOpaqueSceneForOutline(
+	const VECTOR& cameraPos,
+	const VECTOR& cameraTarget,
+	const std::function<void()>& drawEnemy
+)
+{
+	if (outlineRTColor_ == -1 ||
+		outlineRTNormal_ == -1 ||
+		outlineRTDepth_ == -1)
+	{
+		return;
+	}
+
+	// =========================
+	// 描画先とカメラ
+	// =========================
+
+	SetDrawScreen(outlineRTColor_);
+	ClearDrawScreen();
+
+	SetCameraNearFar(10.0f, 7000.0f);
+	SetupCamera_Perspective(DX_PI_F / 3.0f);
+
+	SetCameraPositionAndTarget_UpVecY(
+		cameraPos,
+		cameraTarget
+	);
+
+	FillGraph(
+		outlineRTNormal_,
+		0,
+		0,
+		0,
+		0
+	);
+
+	FillGraph(
+		outlineRTDepth_,
+		1.0f,
+		0,
+		0,
+		0
+	);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetDrawBright(255, 255, 255);
+
+	// =========================
+	// ステージ用MRT
+	// =========================
+
+	SetRenderTargetToShader(
+		1,
+		outlineRTNormal_
+	);
+
+	SetRenderTargetToShader(
+		2,
+		outlineRTDepth_
+	);
+
+	lightEffect_.Begin();
+
+	// 床
+	for (const auto& stage : stages_)
+	{
+		if (stage.second == nullptr)
+		{
+			continue;
+		}
+
+		stage.second->Draw();
+	}
+
+	// 不透明家具
+	for (auto furniture : furnitures_)
+	{
+		if (furniture == nullptr)
+		{
+			continue;
+		}
+
+		furniture->Draw();
+	}
+
+	// StoneDevice
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Draw();
+	}
+
+	// アイテム
+	for (auto item : items_)
+	{
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		item->Draw();
+	}
+
+	lightEffect_.End();
+
+	// =========================
+	// MRTとステージ用シェーダー解除
+	// =========================
+
+	SetRenderTargetToShader(1, -1);
+	SetRenderTargetToShader(2, -1);
+
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	// =========================
+	// 敵を同じカラーRTとZバッファへ描画
+	// =========================
+
+	SetDrawBright(255, 255, 255);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseLighting(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_ALWAYS
+	);
+
+	if (drawEnemy)
+	{
+		drawEnemy();
+	}
+
+	// =========================
+	// 天井ライト本体
+	// =========================
+
+	SetDrawBright(255, 235, 190);
+
+	for (auto light : ceilingLights_)
+	{
+		if (light == nullptr)
+		{
+			continue;
+		}
+
+		light->Draw();
+	}
+
+	SetDrawBright(255, 255, 255);
+
+	// =========================
+	// ガラス家具
+	// =========================
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+
+	MV1SetSemiTransDrawMode(
+		DX_SEMITRANSDRAWMODE_ALWAYS
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		255
+	);
+
+	SetDrawBright(140, 160, 180);
+
+	for (auto furniture : glassFurnitures_)
+	{
+		if (furniture == nullptr)
+		{
+			continue;
+		}
+
+		furniture->Draw();
+	}
+
+	// =========================
+	// アイテムの白点滅
+	// =========================
+
+	for (auto item : items_)
+	{
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		item->DrawWhiteBlink();
+	}
+
+	SetDrawBright(255, 255, 255);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
+	// =========================
+	// 天井ライトの光
+	// =========================
+
+	DrawCeilingLightBeams();
+
+	for (auto light : ceilingLights_)
+	{
+		if (light == nullptr)
+		{
+			continue;
+		}
+
+		light->DrawGlow();
+	}
+
+	// =========================
+	// 描画状態をリセット
+	// =========================
+
+	SetRenderTargetToShader(1, -1);
+	SetRenderTargetToShader(2, -1);
+
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetDrawBright(255, 255, 255);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseLighting(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
 }
