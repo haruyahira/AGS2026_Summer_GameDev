@@ -214,7 +214,7 @@ void Player::Draw(void)
 
 
 
-	hpUI_.DrawPlayerHP(this, 0, 40, "Player");
+	hpUI_.DrawPlayerHP(this, 0, Application::getSizeY_ - 85, "Player");
 
 	// 画面赤フラッシュ
 	DrawDamageEffect();

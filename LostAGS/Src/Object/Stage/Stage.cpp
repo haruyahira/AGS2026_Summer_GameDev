@@ -251,12 +251,6 @@ void Stage::Update(void)
 		return;
 	}
 
-
-
-	// 追加：TABを押している間ミニマップ表示
-	isMiniMapVisible_ = CheckHitKey(KEY_INPUT_TAB);
-
-
 	if (player_ != nullptr)
 	{
 		lightEffect_.GetLightManager().SetViewPoint(
@@ -403,7 +397,12 @@ void Stage::Draw(void)
 
 void Stage::DrawUI(void) const
 {
+
+	// ミニマップ表示
+	DrawMiniMap();
 	DrawEscapeTimeUI();
+	// ライト状態を表示
+	DrawFlashLightUI();
 
 	if (isEmergencyEscape_)
 	{
@@ -468,10 +467,6 @@ void Stage::DrawUI(void) const
 		}
 	}
 
-	if (isMiniMapVisible_)
-	{
-		DrawMiniMap();
-	}
 }
 
 
@@ -2389,7 +2384,10 @@ void Stage::UpdateFlashLightForShader(
 	);
 }
 
-bool Stage::IsLineBlocked(const VECTOR& from, const VECTOR& to) const
+bool Stage::IsLineBlocked(
+	const VECTOR& from,
+	const VECTOR& to
+) const
 {
 	for (auto f : furnitures_)
 	{
@@ -2398,7 +2396,21 @@ bool Stage::IsLineBlocked(const VECTOR& from, const VECTOR& to) const
 			continue;
 		}
 
+		// 机では敵を完全に隠さない
+		Table* table =
+			dynamic_cast<Table*>(f);
+
+		if (table != nullptr)
+		{
+			continue;
+		}
+
 		int modelId = f->GetModelId();
+
+		if (modelId < 0)
+		{
+			continue;
+		}
 
 		MV1_COLL_RESULT_POLY hit =
 			MV1CollCheck_Line(
@@ -2648,10 +2660,9 @@ void Stage::DrawMiniMap(void) const
 	int screenW, screenH;
 	GetDrawScreenSize(&screenW, &screenH);
 
-	const int mapSize = 460;
-
-	const int mapX = screenW / 2 - mapSize / 2;
-	const int mapY = screenH / 2 - mapSize / 2;
+	const int mapSize = 300;
+	const int mapX = 30;
+	const int mapY = 60;
 
 	// =========================
 	// ワールド座標 → ミニマップ座標
@@ -3119,28 +3130,6 @@ void Stage::DrawMiniMap(void) const
 		GetColor(230, 230, 230)
 	);
 
-	DrawLine(
-		mapX + 105,
-		legendY + 8,
-		mapX + 145,
-		legendY + 8,
-		GetColor(200, 255, 120),
-		4
-	);
-
-	DrawString(
-		mapX + 155,
-		legendY,
-		"Wall",
-		GetColor(230, 230, 230)
-	);
-
-	DrawString(
-		mapX + mapSize - 150,
-		legendY,
-		"TABを離すと閉じます",
-		GetColor(200, 200, 200)
-	);
 
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
@@ -4188,5 +4177,394 @@ void Stage::DrawStoneDeviceRegisterUI(void) const
 		GetColor(255, 230, 120),
 		"登録予定額：%d円",
 		registerMoney
+	);
+}
+
+void Stage::DrawFlashLightUI(void) const
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	int screenW = 0;
+	int screenH = 0;
+
+	GetDrawScreenSize(
+		&screenW,
+		&screenH
+	);
+
+	const bool isLightOn =
+		player_->IsFlashLightOn();
+
+	// =========================
+	// インベントリと同じ配置情報
+	// =========================
+
+	const int inventorySlotCount = MAX_ITEM_COUNT;
+	const int inventorySlotW = 120;
+	const int inventorySlotH = 60;
+	const int inventorySlotMargin = 12;
+	const int inventoryBottomMargin = 25;
+
+	const int inventoryW =
+		inventorySlotW * inventorySlotCount
+		+ inventorySlotMargin
+		* (inventorySlotCount - 1);
+
+	const int inventoryX =
+		screenW / 2 - inventoryW / 2;
+
+	const int inventoryY =
+		screenH
+		- inventorySlotH
+		- inventoryBottomMargin;
+
+	// =========================
+	// ライトパネル
+	// インベントリ1枠と同じ大きさ
+	// =========================
+
+	const int panelW = inventorySlotW;
+	const int panelH = inventorySlotH;
+
+	const int leftMargin = 30;
+
+	const int x =
+		inventoryX
+		- panelW
+		- inventorySlotMargin
+		- leftMargin;
+
+	// インベントリと上端・下端をそろえる
+	const int y = inventoryY;
+
+	const int frameColor = isLightOn
+		? GetColor(255, 235, 150)
+		: GetColor(130, 130, 130);
+
+	const int iconColor = isLightOn
+		? GetColor(255, 245, 190)
+		: GetColor(165, 165, 165);
+
+	const int panelColor =
+		GetColor(15, 15, 20);
+
+	// =========================
+	// パネル背景
+	// =========================
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		220
+	);
+
+	DrawBox(
+		x,
+		y,
+		x + panelW,
+		y + panelH,
+		panelColor,
+		TRUE
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	// インベントリと同じような外枠
+	DrawBox(
+		x,
+		y,
+		x + panelW,
+		y + panelH,
+		frameColor,
+		FALSE
+	);
+
+	// 内側の枠
+	DrawBox(
+		x + 3,
+		y + 3,
+		x + panelW - 3,
+		y + panelH - 3,
+		GetColor(60, 60, 65),
+		FALSE
+	);
+
+	// =========================
+	// 縦向きの懐中電灯
+	// =========================
+
+	const int centerX =
+		x + panelW / 2;
+
+	const int centerY =
+		y + panelH / 2;
+
+	// -------------------------
+	// ON時の光
+	// 上方向へ照らす
+	// -------------------------
+
+	if (isLightOn)
+	{
+		SetDrawBlendMode(
+			DX_BLENDMODE_ALPHA,
+			120
+		);
+
+		DrawTriangle(
+			centerX,
+			centerY - 15,
+
+			centerX - 17,
+			centerY - 28,
+
+			centerX + 17,
+			centerY - 28,
+
+			GetColor(255, 225, 90),
+			TRUE
+		);
+
+		SetDrawBlendMode(
+			DX_BLENDMODE_NOBLEND,
+			0
+		);
+	}
+
+	// -------------------------
+	// ライトの頭部分
+	// 上が広く、下が細い台形
+	// -------------------------
+
+	DrawQuadrangle(
+		centerX - 11,
+		centerY - 16,
+
+		centerX + 11,
+		centerY - 16,
+
+		centerX + 7,
+		centerY - 7,
+
+		centerX - 7,
+		centerY - 7,
+
+		iconColor,
+		TRUE
+	);
+
+	// レンズの線
+	DrawLine(
+		centerX - 9,
+		centerY - 13,
+
+		centerX + 9,
+		centerY - 13,
+
+		GetColor(80, 80, 70),
+		2
+	);
+
+	// -------------------------
+	// 持ち手
+	// -------------------------
+
+	DrawBox(
+		centerX - 5,
+		centerY - 7,
+
+		centerX + 5,
+		centerY + 17,
+
+		iconColor,
+		TRUE
+	);
+
+	// 持ち手の内側
+	DrawBox(
+		centerX - 2,
+		centerY - 2,
+
+		centerX + 2,
+		centerY + 12,
+
+		GetColor(80, 80, 80),
+		TRUE
+	);
+
+	// 持ち手の下端
+	DrawCircle(
+		centerX,
+		centerY + 17,
+		5,
+		iconColor,
+		TRUE
+	);
+
+	// -------------------------
+	// スイッチ
+	// -------------------------
+
+	const int switchColor = isLightOn
+		? GetColor(255, 190, 40)
+		: GetColor(85, 85, 85);
+
+	DrawBox(
+		centerX + 5,
+		centerY - 2,
+
+		centerX + 9,
+		centerY + 6,
+
+		switchColor,
+		TRUE
+	);
+
+	// -------------------------
+	// OFF時の斜線
+	// -------------------------
+
+	if (!isLightOn)
+	{
+		DrawLine(
+			centerX - 18,
+			centerY - 22,
+
+			centerX + 18,
+			centerY + 21,
+
+			GetColor(220, 65, 65),
+			3
+		);
+	}
+
+	// =========================
+	// 右クリックマーク
+	// パネル下の空白部分へ配置
+	// =========================
+
+	const int mouseW = 14;
+	const int mouseH = 20;
+
+	const int mouseCenterX =
+		x + panelW / 2;
+
+	// パネルの下端から2px下
+	const int mouseTop =
+		y + panelH + 2;
+
+	const int mouseLeft =
+		mouseCenterX - mouseW / 2;
+
+	const int mouseRight =
+		mouseCenterX + mouseW / 2;
+
+	const int mouseBottom =
+		mouseTop + mouseH;
+
+	const int mouseColor =
+		GetColor(225, 225, 225);
+
+	const int rightButtonColor =
+		GetColor(255, 210, 90);
+
+	// -------------------------
+	// マウス本体
+	// -------------------------
+
+	DrawOval(
+		mouseCenterX,
+		mouseTop + 6,
+		mouseW / 2,
+		6,
+		mouseColor,
+		FALSE
+	);
+
+	DrawOval(
+		mouseCenterX,
+		mouseBottom - 6,
+		mouseW / 2,
+		6,
+		mouseColor,
+		FALSE
+	);
+
+	DrawLine(
+		mouseLeft,
+		mouseTop + 6,
+		mouseLeft,
+		mouseBottom - 6,
+		mouseColor,
+		1
+	);
+
+	DrawLine(
+		mouseRight,
+		mouseTop + 6,
+		mouseRight,
+		mouseBottom - 6,
+		mouseColor,
+		1
+	);
+
+	// -------------------------
+	// 左右ボタンの区切り
+	// -------------------------
+
+	DrawLine(
+		mouseCenterX,
+		mouseTop,
+		mouseCenterX,
+		mouseTop + 8,
+		mouseColor,
+		1
+	);
+
+	DrawLine(
+		mouseLeft,
+		mouseTop + 8,
+		mouseRight,
+		mouseTop + 8,
+		mouseColor,
+		1
+	);
+
+	// -------------------------
+	// 右ボタンを黄色で表示
+	// -------------------------
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		220
+	);
+
+	DrawBox(
+		mouseCenterX + 1,
+		mouseTop + 2,
+		mouseRight - 2,
+		mouseTop + 7,
+		rightButtonColor,
+		TRUE
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	// 塗りつぶし後に線を描き直す
+	DrawLine(
+		mouseCenterX,
+		mouseTop,
+		mouseCenterX,
+		mouseTop + 8,
+		mouseColor,
+		1
 	);
 }

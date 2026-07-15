@@ -287,5 +287,6 @@ private:
 
     void DrawRegisterItemUI(void) const;
     void DrawStoneDeviceRegisterUI(void) const;
+    void DrawFlashLightUI(void) const;
 
 };

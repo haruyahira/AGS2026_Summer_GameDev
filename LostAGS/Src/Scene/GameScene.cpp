@@ -239,7 +239,7 @@ void GameScene::Draw(void)
 
 	stage_->Draw();
 
-	player_->Draw();
+
 
 	// 開始直後は敵を描かない
 	if (!isHideEnemyAtStart_)
@@ -260,6 +260,8 @@ void GameScene::DrawUI(void)
 	{
 		stage_->DrawUI();
 	}
+
+	player_->Draw();
 }
 
 void GameScene::DrawPostEffect(int mainScreen)
@@ -357,6 +359,7 @@ void GameScene::DrawIntroUI(void) const
 
 	const char* messages[] =
 	{
+
 		"指定された場所へ到着しました。",
 		"",
 		"価値のある物品を回収しろ。",
