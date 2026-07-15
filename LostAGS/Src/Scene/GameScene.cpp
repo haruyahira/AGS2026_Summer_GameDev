@@ -132,7 +132,8 @@ void GameScene::OnLoaded(void)
 
 	// ƒJƒƒ‰
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON);
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW
+	);
 
 	player_->Update();
 	SceneManager::GetInstance().GetCamera()->Update();
@@ -231,6 +232,20 @@ void GameScene::Update(void)
 	postEffect_->Update(time);
 }
 
+void GameScene::DrawPlayerAndEnemy(void)
+{
+	if (enemyMng_ != nullptr)
+	{
+		enemyMng_->Draw();
+	}
+
+	if (player_ != nullptr)
+	{
+		player_->Draw();
+	}
+}
+
+
 void GameScene::Draw(void)
 {
 	if (stage_ == nullptr ||
@@ -240,24 +255,38 @@ void GameScene::Draw(void)
 		return;
 	}
 
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+
 	if (isHideEnemyAtStart_)
 	{
-		// ŠJŽn’¼Œã‚Í‹ó‚Ì•`‰æˆ—‚ð“n‚·
+		// “G‚Í”ñ•\Ž¦AƒvƒŒƒCƒ„[‚¾‚¯•`‰æ
 		stage_->Draw(
-			std::function<void()>()
+			std::bind(
+				&Player::Draw,
+				player_
+			)
 		);
 	}
 	else
 	{
-		// EnemyManager::Draw‚ðStage‚Ö“n‚·
+		// “G‚ÆƒvƒŒƒCƒ„[‚ð“¯‚¶•`‰ææ‚Ö•`‰æ
 		stage_->Draw(
 			std::bind(
-				&EnemyManager::Draw,
-				enemyMng_.get()
+				&GameScene::DrawPlayerAndEnemy,
+				this
 			)
 		);
 	}
 }
+
 
 void GameScene::DrawUI(void)
 {
@@ -272,7 +301,7 @@ void GameScene::DrawUI(void)
 		stage_->DrawUI();
 	}
 
-	player_->Draw();
+	player_->DrawUI();
 }
 
 void GameScene::DrawPostEffect(int mainScreen)

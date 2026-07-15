@@ -62,16 +62,7 @@ public:
 
     void StartEscapeTimer(void);
 public:
-    void Draw(
-        const std::function<void()>& drawEnemy
-    );
-
-private:
-    void DrawOpaqueSceneForOutline(
-        const VECTOR& cameraPos,
-        const VECTOR& cameraTarget,
-        const std::function<void()>& drawEnemy
-    );
+   
 
 public:
 
@@ -80,6 +71,10 @@ public:
 
     void Init(void);
     void Update(void);
+    void Draw(
+        const std::function<void()>& drawActors
+    );
+
   /*  void Draw(void);*/
 
     void DrawUI(void) const;
@@ -214,7 +209,7 @@ private:
     int outlineRTNormal_ = -1;
     int outlineRTDepth_ = -1;
 
-    int outlinePostPS_ = -1;
+    int outlineOverlayPS_ = -1;
 
     bool InitPostOutline(void);
     void ReleasePostOutline(void);
@@ -223,6 +218,8 @@ private:
         const VECTOR& cameraPos,
         const VECTOR& cameraTarget
     );
+
+    void DrawPostOutlineOverlay(void);
 
     // 重要：
     // DX_SCREEN_BACKに直接描かないため、出力先を受け取る
@@ -287,6 +284,7 @@ private:
     bool IsNearEscapeButton(void) const;
 
     void DrawEscapeButtonUI(void) const;
+    void DrawStageDepthOnly();
 
     // アイテム登録完了UI
     bool isRegisterItemUIVisible_;

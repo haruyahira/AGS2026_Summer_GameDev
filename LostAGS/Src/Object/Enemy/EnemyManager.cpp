@@ -188,6 +188,8 @@ void EnemyManager::Update(Player* player)
 
 void EnemyManager::Draw(void)
 {
+
+
 	for (auto enemy : enemies_)
 	{
 		if (enemy == nullptr)

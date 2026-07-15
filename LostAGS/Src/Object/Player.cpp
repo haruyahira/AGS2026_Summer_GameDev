@@ -212,15 +212,32 @@ void Player::Draw(void)
 	}
 #endif
 
-
-
-	hpUI_.DrawPlayerHP(this, 0, Application::getSizeY_ - 85, "Player");
-
+	
 	// 画面赤フラッシュ
 	DrawDamageEffect();
 
 }
 
+void Player::DrawUI()
+{
+	constexpr int HP_UI_HEIGHT = 60;
+	constexpr int LEFT_MARGIN = 20;
+	constexpr int BOTTOM_MARGIN = 25;
+
+	int drawX = LEFT_MARGIN;
+
+	int drawY =
+		Application::GetScreenHeight()
+		- HP_UI_HEIGHT
+		- BOTTOM_MARGIN;
+
+	hpUI_.DrawPlayerHP(
+		this,
+		drawX,
+		drawY,
+		"Player"
+	);
+}
 void Player::AddCollider(Collider* collider)
 {
 	colliders_.push_back(collider);

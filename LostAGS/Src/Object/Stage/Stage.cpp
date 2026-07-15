@@ -2016,21 +2016,56 @@ void Stage::CreateKitchenLight(const Stage::FurnitureData& data)
 }
 bool Stage::InitPostOutline(void)
 {
-	int w, h;
-	GetDrawScreenSize(&w, &h);
+    int w = 0;
+    int h = 0;
 
-	outlineRTColor_ = MakeScreen(w, h, false);
-	outlineRTNormal_ = MakeScreen(w, h, false);
+    GetDrawScreenSize(
+        &w,
+        &h
+    );
 
-	SetCreateDrawValidGraphChannelNum(1);
-	SetCreateGraphChannelBitDepth(32);
-	outlineRTDepth_ = MakeScreen(w, h, false);
-	SetCreateGraphChannelBitDepth(0);
-	SetCreateDrawValidGraphChannelNum(4);
+    // カラーRT
+    outlineRTColor_ = MakeScreen(
+        w,
+        h,
+        FALSE
+    );
 
-	outlinePostPS_ = LoadPixelShader("Data/Shader/PostOutlinePS.cso");
+    // 法線RT
+    outlineRTNormal_ = MakeScreen(
+        w,
+        h,
+        FALSE
+    );
 
-	return true;
+    // 深度RT
+    SetCreateDrawValidGraphChannelNum(1);
+    SetCreateGraphChannelBitDepth(32);
+
+    outlineRTDepth_ = MakeScreen(
+        w,
+        h,
+        FALSE
+    );
+
+    // 作成設定を元に戻す
+    SetCreateGraphChannelBitDepth(0);
+    SetCreateDrawValidGraphChannelNum(4);
+
+    // 輪郭線だけを出力するピクセルシェーダー
+    outlineOverlayPS_ = LoadPixelShader(
+        "Data/Shader/PostOutlineOverlayPS.cso"
+    );
+
+    if (outlineRTColor_ < 0 ||
+        outlineRTNormal_ < 0 ||
+        outlineRTDepth_ < 0 ||
+        outlineOverlayPS_ < 0)
+    {
+        return false;
+    }
+
+    return true;
 }
 void Stage::ReleasePostOutline(void)
 {
@@ -2052,10 +2087,10 @@ void Stage::ReleasePostOutline(void)
 		outlineRTDepth_ = -1;
 	}
 
-	if (outlinePostPS_ != -1)
+	if (outlineOverlayPS_ != -1)
 	{
-		DeleteShader(outlinePostPS_);
-		outlinePostPS_ = -1;
+		DeleteShader(outlineOverlayPS_);
+		outlineOverlayPS_ = -1;
 	}
 }
 
@@ -2071,7 +2106,7 @@ void Stage::DrawPostOutline(int outputScreen)
 
 	// シェーダーの読み込みに失敗している場合は、
 	// カラーRTをそのまま表示する
-	if (outlinePostPS_ < 0 ||
+	if (outlineOverlayPS_ < 0 ||
 		outlineRTNormal_ < 0 ||
 		outlineRTDepth_ < 0)
 	{
@@ -2126,7 +2161,7 @@ void Stage::DrawPostOutline(int outputScreen)
 	);
 
 	SetUsePixelShader(
-		outlinePostPS_
+		outlineOverlayPS_
 	);
 
 	// =========================
@@ -3760,6 +3795,78 @@ void Stage::DrawEscapeButtonUI(void) const
 	);
 }
 
+void Stage::DrawStageDepthOnly()
+{
+	// 通常のシェーダー状態へ戻す
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(FALSE);
+
+	// 色を見えなくし、Zバッファだけ書き込ませる
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		0
+	);
+
+	// 床、壁、ステージ
+	for (const auto& stage : stages_)
+	{
+		if (stage.second == nullptr)
+		{
+			continue;
+		}
+
+		stage.second->Draw();
+	}
+
+	// 不透明家具
+	for (auto furniture : furnitures_)
+	{
+		if (furniture == nullptr)
+		{
+			continue;
+		}
+
+		furniture->Draw();
+	}
+
+	// StoneDeviceも敵を隠す必要があるなら描画
+	if (stoneDevice_ != nullptr)
+	{
+		stoneDevice_->Draw();
+	}
+
+	// 不透明なアイテムが敵を隠すなら描画
+	for (auto item : items_)
+	{
+		if (item == nullptr)
+		{
+			continue;
+		}
+
+		item->Draw();
+	}
+
+	// 描画状態を戻す
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseLighting(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+}
+
 bool Stage::IsEmergencyEscape(void) const
 {
 	return isEmergencyEscape_;
@@ -4490,7 +4597,7 @@ void Stage::DrawFlashLightUI(void) const
 }
 
 void Stage::Draw(
-	const std::function<void()>& drawEnemy
+	const std::function<void()>& drawActors
 )
 {
 	int oldScreen = GetDrawScreen();
@@ -4503,32 +4610,29 @@ void Stage::Draw(
 		cameraTarget
 	);
 
+	// ステージだけをMRT描画
 	DrawOpaqueSceneForOutline(
-		cameraPos,
-		cameraTarget,
-		drawEnemy
-	);
-
-	DrawPostOutline(oldScreen);
-
-	SetDrawScreen(oldScreen);
-
-	SetCameraNearFar(10.0f, 7000.0f);
-	SetupCamera_Perspective(DX_PI_F / 3.0f);
-
-	SetCameraPositionAndTarget_UpVecY(
 		cameraPos,
 		cameraTarget
 	);
 
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(TRUE);
-	SetUseBackCulling(TRUE);
-	SetUseLighting(TRUE);
+	// ステージの輪郭を合成
+	DrawPostOutlineOverlay();
 
-	SetDrawBlendMode(
-		DX_BLENDMODE_NOBLEND,
-		0
+	// ステージと同じカラーRTへキャラクターを通常描画
+	SetDrawScreen(outlineRTColor_);
+	SetCameraNearFar(
+		10.0f,
+		7000.0f
+	);
+
+	SetupCamera_Perspective(
+		DX_PI_F / 3.0f
+	);
+
+	SetCameraPositionAndTarget_UpVecY(
+		cameraPos,
+		cameraTarget
 	);
 
 	SetUseVertexShader(-1);
@@ -4537,12 +4641,82 @@ void Stage::Draw(
 	SetUseTextureToShader(0, -1);
 	SetUseTextureToShader(1, -1);
 	SetUseTextureToShader(2, -1);
+
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+
+	// 敵とプレイヤーを描画
+	if (drawActors)
+	{
+		drawActors();
+	}
+
+	// 完成画像を元の描画先へ転送
+	SetDrawScreen(oldScreen);
+
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+	SetUseLighting(FALSE);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	DrawGraph(
+		0,
+		0,
+		outlineRTColor_,
+		FALSE
+	);
+
+	// 通常状態へ戻す
+	SetCameraNearFar(
+		10.0f,
+		7000.0f
+	);
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
+
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
 }
 
 void Stage::DrawOpaqueSceneForOutline(
 	const VECTOR& cameraPos,
-	const VECTOR& cameraTarget,
-	const std::function<void()>& drawEnemy
+	const VECTOR& cameraTarget
 )
 {
 	if (outlineRTColor_ == -1 ||
@@ -4557,16 +4731,25 @@ void Stage::DrawOpaqueSceneForOutline(
 	// =========================
 
 	SetDrawScreen(outlineRTColor_);
+
+	// カラーとZバッファを消去
 	ClearDrawScreen();
 
-	SetCameraNearFar(10.0f, 7000.0f);
-	SetupCamera_Perspective(DX_PI_F / 3.0f);
+	SetCameraNearFar(
+		10.0f,
+		7000.0f
+	);
+
+	SetupCamera_Perspective(
+		DX_PI_F / 3.0f
+	);
 
 	SetCameraPositionAndTarget_UpVecY(
 		cameraPos,
 		cameraTarget
 	);
 
+	// 法線RTを初期化
 	FillGraph(
 		outlineRTNormal_,
 		0,
@@ -4575,6 +4758,7 @@ void Stage::DrawOpaqueSceneForOutline(
 		0
 	);
 
+	// 深度RTを最遠値で初期化
 	FillGraph(
 		outlineRTDepth_,
 		1.0f,
@@ -4586,16 +4770,21 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
 	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
 
 	SetDrawBlendMode(
 		DX_BLENDMODE_NOBLEND,
 		0
 	);
 
-	SetDrawBright(255, 255, 255);
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
 
 	// =========================
-	// ステージ用MRT
+	// MRT設定
 	// =========================
 
 	SetRenderTargetToShader(
@@ -4607,6 +4796,10 @@ void Stage::DrawOpaqueSceneForOutline(
 		2,
 		outlineRTDepth_
 	);
+
+	// =========================
+	// 不透明ステージ描画
+	// =========================
 
 	lightEffect_.Begin();
 
@@ -4652,7 +4845,7 @@ void Stage::DrawOpaqueSceneForOutline(
 	lightEffect_.End();
 
 	// =========================
-	// MRTとステージ用シェーダー解除
+	// MRTとシェーダー解除
 	// =========================
 
 	SetRenderTargetToShader(1, -1);
@@ -4666,35 +4859,14 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetUseTextureToShader(2, -1);
 
 	// =========================
-	// 敵を同じカラーRTとZバッファへ描画
-	// =========================
-
-	SetDrawBright(255, 255, 255);
-
-	SetDrawBlendMode(
-		DX_BLENDMODE_NOBLEND,
-		0
-	);
-
-	SetUseLighting(TRUE);
-	SetUseBackCulling(TRUE);
-	SetUseZBuffer3D(TRUE);
-	SetWriteZBuffer3D(TRUE);
-
-	MV1SetSemiTransDrawMode(
-		DX_SEMITRANSDRAWMODE_ALWAYS
-	);
-
-	if (drawEnemy)
-	{
-		drawEnemy();
-	}
-
-	// =========================
 	// 天井ライト本体
 	// =========================
 
-	SetDrawBright(255, 235, 190);
+	SetDrawBright(
+		255,
+		235,
+		190
+	);
 
 	for (auto light : ceilingLights_)
 	{
@@ -4706,7 +4878,11 @@ void Stage::DrawOpaqueSceneForOutline(
 		light->Draw();
 	}
 
-	SetDrawBright(255, 255, 255);
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
 
 	// =========================
 	// ガラス家具
@@ -4725,7 +4901,11 @@ void Stage::DrawOpaqueSceneForOutline(
 		255
 	);
 
-	SetDrawBright(140, 160, 180);
+	SetDrawBright(
+		140,
+		160,
+		180
+	);
 
 	for (auto furniture : glassFurnitures_)
 	{
@@ -4751,7 +4931,11 @@ void Stage::DrawOpaqueSceneForOutline(
 		item->DrawWhiteBlink();
 	}
 
-	SetDrawBright(255, 255, 255);
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
 
 	SetDrawBlendMode(
 		DX_BLENDMODE_NOBLEND,
@@ -4792,7 +4976,11 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetUseTextureToShader(1, -1);
 	SetUseTextureToShader(2, -1);
 
-	SetDrawBright(255, 255, 255);
+	SetDrawBright(
+		255,
+		255,
+		255
+	);
 
 	SetDrawBlendMode(
 		DX_BLENDMODE_NOBLEND,
@@ -4803,4 +4991,176 @@ void Stage::DrawOpaqueSceneForOutline(
 	SetUseBackCulling(TRUE);
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
+}
+
+void Stage::DrawPostOutlineOverlay(void)
+{
+	if (outlineOverlayPS_ < 0 ||
+		outlineRTColor_ < 0 ||
+		outlineRTNormal_ < 0 ||
+		outlineRTDepth_ < 0)
+	{
+		return;
+	}
+
+	// ステージが描かれているカラーRTへ重ねる
+	SetDrawScreen(outlineRTColor_);
+
+	int screenW = 0;
+	int screenH = 0;
+
+	GetDrawScreenSize(
+		&screenW,
+		&screenH
+	);
+
+	// =========================
+	// 2D輪郭線合成用設定
+	// =========================
+
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+	SetUseLighting(FALSE);
+
+	// シェーダーが返したアルファ値で輪郭線だけ重ねる
+	SetDrawBlendMode(
+		DX_BLENDMODE_ALPHA,
+		255
+	);
+
+	SetUseVertexShader(-1);
+
+	// t0は使用しない
+	SetUseTextureToShader(0, -1);
+
+	// t1に法線
+	SetUseTextureToShader(
+		1,
+		outlineRTNormal_
+	);
+
+	// t2に深度
+	SetUseTextureToShader(
+		2,
+		outlineRTDepth_
+	);
+
+	SetUsePixelShader(
+		outlineOverlayPS_
+	);
+
+	// =========================
+	// 全画面ポリゴン
+	// =========================
+
+	VERTEX2DSHADER vertex[6] = {};
+
+	for (int i = 0; i < 6; i++)
+	{
+		vertex[i].rhw = 1.0f;
+
+		vertex[i].dif =
+			GetColorU8(
+				255,
+				255,
+				255,
+				255
+			);
+
+		vertex[i].spc =
+			GetColorU8(
+				0,
+				0,
+				0,
+				0
+			);
+	}
+
+	// 左上
+	vertex[0].pos =
+		VGet(
+			0.0f,
+			0.0f,
+			0.0f
+		);
+
+	vertex[0].u = 0.0f;
+	vertex[0].v = 0.0f;
+	vertex[0].su = 0.0f;
+	vertex[0].sv = 0.0f;
+
+	// 左下
+	vertex[1].pos =
+		VGet(
+			0.0f,
+			static_cast<float>(screenH),
+			0.0f
+		);
+
+	vertex[1].u = 0.0f;
+	vertex[1].v = 1.0f;
+	vertex[1].su = 0.0f;
+	vertex[1].sv = 1.0f;
+
+	// 右下
+	vertex[2].pos =
+		VGet(
+			static_cast<float>(screenW),
+			static_cast<float>(screenH),
+			0.0f
+		);
+
+	vertex[2].u = 1.0f;
+	vertex[2].v = 1.0f;
+	vertex[2].su = 1.0f;
+	vertex[2].sv = 1.0f;
+
+	// 左上
+	vertex[3] = vertex[0];
+
+	// 右下
+	vertex[4] = vertex[2];
+
+	// 右上
+	vertex[5].pos =
+		VGet(
+			static_cast<float>(screenW),
+			0.0f,
+			0.0f
+		);
+
+	vertex[5].u = 1.0f;
+	vertex[5].v = 0.0f;
+	vertex[5].su = 1.0f;
+	vertex[5].sv = 0.0f;
+
+	DrawPrimitive2DToShader(
+		vertex,
+		6,
+		DX_PRIMTYPE_TRIANGLELIST
+	);
+
+	// =========================
+	// シェーダー解除
+	// =========================
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	SetUsePixelShader(-1);
+
+	SetDrawBlendMode(
+		DX_BLENDMODE_NOBLEND,
+		0
+	);
+
+	// ここでClearDrawScreenはしない
+	// ステージのZバッファを敵描画に使う
+
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseBackCulling(TRUE);
+	SetUseLighting(TRUE);
 }

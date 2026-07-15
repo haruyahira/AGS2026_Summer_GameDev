@@ -89,6 +89,7 @@ public:
 	void Init(void) override;
 	void Update(void) override;
 	void Draw(void) override;
+	void DrawUI(void);
 
 	// 衝突判定に用いられるコライダ制御
 	void AddCollider(Collider* collider);

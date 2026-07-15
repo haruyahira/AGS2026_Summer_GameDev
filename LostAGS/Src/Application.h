@@ -79,6 +79,10 @@ public:
 	inline static int getSizeY_;
 	inline static int getFps_;
 	inline static int adjustedSizeY_;
+	static int GetScreenHeight()
+	{
+		return adjustedSizeY_;
+	}
 private:
 
 	// 静的インスタンス

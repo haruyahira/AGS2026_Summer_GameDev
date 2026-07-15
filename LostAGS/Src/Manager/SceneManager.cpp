@@ -87,7 +87,7 @@ void SceneManager::Init(void)
 #ifdef _DEBUG
 	waitSceneId_ = SCENE_ID::GAME;
 #else
-	waitSceneId_ = SCENE_ID::TITLE;
+	waitSceneId_ = SCENE_ID::GAME;
 #endif
 
 

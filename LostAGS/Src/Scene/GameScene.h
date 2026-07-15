@@ -61,4 +61,5 @@ private:
 	int introSmallFont_;
 
 	void DrawIntroUI(void) const;
+	void DrawPlayerAndEnemy(void);
 };
