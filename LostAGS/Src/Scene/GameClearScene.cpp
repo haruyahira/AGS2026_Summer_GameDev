@@ -1,10 +1,311 @@
-#include <DxLib.h>
+ï»¿#include <DxLib.h>
 #include <cstring>
 
 #include "../Manager/InputManager.h"
 #include "../Manager/SceneManager.h"
 #include "../Manager/SoundManager.h"
 #include "GameClearScene.h"
+
+namespace
+{
+    enum class CreditType 
+    {
+        
+            TITLE,
+            MESSAGE,
+            ROLE,
+            NAME,
+            SPACE
+            
+    };
+
+    struct CreditLine
+    {
+            CreditType type;
+            const char* text;
+    };
+
+    const CreditLine credits[] =
+    {
+        { CreditType::TITLE,   "GAME CLEAR" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::MESSAGE, "ãƒ—ãƒ¬ã‚¤ã—ã¦ã„ãŸã ã" },
+        { CreditType::MESSAGE, "ã‚ã‚ŠãŒã¨ã†ã”ã–ã„ã¾ã—ãŸ" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "GAMEã€€TITLE" },
+        { CreditType::NAME,    "ã€Œã¬ã‘ã ã›ï¼ã€€ã—ã¼ã‚ã¾å·¥æˆ¿ã€" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ä¼ç”»" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ãƒ‡ã‚¶ã‚¤ãƒ³/åŸç”»"},
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "åŸæ¡ˆï¼è„šæœ¬" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "3Dã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯åˆ¶ä½œ" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::NAME,    "ç™½æ¿± å„ªæ–—" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼ã‚¨ãƒãƒŸãƒ¼ãƒ¢ãƒ‡ãƒ«" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "æœº" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹ã€å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚·ãƒ§ãƒ¼ã‚±ãƒ¼ã‚¹" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ­ãƒƒã‚«ãƒ¼" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "å†·å‡åº«" },
+        { CreditType::NAME,    "ç™½æ¿±ã€€å„ªæ–—" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚²ãƒ¼ãƒŸãƒ³ã‚°ãƒãƒ¼ãƒˆPC" },
+        { CreditType::NAME,    "ç™½æ¿±ã€€å„ªæ–—" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "Iï¼–ï¼˜Book" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "æœ¬æ£š" },
+        { CreditType::NAME,    "ç™½æ¿±ã€€å„ªæ–—" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ç·Šæ€¥è„±å‡ºè£…ç½®" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "æ£š" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚´ãƒŸç®±" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "åºŠ" },
+        { CreditType::NAME,    "ç™½æ¿± å„ªæ–—ã€å¹³å´ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‡ã‚¶ã‚¤ãƒ³" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "é€²è¡Œç®¡ç†" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+
+        { CreditType::ROLE,    "ã‚·ã‚¹ãƒ†ãƒ ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒãƒƒãƒ—ãƒ‡ã‚¶ã‚¤ãƒ³" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼ãƒ¢ãƒ–ãƒ‡ã‚¶ã‚¤ãƒ³" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ‡ãƒãƒƒã‚¯ï¼ãƒ†ã‚¹ãƒˆãƒ—ãƒ¬ã‚¤" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::NAME,    "ç™½æ¿± å„ªæ–—" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ—ãƒ­ãƒ‡ãƒ¥ãƒ¼ã‚µãƒ¼" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ‡ã‚£ãƒ¬ã‚¯ã‚¿ãƒ¼" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ—ãƒ­ã‚°ãƒ©ãƒ " },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ä½œç”»ç›£ç£" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "å‹•ç”»" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "åˆ¶ä½œé€²è¡Œ" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ—ãƒ­ãƒ‡ãƒ¥ãƒ¼ã‚µãƒ¼" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶ä½œ" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::NAME,    "ç™½æ¿± å„ªæ–—" },
+        { CreditType::NAME,    "è¥¿æ‘ æ˜æ´‹" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ‡ã‚£ãƒ¬ã‚¯ã‚¿ãƒ¼" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::ROLE,    "ãƒ—ãƒ­ãƒ‡ãƒ¥ãƒ¼ã‚µãƒ¼" },
+        { CreditType::NAME,    "å¹³ï¨‘ æ™´é™½" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+
+        { CreditType::ROLE,    "ã‚¹ãƒšã‚·ãƒ£ãƒ«ã‚µãƒ³ã‚¯ã‚¹" },
+        { CreditType::NAME,    "éŠã‚“ã§ãã‚ŒãŸçš†æ§˜" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+
+        { CreditType::TITLE,   "åˆ¶ä½œãƒ»è‘—ä½œ" },
+        { CreditType::TITLE,   "ã—ã¼ã‚ã¾" },
+        { CreditType::SPACE,   "" },
+        { CreditType::SPACE,   "" },
+    };
+ 
+    constexpr int creditCount =
+        static_cast<int>(
+            sizeof(credits) / sizeof(credits[0])
+            );
+
+    int GetCreditLineHeight(CreditType type)
+    {
+        switch (type)
+        {
+        case CreditType::TITLE:
+            return 115;
+
+        case CreditType::MESSAGE:
+            return 46;
+
+        case CreditType::ROLE:
+            return 52;
+
+        case CreditType::NAME:
+            return 72;
+
+        case CreditType::SPACE:
+            return 30;
+        }
+
+        return 0;
+    }
+
+
+    int GetUtf8CharacterBytes(
+        const unsigned char* text
+    )
+    {
+        if (text == nullptr ||
+            text[0] == '\0')
+        {
+            return 0;
+        }
+
+        // ASCIIæ–‡å­—
+        if ((text[0] & 0x80) == 0x00)
+        {
+            return 1;
+        }
+
+        // UTF-8ã®2ãƒã‚¤ãƒˆæ–‡å­—
+        if ((text[0] & 0xE0) == 0xC0)
+        {
+            return 2;
+        }
+
+        // UTF-8ã®3ãƒã‚¤ãƒˆæ–‡å­—
+        if ((text[0] & 0xF0) == 0xE0)
+        {
+            return 3;
+        }
+
+        // UTF-8ã®4ãƒã‚¤ãƒˆæ–‡å­—
+        if ((text[0] & 0xF8) == 0xF0)
+        {
+            return 4;
+        }
+
+        // ä¸æ­£ãªæ–‡å­—ã®å ´åˆã¯1ãƒã‚¤ãƒˆé€²ã‚ã‚‹
+        return 1;
+    }
+    
+}
 
 GameClearScene::GameClearScene(void)
 {
@@ -17,6 +318,8 @@ GameClearScene::GameClearScene(void)
 
     staffRollY_ = 0.0f;
     staffRollSpeed_ = 38.0f;
+
+    finalCreditCenterOffset_ = 0.0f;
 
     startTime_ = 0;
     isInputEnabled_ = false;
@@ -72,38 +375,97 @@ void GameClearScene::Init(void)
         true
     );
 
-    // ‘S‰æ–Ê•\¦—p‚Ìˆê–‡ŠG
+    // å…¨ç”»é¢è¡¨ç¤ºç”¨ã®ä¸€æšçµµ
     clearImageHandle_ = LoadGraph(
         "Data/Image/GameClear.png"
     );
 
-    // GAME CLEARA§ìE’˜ì‚È‚Ç
+    // GAME CLEARã€åˆ¶ä½œãƒ»è‘—ä½œãªã©
     titleFontHandle_ = CreateFontToHandle(
         nullptr,
         72,
         5
     );
 
-    // –ğEAƒƒbƒZ[ƒW
+    // å½¹è·ã€ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
     roleFontHandle_ = CreateFontToHandle(
         nullptr,
         34,
         3
     );
 
-    // ƒXƒ^ƒbƒt–¼
+    // ã‚¹ã‚¿ãƒƒãƒ•å
     nameFontHandle_ = CreateFontToHandle(
         nullptr,
         44,
         3
     );
 
-    // ‰æ–Ê‰º•”‚ÌˆÄ“à
+    // ç”»é¢ä¸‹éƒ¨ã®æ¡ˆå†…
     guideFontHandle_ = CreateFontToHandle(
         nullptr,
         30,
         2
     );
+
+    // æœ€å¾Œã®è¡¨ç¤ºè¡Œã®ä¸­å¤®ä½ç½®ã‚’è‡ªå‹•è¨ˆç®—ã™ã‚‹
+    float currentOffsetY = 0.0f;
+
+    finalCreditCenterOffset_ = 0.0f;
+
+    for (int i = 0; i < creditCount; i++)
+    {
+        const CreditLine& credit =
+            credits[i];
+
+        if (credit.type != CreditType::SPACE)
+        {
+            int fontHandle =
+                nameFontHandle_;
+
+            switch (credit.type)
+            {
+            case CreditType::TITLE:
+                fontHandle =
+                    titleFontHandle_;
+                break;
+
+            case CreditType::MESSAGE:
+            case CreditType::ROLE:
+                fontHandle =
+                    roleFontHandle_;
+                break;
+
+            case CreditType::NAME:
+                fontHandle =
+                    nameFontHandle_;
+                break;
+
+            case CreditType::SPACE:
+                break;
+            }
+
+            const int fontSize =
+                GetFontSizeToHandle(
+                    fontHandle
+                );
+
+            /*
+             * è¡¨ç¤ºè¡ŒãŒã‚ã‚‹ãŸã³ã«æ›´æ–°ã™ã‚‹ã€‚
+             * æœ€çµ‚çš„ã«æœ€å¾Œã®è¡¨ç¤ºè¡Œã®ä¸­å¤®ä½ç½®ãŒæ®‹ã‚‹ã€‚
+             */
+            finalCreditCenterOffset_ =
+                currentOffsetY
+                + static_cast<float>(fontSize) * 0.5f;
+        }
+
+        currentOffsetY +=
+            static_cast<float>(
+                GetCreditLineHeight(
+                    credit.type
+                )
+                );
+    }
 
     int screenW = 0;
     int screenH = 0;
@@ -113,13 +475,13 @@ void GameClearScene::Init(void)
         &screenH
     );
 
-    // Å‰‚Ì•¶š‚ğ‰æ–Ê‰º‚©‚çoŒ»‚³‚¹‚é
+    // æœ€åˆã®æ–‡å­—ã‚’ç”»é¢ä¸‹ã‹ã‚‰å‡ºç¾ã•ã›ã‚‹
     staffRollY_ =
         static_cast<float>(
             screenH + 100
             );
 
-    // ‘å‚«‚È•¶š‚É‡‚í‚¹‚Ä­‚µ‘¬‚­‚·‚é
+    // å¤§ããªæ–‡å­—ã«åˆã‚ã›ã¦å°‘ã—é€Ÿãã™ã‚‹
     staffRollSpeed_ = 138.0f;
 
     backgroundMoveTime_ = 0.0f;
@@ -139,7 +501,7 @@ void GameClearScene::Update(void)
     backgroundMoveTime_ +=
         backgroundMoveSpeed_ * deltaTime;
 
-    // ‰¡ˆÚ“®‚ÆcˆÚ“®‚Ì—¼•û‚ª“¯‚¶ˆÊ’u‚É–ß‚éüŠú
+    // æ¨ªç§»å‹•ã¨ç¸¦ç§»å‹•ã®ä¸¡æ–¹ãŒåŒã˜ä½ç½®ã«æˆ»ã‚‹å‘¨æœŸ
     const float backgroundLoopTime =
         DX_TWO_PI_F * 100.0f;
 
@@ -156,44 +518,35 @@ void GameClearScene::Update(void)
         &screenH
     );
 
-    /*
-     * Œ»İ‚Ìcredits”z—ñ‚É‚¨‚¯‚éA
-     * staffRollY_‚©‚ç
-     * u§ìE’˜ìvu‚µ‚Ú‚ ‚Üv‚Ì’†‰›‚Ü‚Å‚Ì‹——£B
-     */
-     // staffRollY_‚©‚çu‚µ‚Ú‚ ‚Üv‚Ì•¶š’†‰›‚Ü‚Å‚Ì‹——£
-    const float shiboamaCenterOffset =
-        2716.0f;
+  
 
-    // ƒXƒ^ƒbƒtƒ[ƒ‹’â~‘O‚¾‚¯ã‚Ö“®‚©‚·
+    // ã‚¹ã‚¿ãƒƒãƒ•ãƒ­ãƒ¼ãƒ«åœæ­¢å‰ã ã‘ä¸Šã¸å‹•ã‹ã™
     if (!isStaffRollStopped_)
     {
         staffRollY_ -=
             staffRollSpeed_ * deltaTime;
 
-        const float shiboamaCenterY =
+        // æœ€å¾Œã®è¡¨ç¤ºè¡Œã®ç¾åœ¨ã®ä¸­å¤®ä½ç½®
+        const float finalCreditCenterY =
             staffRollY_
-            + shiboamaCenterOffset;
+            + finalCreditCenterOffset_;
 
+        // ç”»é¢å…¨ä½“ã®ç¸¦ä¸­å¤®
         const float screenCenterY =
-            static_cast<float>(screenH) * 0.5f
-            - 400.0f;
+            static_cast<float>(screenH) * 0.5f;
 
-        /*
-         * u§ìE’˜ìvu‚µ‚Ú‚ ‚Üv‚Ì’†‰›‚ª
-         * ‰æ–Ê’†‰›‚Ö“’B‚µ‚½‚çA‚»‚ÌˆÊ’u‚ÅŒÅ’è‚·‚éB
-         */
-        if (shiboamaCenterY <= screenCenterY)
+        // æœ€å¾Œã®è¡¨ç¤ºè¡ŒãŒç”»é¢ä¸­å¤®ã«åˆ°é”ã—ãŸã‚‰åœæ­¢
+        if (finalCreditCenterY <= screenCenterY)
         {
             staffRollY_ =
                 screenCenterY
-                - shiboamaCenterOffset;
+                - finalCreditCenterOffset_;
 
             isStaffRollStopped_ = true;
         }
     }
 
-    // ƒV[ƒ“ŠJn‚©‚ç1•bŒã‚É‘€ì‰Â”\
+    // ã‚·ãƒ¼ãƒ³é–‹å§‹ã‹ã‚‰1ç§’å¾Œã«æ“ä½œå¯èƒ½
     if (GetNowCount() - startTime_ >= 1000)
     {
         isInputEnabled_ = true;
@@ -233,7 +586,7 @@ void GameClearScene::Update(void)
 
 void GameClearScene::Draw(void)
 {
-    // ƒJƒXƒ^ƒ€ƒVƒF[ƒ_[‚ğ‰ğœ
+    // ã‚«ã‚¹ã‚¿ãƒ ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’è§£é™¤
     SetUseVertexShader(-1);
     SetUsePixelShader(-1);
 
@@ -241,7 +594,7 @@ void GameClearScene::Draw(void)
     SetUseTextureToShader(1, -1);
     SetUseTextureToShader(2, -1);
 
-    // 2D•`‰æ—p‚Ìİ’è
+    // 2Dæç”»ç”¨ã®è¨­å®š
     SetUseZBuffer3D(FALSE);
     SetWriteZBuffer3D(FALSE);
     SetUseBackCulling(FALSE);
@@ -258,13 +611,13 @@ void GameClearScene::Draw(void)
         0
     );
 
-    // •`‰æ‡
+    // æç”»é †
     DrawBackground();
     DrawClearImage();
     DrawStaffRoll();
     DrawGuide();
 
-    // •`‰æ”ÍˆÍ‚ğ•K‚¸‘S‰æ–Ê‚Ö–ß‚·
+    // æç”»ç¯„å›²ã‚’å¿…ãšå…¨ç”»é¢ã¸æˆ»ã™
     int screenW = 0;
     int screenH = 0;
 
@@ -302,7 +655,7 @@ void GameClearScene::DrawBackground(void) const
         &screenH
     );
 
-    // ÀÛ‚Ì•`‰æ‰æ–Ê‘S‘Ì‚ğ•‚Å“h‚é
+    // å®Ÿéš›ã®æç”»ç”»é¢å…¨ä½“ã‚’é»’ã§å¡—ã‚‹
     DrawBox(
         0,
         0,
@@ -337,8 +690,8 @@ void GameClearScene::DrawClearImage(void) const
         if (imageW > 0 &&
             imageH > 0)
         {
-            // Œ³‰æ‘œ‚Ì90ƒp[ƒZƒ“ƒg‚ğØ‚èo‚·
-            // c‚è10ƒp[ƒZƒ“ƒg•ª‚ğˆÚ“®—Ìˆæ‚Æ‚µ‚Äg—p‚·‚é
+            // å…ƒç”»åƒã®90ãƒ‘ãƒ¼ã‚»ãƒ³ãƒˆã‚’åˆ‡ã‚Šå‡ºã™
+            // æ®‹ã‚Š10ãƒ‘ãƒ¼ã‚»ãƒ³ãƒˆåˆ†ã‚’ç§»å‹•é ˜åŸŸã¨ã—ã¦ä½¿ç”¨ã™ã‚‹
             const float cropRate = 0.90f;
 
             const int sourceW =
@@ -351,19 +704,19 @@ void GameClearScene::DrawClearImage(void) const
                     imageH * cropRate
                     );
 
-            // Ø‚èæ‚èˆÊ’u‚ğˆÚ“®‚Å‚«‚é”ÍˆÍ
+            // åˆ‡ã‚Šå–ã‚Šä½ç½®ã‚’ç§»å‹•ã§ãã‚‹ç¯„å›²
             const int moveRangeX =
                 imageW - sourceW;
 
             const int moveRangeY =
                 imageH - sourceH;
 
-            // 0.0‚©‚ç1.0‚Ì”ÍˆÍ‚Å¶‰E‚É‰•œ
+            // 0.0ã‹ã‚‰1.0ã®ç¯„å›²ã§å·¦å³ã«å¾€å¾©
             const float moveXRate =
                 (sinf(backgroundMoveTime_) + 1.0f)
                 * 0.5f;
 
-            // ‰¡‚Æ‚Í­‚µˆá‚¤‘¬“x‚Åã‰º‚É‰•œ
+            // æ¨ªã¨ã¯å°‘ã—é•ã†é€Ÿåº¦ã§ä¸Šä¸‹ã«å¾€å¾©
             const float moveYRate =
                 (cosf(backgroundMoveTime_ * 0.73f) + 1.0f)
                 * 0.5f;
@@ -378,7 +731,7 @@ void GameClearScene::DrawClearImage(void) const
                     moveRangeY * moveYRate
                     );
 
-            // ˆÚ“®‚·‚éØ‚èæ‚è”ÍˆÍ‚ğ‰æ–Ê‘S‘Ì‚ÖŠg‘å•\¦
+            // ç§»å‹•ã™ã‚‹åˆ‡ã‚Šå–ã‚Šç¯„å›²ã‚’ç”»é¢å…¨ä½“ã¸æ‹¡å¤§è¡¨ç¤º
             DrawRectExtendGraph(
                 0,
                 0,
@@ -437,7 +790,7 @@ void GameClearScene::DrawClearImage(void) const
         );
     }
 
-    // ‰æ‘œ‚ğ”–‚­ˆÃ‚­‚·‚é
+    // ç”»åƒã‚’è–„ãæš—ãã™ã‚‹
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         10
@@ -470,11 +823,11 @@ void GameClearScene::DrawStaffRoll(void) const
 
     const int guideAreaHeight = 76;
 
-    // ƒNƒŒƒWƒbƒg‚ğ•\¦‚·‚é‰¡ˆÊ’u
+    // ã‚¯ãƒ¬ã‚¸ãƒƒãƒˆã‚’è¡¨ç¤ºã™ã‚‹æ¨ªä½ç½®
     const int creditCenterX =
         screenW / 2;
 
-    // •‚¢”¼“§–¾”wŒi‚Í‰æ–Ê‘S‘Ì
+    // é»’ã„åŠé€æ˜èƒŒæ™¯ã¯ç”»é¢å…¨ä½“
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         105
@@ -494,7 +847,7 @@ void GameClearScene::DrawStaffRoll(void) const
         0
     );
 
-    // ‰º•”‚ÌˆÄ“à•”•ª‚É‚ÍƒXƒ^ƒbƒtƒ[ƒ‹‚ğ•`‚©‚È‚¢
+    // ä¸‹éƒ¨ã®æ¡ˆå†…éƒ¨åˆ†ã«ã¯ã‚¹ã‚¿ãƒƒãƒ•ãƒ­ãƒ¼ãƒ«ã‚’æã‹ãªã„
     SetDrawArea(
         0,
         0,
@@ -507,119 +860,9 @@ void GameClearScene::DrawStaffRoll(void) const
             staffRollY_
             );
 
-    enum class CreditType
-    {
-        TITLE,
-        MESSAGE,
-        ROLE,
-        NAME,
-        SPACE
-    };
-
-    struct CreditLine
-    {
-        CreditType type;
-        const char* text;
-    };
-
-    const CreditLine credits[] =
-    {
-        { CreditType::TITLE,   "GAME CLEAR" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::MESSAGE, "ƒvƒŒƒC‚µ‚Ä‚¢‚½‚¾‚«" },
-        { CreditType::MESSAGE, "‚ ‚è‚ª‚Æ‚¤‚²‚´‚¢‚Ü‚µ‚½" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "Šé‰æ^ƒvƒƒfƒ…[ƒT[" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒfƒBƒŒƒNƒ^[" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒLƒƒƒ‰ƒNƒ^[ƒfƒUƒCƒ“" },
-        { CreditType::ROLE,    "ƒŒƒbƒT[ƒpƒ“ƒ_ƒfƒUƒCƒ“" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒA[ƒgƒfƒBƒŒƒNƒ^[" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒvƒƒOƒ‰ƒ€ƒfƒBƒŒƒNƒ^[" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒvƒƒOƒ‰ƒ€" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒvƒ‰ƒ“ƒjƒ“ƒO" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒVƒiƒŠƒI" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "3DƒLƒƒƒ‰ƒNƒ^[" },
-        { CreditType::ROLE,    "ƒfƒBƒŒƒNƒ^[" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "3DƒLƒƒƒ‰ƒNƒ^[ƒ‚ƒfƒ‹" },
-        { CreditType::ROLE,    "ƒ‚[ƒVƒ‡ƒ“" },
-        { CreditType::NAME,    "•½ú± °—z" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::ROLE,    "ƒXƒyƒVƒƒƒ‹ƒTƒ“ƒNƒX" },
-        { CreditType::NAME,    "—V‚ñ‚Å‚­‚ê‚½ŠF—l" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-        { CreditType::TITLE,   "§ìE’˜ì" },
-        { CreditType::TITLE,   "‚µ‚Ú‚ ‚Ü" },
-        { CreditType::SPACE,   "" },
-        { CreditType::SPACE,   "" },
-
-      
-    };
-
-    const int creditCount =
-        sizeof(credits) /
-        sizeof(credits[0]);
+    // æ–‡å­—ã‚’æºã‚‰ã™ãŸã‚ã®çµŒéæ™‚é–“
+    const float waveTime =
+        static_cast<float>(GetNowCount()) / 1000.0f;
 
     for (int i = 0; i < creditCount; i++)
     {
@@ -628,10 +871,13 @@ void GameClearScene::DrawStaffRoll(void) const
 
         if (credit.type == CreditType::SPACE)
         {
-            y += 30;
+            y +=
+                GetCreditLineHeight(
+                    credit.type
+                );
+
             continue;
         }
-
         int fontHandle =
             nameFontHandle_;
 
@@ -644,7 +890,10 @@ void GameClearScene::DrawStaffRoll(void) const
         int darkEdgeColor =
             GetColor(80, 35, 5);
 
-        int lineHeight = 66;
+        const int lineHeight =
+            GetCreditLineHeight(
+                credit.type
+            );
         int edgeSize = 3;
 
         bool hasGreenLine = false;
@@ -664,7 +913,7 @@ void GameClearScene::DrawStaffRoll(void) const
             darkEdgeColor =
                 GetColor(65, 25, 0);
 
-            lineHeight = 115;
+       
             edgeSize = 4;
             hasGreenLine = false;
             break;
@@ -682,7 +931,7 @@ void GameClearScene::DrawStaffRoll(void) const
             darkEdgeColor =
                 GetColor(20, 20, 20);
 
-            lineHeight = 46;
+          
             edgeSize = 3;
             hasGreenLine = false;
             break;
@@ -700,7 +949,7 @@ void GameClearScene::DrawStaffRoll(void) const
             darkEdgeColor =
                 GetColor(90, 35, 0);
 
-            lineHeight = 52;
+           
             edgeSize = 3;
             hasGreenLine = true;
             break;
@@ -718,7 +967,7 @@ void GameClearScene::DrawStaffRoll(void) const
             darkEdgeColor =
                 GetColor(85, 30, 0);
 
-            lineHeight = 72;
+         
             edgeSize = 4;
             hasGreenLine = true;
             break;
@@ -742,13 +991,17 @@ void GameClearScene::DrawStaffRoll(void) const
                 fontHandle
             );
 
-        const int drawX =
-            creditCenterX - textW / 2;
+      
+        // æ–‡å­—å˜ä½ã®æºã‚Œå¹…ã‚’è€ƒæ…®ã—ã¦ç”»é¢å†…ã‹åˆ¤å®šã™ã‚‹
+        constexpr int waveMarginY = 12;
 
-        if (y > -130 &&
-            y < screenH - guideAreaHeight + 40)
+        if (y > -130 - waveMarginY &&
+            y < screenH - guideAreaHeight + 40 + waveMarginY)
         {
-            // ‰©—ÎF‚Ìƒ‰ƒCƒ“‚ğ•¶š‚ÌŒã‚ë‚É•`‰æ
+            /*
+             * é»„ç·‘è‰²ã®ãƒ©ã‚¤ãƒ³ã¯æºã‚‰ã•ãšã€
+             * æ–‡å­—åˆ—å…¨ä½“ã®ä¸­å¤®ã«è¡¨ç¤ºã™ã‚‹ã€‚
+             */
             if (hasGreenLine)
             {
                 const int fontSize =
@@ -756,44 +1009,55 @@ void GameClearScene::DrawStaffRoll(void) const
                         fontHandle
                     );
 
+                const int lineX =
+                    creditCenterX
+                    - textW / 2
+                    - 18;
+
                 const int lineY =
                     y + fontSize - 5;
 
                 DrawCreditLine(
-                    drawX - 18,
+                    lineX,
                     lineY,
                     textW + 36,
                     GetColor(130, 255, 70)
                 );
             }
 
-            // ŠO‘¤‚ÌˆÃ‚¢‰
-            DrawOutlinedText(
-                drawX,
+            // 1æ–‡å­—ãšã¤å¤–å´ã®æš—ã„ç¸ã‚’æç”»
+            DrawWavingOutlinedText(
+                creditCenterX,
                 y,
                 text,
                 darkEdgeColor,
                 darkEdgeColor,
                 fontHandle,
-                edgeSize + 2
+                edgeSize + 2,
+                waveTime,
+                i
             );
 
-            // “à‘¤‚Ì”’‚¢‰
-            DrawOutlinedText(
-                drawX,
+            // 1æ–‡å­—ãšã¤å†…å´ã®ç™½ã„ç¸ã¨æ–‡å­—æœ¬ä½“ã‚’æç”»
+            DrawWavingOutlinedText(
+                creditCenterX,
                 y,
                 text,
                 textColor,
                 whiteEdgeColor,
                 fontHandle,
-                edgeSize
+                edgeSize,
+                waveTime,
+                i
             );
         }
 
         y += lineHeight;
+
+        y += lineHeight;
     }
 
-    // •`‰æ”ÍˆÍ‚ğ‘S‰æ–Ê‚Ö–ß‚·
+    // æç”»ç¯„å›²ã‚’å…¨ç”»é¢ã¸æˆ»ã™
     SetDrawArea(
         0,
         0,
@@ -819,7 +1083,7 @@ void GameClearScene::DrawGuide(void) const
 
     const int guideAreaHeight = 76;
 
-    // ‰º•”‚Ì•‚¢‘Ñ
+    // ä¸‹éƒ¨ã®é»’ã„å¸¯
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         225
@@ -853,7 +1117,7 @@ void GameClearScene::DrawGuide(void) const
             );
 
     const char* guide =
-        "Œˆ’èƒL[  ƒ^ƒCƒgƒ‹‚Ö";
+        "æ±ºå®šã‚­ãƒ¼  ã‚¿ã‚¤ãƒˆãƒ«ã¸";
 
     const int guideLength =
         static_cast<int>(
@@ -901,8 +1165,8 @@ void GameClearScene::DrawOutlinedText(
 ) const
 {
     /*
-     * ‰‚ğŒ„ŠÔ‚È‚­•\¦‚·‚é‚½‚ßA
-     * edgeSize‚Ì”ÍˆÍ‚ğ‚·‚×‚Ä•`‰æ‚·‚éB
+     * ç¸ã‚’éš™é–“ãªãè¡¨ç¤ºã™ã‚‹ãŸã‚ã€
+     * edgeSizeã®ç¯„å›²ã‚’ã™ã¹ã¦æç”»ã™ã‚‹ã€‚
      */
     for (int offsetY = -edgeSize;
         offsetY <= edgeSize;
@@ -928,7 +1192,7 @@ void GameClearScene::DrawOutlinedText(
         }
     }
 
-    // ÅŒã‚É•¶š–{‘Ì‚ğ•`‰æ
+    // æœ€å¾Œã«æ–‡å­—æœ¬ä½“ã‚’æç”»
     DrawStringToHandle(
         x,
         y,
@@ -938,6 +1202,134 @@ void GameClearScene::DrawOutlinedText(
     );
 }
 
+void GameClearScene::DrawWavingOutlinedText(
+    int centerX,
+    int baseY,
+    const char* text,
+    int textColor,
+    int edgeColor,
+    int fontHandle,
+    int edgeSize,
+    float waveTime,
+    int lineIndex
+) const
+{
+    if (text == nullptr)
+    {
+        return;
+    }
+
+    const int textLength =
+        static_cast<int>(
+            strlen(text)
+            );
+
+    if (textLength <= 0)
+    {
+        return;
+    }
+
+    // æ–‡å­—åˆ—å…¨ä½“ã®å¹…ã‚’å–å¾—ã—ã¦ä¸­å¤®æƒãˆã™ã‚‹
+    const int totalWidth =
+        GetDrawStringWidthToHandle(
+            text,
+            textLength,
+            fontHandle
+        );
+
+    int currentX =
+        centerX - totalWidth / 2;
+
+    int byteIndex = 0;
+    int characterIndex = 0;
+
+    while (byteIndex < textLength)
+    {
+        const unsigned char* currentCharacter =
+            reinterpret_cast<const unsigned char*>(
+                text + byteIndex
+                );
+
+        int characterBytes =
+            GetUtf8CharacterBytes(
+                currentCharacter
+            );
+
+        if (characterBytes <= 0 ||
+            byteIndex + characterBytes > textLength)
+        {
+            characterBytes = 1;
+        }
+
+        // UTF-8ã®1æ–‡å­—ã¯æœ€å¤§4ãƒã‚¤ãƒˆ
+        char characterText[5] =
+        {
+            '\0',
+            '\0',
+            '\0',
+            '\0',
+            '\0'
+        };
+
+        for (int j = 0;
+            j < characterBytes;
+            j++)
+        {
+            characterText[j] =
+                text[byteIndex + j];
+        }
+
+        const int characterWidth =
+            GetDrawStringWidthToHandle(
+                characterText,
+                characterBytes,
+                fontHandle
+            );
+
+        // è¡Œã”ã¨ã€æ–‡å­—ã”ã¨ã«å‹•ãã‚¿ã‚¤ãƒŸãƒ³ã‚°ã‚’ãšã‚‰ã™
+        const float phase =
+            static_cast<float>(lineIndex) * 0.25f
+            + static_cast<float>(characterIndex) * 0.55f;
+
+        // æ–‡å­—ã”ã¨ã®å·¦å³æºã‚Œ
+        const float waveX =
+            sinf(
+                waveTime * 1.3f
+                + phase * 0.7f
+            ) * 2.0f;
+
+        // æ–‡å­—ã”ã¨ã®ä¸Šä¸‹æºã‚Œ
+        const float waveY =
+            sinf(
+                waveTime * 2.4f
+                + phase
+            ) * 7.0f;
+
+        const int drawX =
+            currentX
+            + static_cast<int>(waveX);
+
+        const int drawY =
+            baseY
+            + static_cast<int>(waveY);
+
+        DrawOutlinedText(
+            drawX,
+            drawY,
+            characterText,
+            textColor,
+            edgeColor,
+            fontHandle,
+            edgeSize
+        );
+
+        currentX += characterWidth;
+        byteIndex += characterBytes;
+        characterIndex++;
+    }
+}
+
+
 void GameClearScene::DrawCreditLine(
     int x,
     int y,
@@ -945,7 +1337,7 @@ void GameClearScene::DrawCreditLine(
     int color
 ) const
 {
-    // ‘¾‚¢”¼“§–¾ƒ‰ƒCƒ“
+    // å¤ªã„åŠé€æ˜ãƒ©ã‚¤ãƒ³
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         75
@@ -960,7 +1352,7 @@ void GameClearScene::DrawCreditLine(
         14
     );
 
-    // ­‚µ‚¸‚ç‚µ‚½ƒ‰ƒCƒ“
+    // å°‘ã—ãšã‚‰ã—ãŸãƒ©ã‚¤ãƒ³
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         100
@@ -975,7 +1367,7 @@ void GameClearScene::DrawCreditLine(
         8
     );
 
-    // ’†S‚Ì–¾‚é‚¢ƒ‰ƒCƒ“
+    // ä¸­å¿ƒã®æ˜ã‚‹ã„ãƒ©ã‚¤ãƒ³
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         150

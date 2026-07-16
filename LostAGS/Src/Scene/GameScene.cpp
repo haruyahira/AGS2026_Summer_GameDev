@@ -132,7 +132,7 @@ void GameScene::OnLoaded(void)
 
 	// ƒJƒƒ‰
 	SceneManager::GetInstance().GetCamera()->SetFollow(&player_->GetTransform());
-	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FOLLOW
+	SceneManager::GetInstance().GetCamera()->ChangeMode(Camera::MODE::FIRST_PERSON
 	);
 
 	player_->Update();

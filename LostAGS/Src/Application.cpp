@@ -99,6 +99,10 @@ void Application::Init(void)
 
 	isInitFail_ = false;
 
+	SetUseCharCodeFormat(
+		DX_CHARCODEFORMAT_UTF8
+	);
+
 	if (DxLib_Init() == -1)
 	{
 		isInitFail_ = true;

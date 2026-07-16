@@ -44,7 +44,17 @@ private:
         int color
     ) const;
 
-
+    void DrawWavingOutlinedText(
+        int centerX,
+        int baseY,
+        const char* text,
+        int textColor,
+        int edgeColor,
+        int fontHandle,
+        int edgeSize,
+        float waveTime,
+        int lineIndex
+    ) const;
 
 private:
     // 全画面に表示する一枚絵
@@ -75,4 +85,5 @@ private:
     float backgroundMoveSpeed_;
     // 「制作・著作」が中央に到達したか
     bool isStaffRollStopped_;
+    float finalCreditCenterOffset_;
 };
