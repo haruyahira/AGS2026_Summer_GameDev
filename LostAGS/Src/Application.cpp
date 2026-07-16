@@ -74,34 +74,12 @@ void Application::Init(void)
 	InitDebugConsole();
 	DebugLog("Application Init Start\n");
 
-	// 現在の作業フォルダーを確認
-	char currentDirectory[MAX_PATH] = {};
-
-	DWORD result = GetCurrentDirectoryA(
-		MAX_PATH,
-		currentDirectory
-	);
-
-	if (result == 0)
-	{
-		DebugLog("作業フォルダーの取得に失敗しました\n");
-	}
-	else
-	{
-		DebugLog(
-			"作業フォルダー: %s\n",
-			currentDirectory
-		);
-	}
 
 	// DxLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 
 	isInitFail_ = false;
 
-	SetUseCharCodeFormat(
-		DX_CHARCODEFORMAT_UTF8
-	);
 
 	if (DxLib_Init() == -1)
 	{
