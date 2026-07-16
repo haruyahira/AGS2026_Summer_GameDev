@@ -1,5 +1,7 @@
 ﻿#include <DxLib.h>
+#include <Windows.h>
 #include <cstring>
+#include <string>
 
 #include "../Manager/InputManager.h"
 #include "../Manager/SceneManager.h"
@@ -267,44 +269,6 @@ namespace
     }
 
 
-    int GetUtf8CharacterBytes(
-        const unsigned char* text
-    )
-    {
-        if (text == nullptr ||
-            text[0] == '\0')
-        {
-            return 0;
-        }
-
-        // ASCII文字
-        if ((text[0] & 0x80) == 0x00)
-        {
-            return 1;
-        }
-
-        // UTF-8の2バイト文字
-        if ((text[0] & 0xE0) == 0xC0)
-        {
-            return 2;
-        }
-
-        // UTF-8の3バイト文字
-        if ((text[0] & 0xF0) == 0xE0)
-        {
-            return 3;
-        }
-
-        // UTF-8の4バイト文字
-        if ((text[0] & 0xF8) == 0xF0)
-        {
-            return 4;
-        }
-
-        // 不正な文字の場合は1バイト進める
-        return 1;
-    }
-    
 }
 
 GameClearScene::GameClearScene(void)
@@ -380,30 +344,32 @@ void GameClearScene::Init(void)
         "Data/Image/GameClear.png"
     );
 
+    const char* fontName = "Yu Gothic";
+
     // GAME CLEAR、制作・著作など
     titleFontHandle_ = CreateFontToHandle(
-        nullptr,
-        72,
+        fontName,
+        70,
         5
     );
 
     // 役職、メッセージ
     roleFontHandle_ = CreateFontToHandle(
-        nullptr,
-        34,
+        fontName,
+        32,
         3
     );
 
     // スタッフ名
     nameFontHandle_ = CreateFontToHandle(
-        nullptr,
-        44,
+        fontName,
+        42,
         3
     );
 
     // 画面下部の案内
     guideFontHandle_ = CreateFontToHandle(
-        nullptr,
+        fontName,
         30,
         2
     );
@@ -1015,7 +981,7 @@ void GameClearScene::DrawStaffRoll(void) const
                     - 18;
 
                 const int lineY =
-                    y + fontSize - 5;
+                    y + fontSize + 3;
 
                 DrawCreditLine(
                     lineX,
@@ -1054,7 +1020,6 @@ void GameClearScene::DrawStaffRoll(void) const
 
         y += lineHeight;
 
-        y += lineHeight;
     }
 
     // 描画範囲を全画面へ戻す
@@ -1154,182 +1119,6 @@ void GameClearScene::DrawGuide(void) const
     );
 }
 
-void GameClearScene::DrawOutlinedText(
-    int x,
-    int y,
-    const char* text,
-    int textColor,
-    int edgeColor,
-    int fontHandle,
-    int edgeSize
-) const
-{
-    /*
-     * 縁を隙間なく表示するため、
-     * edgeSizeの範囲をすべて描画する。
-     */
-    for (int offsetY = -edgeSize;
-        offsetY <= edgeSize;
-        offsetY++)
-    {
-        for (int offsetX = -edgeSize;
-            offsetX <= edgeSize;
-            offsetX++)
-        {
-            if (offsetX == 0 &&
-                offsetY == 0)
-            {
-                continue;
-            }
-
-            DrawStringToHandle(
-                x + offsetX,
-                y + offsetY,
-                text,
-                edgeColor,
-                fontHandle
-            );
-        }
-    }
-
-    // 最後に文字本体を描画
-    DrawStringToHandle(
-        x,
-        y,
-        text,
-        textColor,
-        fontHandle
-    );
-}
-
-void GameClearScene::DrawWavingOutlinedText(
-    int centerX,
-    int baseY,
-    const char* text,
-    int textColor,
-    int edgeColor,
-    int fontHandle,
-    int edgeSize,
-    float waveTime,
-    int lineIndex
-) const
-{
-    if (text == nullptr)
-    {
-        return;
-    }
-
-    const int textLength =
-        static_cast<int>(
-            strlen(text)
-            );
-
-    if (textLength <= 0)
-    {
-        return;
-    }
-
-    // 文字列全体の幅を取得して中央揃えする
-    const int totalWidth =
-        GetDrawStringWidthToHandle(
-            text,
-            textLength,
-            fontHandle
-        );
-
-    int currentX =
-        centerX - totalWidth / 2;
-
-    int byteIndex = 0;
-    int characterIndex = 0;
-
-    while (byteIndex < textLength)
-    {
-        const unsigned char* currentCharacter =
-            reinterpret_cast<const unsigned char*>(
-                text + byteIndex
-                );
-
-        int characterBytes =
-            GetUtf8CharacterBytes(
-                currentCharacter
-            );
-
-        if (characterBytes <= 0 ||
-            byteIndex + characterBytes > textLength)
-        {
-            characterBytes = 1;
-        }
-
-        // UTF-8の1文字は最大4バイト
-        char characterText[5] =
-        {
-            '\0',
-            '\0',
-            '\0',
-            '\0',
-            '\0'
-        };
-
-        for (int j = 0;
-            j < characterBytes;
-            j++)
-        {
-            characterText[j] =
-                text[byteIndex + j];
-        }
-
-        const int characterWidth =
-            GetDrawStringWidthToHandle(
-                characterText,
-                characterBytes,
-                fontHandle
-            );
-
-        // 行ごと、文字ごとに動くタイミングをずらす
-        const float phase =
-            static_cast<float>(lineIndex) * 0.25f
-            + static_cast<float>(characterIndex) * 0.55f;
-
-        // 文字ごとの左右揺れ
-        const float waveX =
-            sinf(
-                waveTime * 1.3f
-                + phase * 0.7f
-            ) * 2.0f;
-
-        // 文字ごとの上下揺れ
-        const float waveY =
-            sinf(
-                waveTime * 2.4f
-                + phase
-            ) * 7.0f;
-
-        const int drawX =
-            currentX
-            + static_cast<int>(waveX);
-
-        const int drawY =
-            baseY
-            + static_cast<int>(waveY);
-
-        DrawOutlinedText(
-            drawX,
-            drawY,
-            characterText,
-            textColor,
-            edgeColor,
-            fontHandle,
-            edgeSize
-        );
-
-        currentX += characterWidth;
-        byteIndex += characterBytes;
-        characterIndex++;
-    }
-}
-
-
 void GameClearScene::DrawCreditLine(
     int x,
     int y,
@@ -1385,5 +1174,182 @@ void GameClearScene::DrawCreditLine(
     SetDrawBlendMode(
         DX_BLENDMODE_NOBLEND,
         0
+    );
+}
+
+void GameClearScene::DrawWavingOutlinedText(
+    int centerX,
+    int baseY,
+    const char* text,
+    int textColor,
+    int edgeColor,
+    int fontHandle,
+    int edgeSize,
+    float waveTime,
+    int lineIndex
+) const
+{
+    if (text == nullptr ||
+        text[0] == '\0')
+    {
+        return;
+    }
+
+    const int textLength =
+        static_cast<int>(
+            strlen(text)
+            );
+
+    const int totalWidth =
+        GetDrawStringWidthToHandle(
+            text,
+            textLength,
+            fontHandle
+        );
+
+    int currentX =
+        centerX - totalWidth / 2;
+
+    int byteIndex = 0;
+    int characterIndex = 0;
+
+    while (byteIndex < textLength)
+    {
+        const unsigned char firstByte =
+            static_cast<unsigned char>(
+                text[byteIndex]
+                );
+
+        int characterBytes = 1;
+
+        /*
+         * Shift-JISの先頭バイトなら2バイト文字。
+         * 現在のプロジェクトでは、日本語が通常描画できるため、
+         * 実際の文字列がShift-JISになっている可能性が高い。
+         */
+        if ((firstByte >= 0x81 &&
+            firstByte <= 0x9F) ||
+            (firstByte >= 0xE0 &&
+                firstByte <= 0xFC))
+        {
+            characterBytes = 2;
+        }
+
+        // 文字列の終端を超えないようにする
+        if (byteIndex + characterBytes >
+            textLength)
+        {
+            characterBytes = 1;
+        }
+
+        char characterText[3] =
+        {
+            '\0',
+            '\0',
+            '\0'
+        };
+
+        characterText[0] =
+            text[byteIndex];
+
+        if (characterBytes == 2)
+        {
+            characterText[1] =
+                text[byteIndex + 1];
+        }
+
+        const int characterWidth =
+            GetDrawStringWidthToHandle(
+                characterText,
+                characterBytes,
+                fontHandle
+            );
+
+        const float phase =
+            static_cast<float>(lineIndex) * 0.25f
+            + static_cast<float>(characterIndex) * 0.55f;
+
+        const float waveX =
+            sinf(
+                waveTime * 1.3f
+                + phase * 0.7f
+            ) * 1.5f;
+
+        const float waveY =
+            sinf(
+                waveTime * 2.0f
+                + phase
+            ) * 6.0f;
+
+        const int drawX =
+            currentX
+            + static_cast<int>(waveX);
+
+        const int drawY =
+            baseY
+            + static_cast<int>(waveY);
+
+        DrawOutlinedText(
+            drawX,
+            drawY,
+            characterText,
+            textColor,
+            edgeColor,
+            fontHandle,
+            edgeSize
+        );
+
+        currentX += characterWidth;
+        byteIndex += characterBytes;
+        characterIndex++;
+    }
+}
+
+void GameClearScene::DrawOutlinedText(
+    int x,
+    int y,
+    const char* text,
+    int textColor,
+    int edgeColor,
+    int fontHandle,
+    int edgeSize
+) const
+{
+    if (text == nullptr ||
+        text[0] == '\0')
+    {
+        return;
+    }
+
+    for (int offsetY = -edgeSize;
+        offsetY <= edgeSize;
+        offsetY++)
+    {
+        for (int offsetX = -edgeSize;
+            offsetX <= edgeSize;
+            offsetX++)
+        {
+            if (offsetX == 0 &&
+                offsetY == 0)
+            {
+                continue;
+            }
+
+            DrawStringToHandle(
+                x + offsetX,
+                y + offsetY,
+                text,
+                edgeColor,
+                fontHandle
+            );
+        }
+    }
+
+    DrawStringToHandle(
+        x,
+        y,
+        text,
+        textColor,
+        fontHandle
     );
 }

@@ -13,4 +13,7 @@ public:
 private:
     int selectIndex_;
     float stickInputWait_;
+    int gameOverFontHandle_;
+    int menuFontHandle_;
+    int guideFontHandle_;
 };

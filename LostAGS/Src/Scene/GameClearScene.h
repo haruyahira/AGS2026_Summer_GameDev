@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Windows.h>
+#include <string>
 #include "SceneBase.h"
 
 class GameClearScene : public SceneBase
@@ -54,6 +56,16 @@ private:
         int edgeSize,
         float waveTime,
         int lineIndex
+    ) const;
+
+    void DrawOutlinedWideText(
+        int x,
+        int y,
+        const wchar_t* text,
+        int textColor,
+        int edgeColor,
+        int fontHandle,
+        int edgeSize
     ) const;
 
 private:
