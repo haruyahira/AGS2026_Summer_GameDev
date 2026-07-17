@@ -275,10 +275,8 @@ void TitleScene::UpdateSelect(void)
 	// RANKING
 	if (drawIndex_ == 2)
 	{
-		// ランキング画面を作ったらここに遷移を書く
-		// SceneManager::GetInstance().ChangeScene(
-		//     SceneManager::SCENE_ID::RANKING
-		// );
+		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::RANKING);
+		
 		return;
 	}
 

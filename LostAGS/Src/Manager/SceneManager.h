@@ -17,6 +17,7 @@ public:
 		TITLE,
 		GAME,
 		RESULT,
+		RANKING,
 		GAMEOVER,
 		GAMECLEAR,
 	};
@@ -74,6 +75,12 @@ public:
 	// メインスクリーン
 	int GetMainScreen(void);
 
+
+	void SetResultRank(
+		int rank
+	);
+
+	int GetResultRank(void) const;
 private:
 
 	// 静的インスタンス
@@ -144,5 +151,11 @@ private:
 	bool isLoadingDrawn_;
 	static constexpr int LOADING_MIN_TIME = 1680; // ミリ秒 1000 = 1秒
 
+	//---------------------------------
+	// 今回のランキング順位
+	//
+	// -1はランキング外
+	//---------------------------------
+	int resultRank_;
 
 };

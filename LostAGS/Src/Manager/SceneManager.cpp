@@ -7,6 +7,7 @@
 #include "../Scene/TitleScene.h"
 #include "../Scene/GameScene.h"
 #include "../Scene/ResultScene.h"
+#include "../Scene/RankingScene.h"
 #include "../Scene/GameOverScene.h"
 #include "../Scene/GameClearScene.h"
 #include "../Manager/SoundManager.h"
@@ -60,6 +61,7 @@ void SceneManager::Init(void)
 	resultRemainDay_ = START_REMAIN_DAY;
 	resultStolenMoney_ = 0;
 	resultTotalMoney_ = 0;
+	resultRank_ = -1;
 
 	waitSceneId_ = SCENE_ID::NONE;
 
@@ -87,7 +89,7 @@ void SceneManager::Init(void)
 #ifdef _DEBUG
 	waitSceneId_ = SCENE_ID::GAME;
 #else
-	waitSceneId_ = SCENE_ID::GAME;
+	waitSceneId_ = SCENE_ID::TITLE;
 #endif
 
 
@@ -324,6 +326,11 @@ void SceneManager::DoChangeScene(SCENE_ID sceneId)
 		scene_ = new ResultScene();
 		break;
 
+	case SCENE_ID::RANKING:
+		scene_ =
+			new RankingScene();
+		break;
+
 	case SCENE_ID::GAMEOVER:
 		scene_ = new GameOverScene();
 		break;
@@ -403,6 +410,11 @@ void SceneManager::StartAsyncChangeScene(SCENE_ID sceneId)
 
 	case SCENE_ID::RESULT:
 		scene_ = new ResultScene();
+		break;
+
+	case SCENE_ID::RANKING:
+		scene_ =
+			new RankingScene();
 		break;
 
 	case SCENE_ID::GAMEOVER:
@@ -529,25 +541,28 @@ void SceneManager::Fade(void)
 	}
 }
 
-void SceneManager::SetResultData(int stolenMoney)
+void SceneManager::SetResultData(
+	int stolenMoney)
 {
-	// 今回盗んだ金額
-	resultStolenMoney_ = stolenMoney;
+	//---------------------------------
+	// 今回の1日で盗んだ金額
+	//---------------------------------
+	resultStolenMoney_ =
+		stolenMoney;
 
-	// 累計金額に加算
-	resultTotalMoney_ += stolenMoney;
+	//---------------------------------
+	// 1日制なので累計金額も同じ値
+	//---------------------------------
+	resultTotalMoney_ =
+		stolenMoney;
 
-	// 1日終了したので残り日数を1減らす
-	gameRemainDay_--;
-
-	if (gameRemainDay_ < 0)
-	{
-		gameRemainDay_ = 0;
-	}
-
-	// リザルト表示用
-	resultRemainDay_ = gameRemainDay_;
+	//---------------------------------
+	// 1日終了済み
+	//---------------------------------
+	gameRemainDay_ = 0;
+	resultRemainDay_ = 0;
 }
+
 int SceneManager::GetGameRemainDay(void) const
 {
 	return gameRemainDay_;
@@ -570,19 +585,32 @@ int SceneManager::GetResultTotalMoney(void) const
 
 bool SceneManager::CanGoNextDay(void) const
 {
-	return gameRemainDay_ > 0;
+	return false;
 }
 
 void SceneManager::ResetGameResultData(void)
 {
-	gameRemainDay_ = START_REMAIN_DAY;
-	resultRemainDay_ = START_REMAIN_DAY;
+	//---------------------------------
+	// 1日制の初期状態
+	//---------------------------------
+	gameRemainDay_ = 1;
+	resultRemainDay_ = 1;
+
+	//---------------------------------
+	// 金額をリセット
+	//---------------------------------
 	resultStolenMoney_ = 0;
 	resultTotalMoney_ = 0;
 
-	// 追加：一度死んだ情報もリセット
-	isPlayerDeadOnce_ = false;
+	//---------------------------------
+	// 今回の順位をリセット
+	//---------------------------------
+	resultRank_ = -1;
 
+	//---------------------------------
+	// 死亡状態をリセット
+	//---------------------------------
+	isPlayerDeadOnce_ = false;
 }
 int SceneManager::GetTargetMoney(void) const
 {
@@ -591,7 +619,9 @@ int SceneManager::GetTargetMoney(void) const
 
 int SceneManager::GetNeedMoney(void) const
 {
-	int needMoney = targetMoney_ - resultTotalMoney_;
+	int needMoney =
+		targetMoney_ -
+		resultStolenMoney_;
 
 	if (needMoney < 0)
 	{
@@ -613,14 +643,19 @@ bool SceneManager::IsPlayerDeadOnce(void) const
 
 bool SceneManager::IsGameClear(void) const
 {
-	// 一度でも死んでいたらクリア不可
+	//---------------------------------
+	// 死亡していたらクリア不可
+	//---------------------------------
 	if (isPlayerDeadOnce_)
 	{
 		return false;
 	}
 
+	//---------------------------------
 	// 目標金額未達成ならクリア不可
-	if (resultTotalMoney_ < targetMoney_)
+	//---------------------------------
+	if (resultStolenMoney_ <
+		targetMoney_)
 	{
 		return false;
 	}
@@ -981,4 +1016,15 @@ void SceneManager::DrawLoadingScreen(void)
 
 	// ロード画面を1回描画した
 	isLoadingDrawn_ = true;
+}
+
+void SceneManager::SetResultRank(
+	int rank)
+{
+	resultRank_ = rank;
+}
+
+int SceneManager::GetResultRank(void) const
+{
+	return resultRank_;
 }
