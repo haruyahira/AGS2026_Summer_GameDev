@@ -190,6 +190,7 @@ void RankingScene::Update(void)
     }
 
 #ifdef _DEBUG
+
     //---------------------------------
     // デバッグ時のみDeleteで全削除
     //---------------------------------
@@ -199,6 +200,7 @@ void RankingScene::Update(void)
         RankingManager::GetInstance().
             Clear();
     }
+
 #endif
 }
 
@@ -302,7 +304,8 @@ void RankingScene::DrawBackground(void)
     //---------------------------------
     // 細い垂直走査光
     //---------------------------------
-    const int sweepWidth = 34;
+    const int sweepWidth =
+        34;
 
     const int sweepX =
         static_cast<int>(
@@ -414,14 +417,14 @@ void RankingScene::DrawDecorations(void)
             74
         );
 
-    //---------------------------------
-    // 左側の回路風ライン
-    //---------------------------------
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
         90
     );
 
+    //---------------------------------
+    // 左側の回路風ライン
+    //---------------------------------
     DrawLine(
         0,
         145,
@@ -533,9 +536,6 @@ void RankingScene::DrawPanel(void)
     const int screenH =
         Application::adjustedSizeY_;
 
-    //---------------------------------
-    // パネル位置と余白
-    //---------------------------------
     const int panelY =
         180;
 
@@ -545,33 +545,21 @@ void RankingScene::DrawPanel(void)
     const int bottomMargin =
         110;
 
-    //---------------------------------
-    // パネル横幅
-    //---------------------------------
     const int panelW =
         (std::min)(
             920,
             screenW -
             sideMargin * 2
-        );
+            );
 
-    //---------------------------------
-    // パネル高さ
-    //
-    // 最大770px
-    // ただし画面下の案内表示領域を残す
-    //---------------------------------
     const int panelH =
         (std::min)(
             770,
             screenH -
             panelY -
             bottomMargin
-        );
+            );
 
-    //---------------------------------
-    // パネルを画面中央へ配置
-    //---------------------------------
     const int panelX =
         screenW / 2 -
         panelW / 2;
@@ -707,7 +695,22 @@ void RankingScene::DrawPanel(void)
     );
 
     //---------------------------------
-    // REWARD列名を右揃え
+    // NAME列名
+    //---------------------------------
+    DrawStringToHandle(
+        panelX + 220,
+        panelY + 18,
+        "NAME",
+        GetColor(
+            105,
+            185,
+            178
+        ),
+        smallFontHandle_
+    );
+
+    //---------------------------------
+    // REWARD列名
     //---------------------------------
     const char* rewardLabel =
         "REWARD";
@@ -854,7 +857,9 @@ void RankingScene::DrawHeader(void)
         GetDrawStringWidthToHandle(
             subTitle,
             static_cast<int>(
-                strlen(subTitle)
+                strlen(
+                    subTitle
+                )
                 ),
             subTitleFontHandle_
         );
@@ -882,7 +887,9 @@ void RankingScene::DrawHeader(void)
         GetDrawStringWidthToHandle(
             title,
             static_cast<int>(
-                strlen(title)
+                strlen(
+                    title
+                )
                 ),
             titleFontHandle_
         );
@@ -894,7 +901,7 @@ void RankingScene::DrawHeader(void)
         centerX -
         titleWidth / 2 +
         4,
-        63 + 5,
+        68,
         title,
         GetColor(
             0,
@@ -960,19 +967,24 @@ void RankingScene::DrawRanking(void)
     const int rankingCount =
         rankingManager.GetRankingCount();
 
-    const int screenW =
-        Application::SCREEN_SIZE_X;
-
     const int centerX =
-        screenW / 2;
+        Application::SCREEN_SIZE_X / 2;
 
-    const int rowW = 800;
+    const int rowW =
+        800;
+
     const int rowX =
-        centerX - rowW / 2;
+        centerX -
+        rowW / 2;
 
-    const int startY = 250;
-    const int rowH = 54;
-    const int rowGap = 9;
+    const int startY =
+        250;
+
+    const int rowH =
+        54;
+
+    const int rowGap =
+        9;
 
     //---------------------------------
     // 10行固定表示
@@ -986,7 +998,8 @@ void RankingScene::DrawRanking(void)
             index + 1;
 
         const bool hasData =
-            index < rankingCount;
+            index <
+            rankingCount;
 
         const int baseY =
             startY +
@@ -998,7 +1011,9 @@ void RankingScene::DrawRanking(void)
         //---------------------------------
         const float appearDelay =
             0.35f +
-            static_cast<float>(index) *
+            static_cast<float>(
+                index
+                ) *
             0.07f;
 
         const float appearRate =
@@ -1012,9 +1027,6 @@ void RankingScene::DrawRanking(void)
                 )
             );
 
-        //---------------------------------
-        // 右からスライド
-        //---------------------------------
         const int slideOffsetX =
             static_cast<int>(
                 (
@@ -1024,12 +1036,12 @@ void RankingScene::DrawRanking(void)
                 120.0f
                 );
 
-        const int y =
-            baseY;
-
         const int x =
             rowX +
             slideOffsetX;
+
+        const int y =
+            baseY;
 
         const int alpha =
             static_cast<int>(
@@ -1101,20 +1113,204 @@ void RankingScene::DrawRanking(void)
             TRUE
         );
 
+        SetDrawBlendMode(
+            DX_BLENDMODE_NOBLEND,
+            0
+        );
+
         //---------------------------------
-        // 1位の光沢アニメーション
+        // 上位3位の発光
         //---------------------------------
-        if (rank == 1 &&
-            hasData)
+        if (hasData &&
+            rank >= 1 &&
+            rank <= 3)
         {
-            const int shineWidth = 100;
+            const float glowRate =
+                (
+                    std::sin(
+                        timer_ * 3.5f +
+                        static_cast<float>(
+                            rank
+                            )
+                    ) +
+                    1.0f
+                    ) *
+                0.5f;
+
+            unsigned int glowColor = 0;
+            unsigned int shineColor = 0;
+
+            //---------------------------------
+            // 金、銀、銅
+            //---------------------------------
+            if (rank == 1)
+            {
+                glowColor =
+                    GetColor(
+                        255,
+                        215,
+                        55
+                    );
+
+                shineColor =
+                    GetColor(
+                        255,
+                        245,
+                        160
+                    );
+            }
+            else if (rank == 2)
+            {
+                glowColor =
+                    GetColor(
+                        220,
+                        235,
+                        245
+                    );
+
+                shineColor =
+                    GetColor(
+                        250,
+                        255,
+                        255
+                    );
+            }
+            else
+            {
+                glowColor =
+                    GetColor(
+                        220,
+                        135,
+                        70
+                    );
+
+                shineColor =
+                    GetColor(
+                        255,
+                        185,
+                        115
+                    );
+            }
+
+            //---------------------------------
+            // 外側の弱い光
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                static_cast<int>(
+                    25.0f +
+                    glowRate *
+                    20.0f
+                    )
+            );
+
+            DrawBox(
+                x - 7,
+                y - 7,
+                x + rowW + 7,
+                y + rowH + 7,
+                glowColor,
+                FALSE
+            );
+
+            DrawBox(
+                x - 6,
+                y - 6,
+                x + rowW + 6,
+                y + rowH + 6,
+                glowColor,
+                FALSE
+            );
+
+            //---------------------------------
+            // 中間の光
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                static_cast<int>(
+                    45.0f +
+                    glowRate *
+                    30.0f
+                    )
+            );
+
+            DrawBox(
+                x - 3,
+                y - 3,
+                x + rowW + 3,
+                y + rowH + 3,
+                glowColor,
+                FALSE
+            );
+
+            DrawBox(
+                x - 2,
+                y - 2,
+                x + rowW + 2,
+                y + rowH + 2,
+                glowColor,
+                FALSE
+            );
+
+            //---------------------------------
+            // 強い発光枠
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                static_cast<int>(
+                    80.0f +
+                    glowRate *
+                    60.0f
+                    )
+            );
+
+            DrawBox(
+                x,
+                y,
+                x + rowW,
+                y + rowH,
+                glowColor,
+                FALSE
+            );
+
+            //---------------------------------
+            // 内側の薄い発光
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                static_cast<int>(
+                    8.0f +
+                    glowRate *
+                    10.0f
+                    )
+            );
+
+            DrawBox(
+                x + 2,
+                y + 2,
+                x + rowW - 2,
+                y + rowH - 2,
+                glowColor,
+                TRUE
+            );
+
+            //---------------------------------
+            // 流れる光沢
+            //---------------------------------
+            const int shineWidth =
+                90;
 
             const int shineX =
                 x -
                 shineWidth +
                 static_cast<int>(
                     std::fmod(
-                        timer_ * 210.0f,
+                        timer_ *
+                        210.0f +
+                        static_cast<float>(
+                            rank *
+                            100
+                            ),
                         static_cast<float>(
                             rowW +
                             shineWidth *
@@ -1123,32 +1319,51 @@ void RankingScene::DrawRanking(void)
                     )
                     );
 
+            int shineLeft =
+                shineX;
+
+            int shineRight =
+                shineX +
+                shineWidth;
+
+            if (shineLeft < x + 2)
+            {
+                shineLeft =
+                    x + 2;
+            }
+
+            if (shineRight >
+                x + rowW - 2)
+            {
+                shineRight =
+                    x + rowW - 2;
+            }
+
             SetDrawBlendMode(
-                DX_BLENDMODE_ALPHA,
-                42
+                DX_BLENDMODE_ADD,
+                35
             );
 
-            DrawBox(
-                shineX,
-                y + 2,
-                shineX + shineWidth,
-                y + rowH - 2,
-                GetColor(
-                    255,
-                    235,
-                    125
-                ),
-                TRUE
+            if (shineLeft < shineRight)
+            {
+                DrawBox(
+                    shineLeft,
+                    y + 2,
+                    shineRight,
+                    y + rowH - 2,
+                    shineColor,
+                    TRUE
+                );
+            }
+
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
             );
         }
 
-        SetDrawBlendMode(
-            DX_BLENDMODE_NOBLEND,
-            0
-        );
-
         //---------------------------------
-        // 枠線
+        // 行の枠線
         //---------------------------------
         DrawBox(
             x,
@@ -1210,29 +1425,96 @@ void RankingScene::DrawRanking(void)
             rankingFontHandle_
         );
 
-        //---------------------------------
-        // 区切り線
-        //---------------------------------
-        DrawLine(
-            x + 150,
-            y + rowH / 2,
-            x + rowW - 240,
-            y + rowH / 2,
-            hasData
-            ? GetColor(
-                55,
-                105,
-                103
-            )
-            : GetColor(
-                20,
-                48,
-                50
-            )
+        SetDrawBlendMode(
+            DX_BLENDMODE_NOBLEND,
+            0
         );
 
+        //---------------------------------
+        // データがある場合
+        //---------------------------------
         if (hasData)
         {
+            //---------------------------------
+            // プレイヤー名
+            //---------------------------------
+            std::string playerName =
+                rankingManager.GetName(
+                    rank
+                );
+
+            if (playerName.empty())
+            {
+                playerName =
+                    "NO NAME";
+            }
+
+            const int nameX =
+                x + 150;
+
+            const int nameY =
+                y + 7;
+
+            //---------------------------------
+            // 上位3位の名前を発光
+            //---------------------------------
+            if (rank >= 1 &&
+                rank <= 3)
+            {
+                SetDrawBlendMode(
+                    DX_BLENDMODE_ADD,
+                    55
+                );
+
+                DrawStringToHandle(
+                    nameX - 1,
+                    nameY,
+                    playerName.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    nameX + 1,
+                    nameY,
+                    playerName.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    nameX,
+                    nameY - 1,
+                    playerName.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    nameX,
+                    nameY + 1,
+                    playerName.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                SetDrawBlendMode(
+                    DX_BLENDMODE_NOBLEND,
+                    0
+                );
+            }
+
+            //---------------------------------
+            // 通常の名前
+            //---------------------------------
+            DrawStringToHandle(
+                nameX,
+                nameY,
+                playerName.c_str(),
+                rankColor,
+                rankingFontHandle_
+            );
+
             //---------------------------------
             // 金額
             //---------------------------------
@@ -1256,52 +1538,94 @@ void RankingScene::DrawRanking(void)
                     rankingFontHandle_
                 );
 
-            DrawStringToHandle(
-                x + rowW -
+            const int moneyX =
+                x +
+                rowW -
                 moneyWidth -
-                30,
-                y + 7,
+                30;
+
+            const int moneyY =
+                y + 7;
+
+            //---------------------------------
+            // 上位3位の金額を発光
+            //---------------------------------
+            if (rank >= 1 &&
+                rank <= 3)
+            {
+                SetDrawBlendMode(
+                    DX_BLENDMODE_ADD,
+                    55
+                );
+
+                DrawStringToHandle(
+                    moneyX - 1,
+                    moneyY,
+                    moneyText.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    moneyX + 1,
+                    moneyY,
+                    moneyText.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    moneyX,
+                    moneyY - 1,
+                    moneyText.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                DrawStringToHandle(
+                    moneyX,
+                    moneyY + 1,
+                    moneyText.c_str(),
+                    rankColor,
+                    rankingFontHandle_
+                );
+
+                SetDrawBlendMode(
+                    DX_BLENDMODE_NOBLEND,
+                    0
+                );
+            }
+
+            //---------------------------------
+            // 通常の金額
+            //---------------------------------
+            DrawStringToHandle(
+                moneyX,
+                moneyY,
                 moneyText.c_str(),
                 rankColor,
                 rankingFontHandle_
             );
-
-            //---------------------------------
-            // 上位3位のラベル
-            //---------------------------------
-            const char* badgeText = nullptr;
-
-            if (rank == 1)
-            {
-                badgeText =
-                    "TOP RECORD";
-            }
-            else if (rank == 2)
-            {
-                badgeText =
-                    "ELITE";
-            }
-            else if (rank == 3)
-            {
-                badgeText =
-                    "HIGH VALUE";
-            }
-
-            if (badgeText != nullptr)
-            {
-                DrawStringToHandle(
-                    x + 150,
-                    y + 6,
-                    badgeText,
-                    rankColor,
-                    smallFontHandle_
-                );
-            }
         }
         else
         {
             //---------------------------------
-            // 空き順位
+            // 空き順位の区切り線
+            //---------------------------------
+            DrawLine(
+                x + 150,
+                y + rowH / 2,
+                x + rowW - 240,
+                y + rowH / 2,
+                GetColor(
+                    20,
+                    48,
+                    50
+                )
+            );
+
+            //---------------------------------
+            // NO DATA
             //---------------------------------
             const char* noData =
                 "NO DATA";
@@ -1310,13 +1634,21 @@ void RankingScene::DrawRanking(void)
                 GetDrawStringWidthToHandle(
                     noData,
                     static_cast<int>(
-                        strlen(noData)
+                        strlen(
+                            noData
+                        )
                         ),
                     rankingFontHandle_
                 );
 
+            SetDrawBlendMode(
+                DX_BLENDMODE_ALPHA,
+                alpha
+            );
+
             DrawStringToHandle(
-                x + rowW -
+                x +
+                rowW -
                 noDataWidth -
                 30,
                 y + 7,
@@ -1328,13 +1660,21 @@ void RankingScene::DrawRanking(void)
                 ),
                 rankingFontHandle_
             );
-        }
 
-        SetDrawBlendMode(
-            DX_BLENDMODE_NOBLEND,
-            0
-        );
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
+            );
+        }
     }
+
+    //---------------------------------
+    // 描画モードを元に戻す
+    //---------------------------------
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
 }
 
 //--------------------------------------------------
@@ -1365,7 +1705,9 @@ void RankingScene::DrawGuide(void)
         GetDrawStringWidthToHandle(
             guide,
             static_cast<int>(
-                strlen(guide)
+                strlen(
+                    guide
+                )
                 ),
             guideFontHandle_
         );
@@ -1448,26 +1790,35 @@ unsigned int RankingScene::GetRankColor(
     {
     case 1:
 
+        //---------------------------------
+        // 金
+        //---------------------------------
         return GetColor(
             255,
             215,
-            70
+            55
         );
 
     case 2:
 
+        //---------------------------------
+        // 銀
+        //---------------------------------
         return GetColor(
-            215,
-            232,
-            238
+            220,
+            235,
+            245
         );
 
     case 3:
 
+        //---------------------------------
+        // 銅
+        //---------------------------------
         return GetColor(
-            218,
-            142,
-            82
+            220,
+            135,
+            70
         );
 
     default:
@@ -1490,6 +1841,9 @@ unsigned int RankingScene::GetRankBackgroundColor(
     {
     case 1:
 
+        //---------------------------------
+        // 金色系の背景
+        //---------------------------------
         return GetColor(
             55,
             47,
@@ -1498,6 +1852,9 @@ unsigned int RankingScene::GetRankBackgroundColor(
 
     case 2:
 
+        //---------------------------------
+        // 銀色系の背景
+        //---------------------------------
         return GetColor(
             31,
             41,
@@ -1506,6 +1863,9 @@ unsigned int RankingScene::GetRankBackgroundColor(
 
     case 3:
 
+        //---------------------------------
+        // 銅色系の背景
+        //---------------------------------
         return GetColor(
             47,
             29,

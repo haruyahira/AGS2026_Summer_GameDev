@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../Manager/SceneManager.h"
+#include <string>
 
-// プロジェクトで使用している
-// シーン基底クラスをincludeしてください
+#include "../Manager/SceneManager.h"
 #include "SceneBase.h"
 
 class ResultScene : public SceneBase
@@ -40,6 +39,7 @@ private:
     void UpdateTitleIn(void);
     void UpdateMoneyCount(void);
     void UpdateMoneyFix(void);
+    void UpdateNameInput(void);
     void UpdateRankingShow(void);
     void UpdateWaitInput(void);
     void UpdateFinish(void);
@@ -50,6 +50,7 @@ private:
     void DrawBackground(void);
     void DrawTitle(void);
     void DrawMoney(void);
+    void DrawNameInput(void);
     void DrawRanking(void);
     void DrawNextGuide(void);
 
@@ -61,10 +62,6 @@ private:
         int destinationSize,
         int money
     ) const;
-
-
-    void DrawNameInput(void);
-    
 
 private:
     STEP step_;
@@ -123,24 +120,23 @@ private:
     int rankingFontHandle_;
     int guideFontHandle_;
 
-    private:
-        //---------------------------------
-        // 名前入力ハンドル
-        //---------------------------------
-        int nameInputHandle_;
+    //---------------------------------
+    // 名前入力ハンドル
+    //---------------------------------
+    int nameInputHandle_;
 
-        //---------------------------------
-        // 入力された名前
-        //---------------------------------
-        std::string playerName_;
+    //---------------------------------
+    // 入力された名前
+    //---------------------------------
+    std::string playerName_;
 
-        //---------------------------------
-        // 名前登録済みか
-        //---------------------------------
-        bool isNameRegistered_;
+    //---------------------------------
+    // 名前登録済みか
+    //---------------------------------
+    bool isNameRegistered_;
 
-        //---------------------------------
-        // 名前入力用フォント
-        //---------------------------------
-        int nameFontHandle_;
+    //---------------------------------
+    // 名前入力用フォント
+    //---------------------------------
+    int nameFontHandle_;
 };

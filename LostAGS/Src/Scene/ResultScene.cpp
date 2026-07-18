@@ -38,10 +38,14 @@ ResultScene::ResultScene(void)
     titleFontHandle_(-1),
     moneyFontHandle_(-1),
     rankingFontHandle_(-1),
-    guideFontHandle_(-1)
+    guideFontHandle_(-1),
+
+    nameInputHandle_(-1),
+    playerName_(""),
+    isNameRegistered_(false),
+    nameFontHandle_(-1)
 {
 }
-
 //--------------------------------------------------
 // デストラクタ
 //--------------------------------------------------
@@ -82,6 +86,30 @@ ResultScene::~ResultScene(void)
 
         guideFontHandle_ = -1;
     }
+
+    //---------------------------------
+// 名前入力ハンドル削除
+//---------------------------------
+    if (nameInputHandle_ != -1)
+    {
+        DeleteKeyInput(
+            nameInputHandle_
+        );
+
+        nameInputHandle_ = -1;
+    }
+
+    //---------------------------------
+    // 名前入力用フォント削除
+    //---------------------------------
+    if (nameFontHandle_ != -1)
+    {
+        DeleteFontToHandle(
+            nameFontHandle_
+        );
+
+        nameFontHandle_ = -1;
+    }
 }
 
 //--------------------------------------------------
@@ -108,6 +136,21 @@ void ResultScene::Init(void)
 
     flashAlpha_ = 0.0f;
     moneyScale_ = 1.0f;
+
+    //---------------------------------
+// 名前入力状態
+//---------------------------------
+    if (nameInputHandle_ != -1)
+    {
+        DeleteKeyInput(
+            nameInputHandle_
+        );
+
+        nameInputHandle_ = -1;
+    }
+
+    playerName_.clear();
+    isNameRegistered_ = false;
 
     //---------------------------------
     // フォント作成
@@ -143,8 +186,20 @@ void ResultScene::Init(void)
             2,
             DX_FONTTYPE_ANTIALIASING_EDGE
         );
+
+    nameFontHandle_ =
+        CreateFontToHandle(
+            nullptr,
+            56,
+            3,
+            DX_FONTTYPE_ANTIALIASING_EDGE
+        );
+
 }
 
+//--------------------------------------------------
+// ロード完了
+//--------------------------------------------------
 //--------------------------------------------------
 // ロード完了
 //--------------------------------------------------
@@ -167,32 +222,20 @@ void ResultScene::OnLoaded(void)
     displayMoney_ = 0.0f;
 
     currentRank_ = -1;
+    visibleRankingCount_ = 0;
+
     isRankingRegistered_ = false;
+    isNameRegistered_ = false;
+
+    playerName_.clear();
 
     //---------------------------------
-    // ゲームクリア時だけランキング登録
+    // 既存ランキングを読み込む
     //---------------------------------
-    if (sceneManager.IsGameClear())
-    {
-        RankingManager& rankingManager =
-            RankingManager::GetInstance();
-
-        rankingManager.Init();
-
-        currentRank_ =
-            rankingManager.RegisterMoney(
-                finalMoney_
-            );
-
-        rankingManager.Save();
-
-        sceneManager.SetResultRank(
-            currentRank_
-        );
-
-        isRankingRegistered_ = true;
-    }
+    RankingManager::GetInstance().
+        Init();
 }
+
 
 //--------------------------------------------------
 // 更新
@@ -256,6 +299,11 @@ void ResultScene::Update(void)
     case STEP::FINISH:
 
         UpdateFinish();
+        break;
+
+    case STEP::NAME_INPUT:
+
+        UpdateNameInput();
         break;
     }
 }
@@ -330,30 +378,201 @@ void ResultScene::UpdateMoneyCount(void)
 //--------------------------------------------------
 // 金額確定演出
 //--------------------------------------------------
+//--------------------------------------------------
+// 金額確定演出
+//--------------------------------------------------
 void ResultScene::UpdateMoneyFix(void)
 {
     constexpr float fixTime =
         0.8f;
 
-    if (stepTimer_ >= fixTime)
+    if (stepTimer_ < fixTime)
     {
-        if (isRankingRegistered_)
-        {
-            step_ =
-                STEP::RANKING_SHOW;
+        return;
+    }
 
-            visibleRankingCount_ = 0;
+    SceneManager& sceneManager =
+        SceneManager::GetInstance();
+
+    //---------------------------------
+    // ゲームクリア時は名前入力へ
+    //---------------------------------
+    if (sceneManager.IsGameClear())
+    {
+        //---------------------------------
+        // 名前入力領域を作成
+        //---------------------------------
+        nameInputHandle_ =
+            MakeKeyInput(
+                12,
+                FALSE,
+                FALSE,
+                FALSE
+            );
+
+        //---------------------------------
+        // 名前入力を有効にする
+        //---------------------------------
+        if (nameInputHandle_ != -1)
+        {
+            SetActiveKeyInput(
+                nameInputHandle_
+            );
+
+            step_ =
+                STEP::NAME_INPUT;
         }
         else
         {
+            //---------------------------------
+            // 作成失敗時はNO NAMEで登録
+            //---------------------------------
+            playerName_ =
+                "NO NAME";
+
+            RankingManager& rankingManager =
+                RankingManager::GetInstance();
+
+            currentRank_ =
+                rankingManager.RegisterRecord(
+                    playerName_,
+                    finalMoney_
+                );
+
+            rankingManager.Save();
+
+            sceneManager.SetResultRank(
+                currentRank_
+            );
+
+            isRankingRegistered_ = true;
+            isNameRegistered_ = true;
+
+            visibleRankingCount_ = 0;
+
             step_ =
-                STEP::WAIT_INPUT;
-
-            canInput_ = true;
+                STEP::RANKING_SHOW;
         }
-
-        stepTimer_ = 0.0f;
     }
+    else
+    {
+        //---------------------------------
+        // ゲームオーバー時は名前入力なし
+        //---------------------------------
+        step_ =
+            STEP::WAIT_INPUT;
+
+        canInput_ = true;
+    }
+
+    stepTimer_ = 0.0f;
+}
+
+//--------------------------------------------------
+// 名前入力
+//--------------------------------------------------
+void ResultScene::UpdateNameInput(void)
+{
+    //---------------------------------
+    // 入力ハンドルがない場合
+    //---------------------------------
+    if (nameInputHandle_ == -1)
+    {
+        return;
+    }
+
+    //---------------------------------
+    // 入力状態を確認
+    //
+    // 0: 入力中
+    // 1: 入力完了
+    // 2: キャンセル
+    //---------------------------------
+    const int inputState =
+        CheckKeyInput(
+            nameInputHandle_
+        );
+
+    //---------------------------------
+    // まだ入力中
+    //---------------------------------
+    if (inputState == 0)
+    {
+        return;
+    }
+
+    //---------------------------------
+    // 入力された名前を取得
+    //---------------------------------
+    char inputName[256] = {};
+
+    if (inputState == 1)
+    {
+        GetKeyInputString(
+            inputName,
+            nameInputHandle_
+        );
+
+        playerName_ =
+            inputName;
+    }
+
+    //---------------------------------
+    // 空文字またはキャンセル時
+    //---------------------------------
+    if (playerName_.empty())
+    {
+        playerName_ =
+            "NO NAME";
+    }
+
+    //---------------------------------
+    // 名前入力を終了
+    //---------------------------------
+    SetActiveKeyInput(
+        -1
+    );
+
+    DeleteKeyInput(
+        nameInputHandle_
+    );
+
+    nameInputHandle_ = -1;
+
+    //---------------------------------
+    // ランキング登録
+    //---------------------------------
+    RankingManager& rankingManager =
+        RankingManager::GetInstance();
+
+    currentRank_ =
+        rankingManager.RegisterRecord(
+            playerName_,
+            finalMoney_
+        );
+
+    rankingManager.Save();
+
+    //---------------------------------
+    // 今回の順位を保存
+    //---------------------------------
+    SceneManager::GetInstance().
+        SetResultRank(
+            currentRank_
+        );
+
+    isRankingRegistered_ = true;
+    isNameRegistered_ = true;
+
+    //---------------------------------
+    // ランキング表示へ進む
+    //---------------------------------
+    visibleRankingCount_ = 0;
+
+    step_ =
+        STEP::RANKING_SHOW;
+
+    stepTimer_ = 0.0f;
 }
 
 //--------------------------------------------------
@@ -450,6 +669,13 @@ void ResultScene::Draw(void)
     DrawBackground();
     DrawTitle();
     DrawMoney();
+    //---------------------------------
+    // 名前入力画面
+    //---------------------------------
+    if (step_ == STEP::NAME_INPUT)
+    {
+        DrawNameInput();
+    }
 
     if (isRankingRegistered_)
     {
@@ -729,6 +955,21 @@ void ResultScene::DrawRanking(void)
         58;
 
     //---------------------------------
+    // 各列の固定位置
+    //---------------------------------
+    const int newBadgeRight =
+        centerX - 330;
+
+    const int rankX =
+        centerX - 260;
+
+    const int nameX =
+        centerX - 190;
+
+    const int moneyRightX =
+        centerX + 330;
+
+    //---------------------------------
     // 見出し
     //---------------------------------
     const char* rankingTitle =
@@ -761,49 +1002,100 @@ void ResultScene::DrawRanking(void)
         const int rank =
             index + 1;
 
-        const int money =
-            rankingManager.GetMoney(rank);
+        const int drawY =
+            startY +
+            index * lineHeight;
 
-        char text[128];
+        std::string name =
+            rankingManager.GetName(
+                rank
+            );
+
+        if (name.empty())
+        {
+            name =
+                "NO NAME";
+        }
+
+        const int money =
+            rankingManager.GetMoney(
+                rank
+            );
+
+        //---------------------------------
+        // 順位文字列
+        //---------------------------------
+        char rankText[16];
 
         sprintf_s(
-            text,
-            "%d  %d G",
-            rank,
-            money
+            rankText,
+            sizeof(rankText),
+            "%d",
+            rank
         );
 
-        unsigned int color =
-            GetColor(225, 235, 235);
+        //---------------------------------
+        // 金額文字列
+        //---------------------------------
+        char moneyText[64];
+
+        sprintf_s(
+            moneyText,
+            sizeof(moneyText),
+            "%d G",
+            money
+        );
 
         //---------------------------------
         // 順位カラー
         //---------------------------------
+        unsigned int color =
+            GetColor(
+                225,
+                235,
+                235
+            );
+
         if (rank == 1)
         {
             color =
-                GetColor(255, 215, 70);
+                GetColor(
+                    255,
+                    215,
+                    70
+                );
         }
         else if (rank == 2)
         {
             color =
-                GetColor(210, 225, 235);
+                GetColor(
+                    210,
+                    225,
+                    235
+                );
         }
         else if (rank == 3)
         {
             color =
-                GetColor(210, 135, 75);
+                GetColor(
+                    210,
+                    135,
+                    75
+                );
         }
 
         //---------------------------------
-        // 今回の順位を強調
+        // 今回の順位
         //---------------------------------
-        if (rank == currentRank_)
+        const bool isNewRecord =
+            rank == currentRank_;
+
+        if (isNewRecord)
         {
             const float blink =
                 (
                     std::sin(
-                        totalTimer_ * 6.0f
+                        totalTimer_ * 7.0f
                     ) +
                     1.0f
                     ) *
@@ -819,37 +1111,264 @@ void ResultScene::DrawRanking(void)
                 GetColor(
                     255,
                     brightness,
-                    80
+                    65
                 );
 
-            DrawStringToHandle(
-                centerX - 330,
-                startY +
-                index * lineHeight,
-                "NEW",
+            //---------------------------------
+            // NEWバッジの位置
+            //---------------------------------
+            const int badgeWidth =
+                105;
+
+            const int badgeHeight =
+                42;
+
+            const int badgeLeft =
+                newBadgeRight -
+                badgeWidth;
+
+            const int badgeTop =
+                drawY + 2;
+
+            const int badgeBottom =
+                badgeTop +
+                badgeHeight;
+
+            //---------------------------------
+            // NEWバッジの外側発光
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                45 +
+                static_cast<int>(
+                    blink * 55.0f
+                    )
+            );
+
+            DrawBox(
+                badgeLeft - 5,
+                badgeTop - 5,
+                newBadgeRight + 5,
+                badgeBottom + 5,
                 color,
-                rankingFontHandle_
+                FALSE
+            );
+
+            DrawBox(
+                badgeLeft - 3,
+                badgeTop - 3,
+                newBadgeRight + 3,
+                badgeBottom + 3,
+                color,
+                FALSE
+            );
+
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
+            );
+
+            //---------------------------------
+            // NEWバッジ背景
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ALPHA,
+                170
+            );
+
+            DrawBox(
+                badgeLeft,
+                badgeTop,
+                newBadgeRight,
+                badgeBottom,
+                GetColor(
+                    75,
+                    48,
+                    4
+                ),
+                TRUE
+            );
+
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
+            );
+
+            //---------------------------------
+            // NEWバッジ枠
+            //---------------------------------
+            DrawBox(
+                badgeLeft,
+                badgeTop,
+                newBadgeRight,
+                badgeBottom,
+                color,
+                FALSE
+            );
+
+            //---------------------------------
+            // NEW文字
+            //---------------------------------
+            const char* newText =
+                "NEW";
+
+            const int newTextWidth =
+                GetDrawStringWidthToHandle(
+                    newText,
+                    static_cast<int>(
+                        strlen(newText)
+                        ),
+                    guideFontHandle_
+                );
+
+            const int newTextX =
+                badgeLeft +
+                (
+                    badgeWidth -
+                    newTextWidth
+                    ) /
+                2;
+
+            const int newTextY =
+                badgeTop + 6;
+
+            //---------------------------------
+            // NEW文字の発光
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                80
+            );
+
+            DrawStringToHandle(
+                newTextX - 1,
+                newTextY,
+                newText,
+                color,
+                guideFontHandle_
+            );
+
+            DrawStringToHandle(
+                newTextX + 1,
+                newTextY,
+                newText,
+                color,
+                guideFontHandle_
+            );
+
+            DrawStringToHandle(
+                newTextX,
+                newTextY - 1,
+                newText,
+                color,
+                guideFontHandle_
+            );
+
+            DrawStringToHandle(
+                newTextX,
+                newTextY + 1,
+                newText,
+                color,
+                guideFontHandle_
+            );
+
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
+            );
+
+            //---------------------------------
+            // NEW文字本体
+            //---------------------------------
+            DrawStringToHandle(
+                newTextX,
+                newTextY,
+                newText,
+                GetColor(
+                    255,
+                    250,
+                    190
+                ),
+                guideFontHandle_
+            );
+
+            //---------------------------------
+            // 今回の行の背景
+            //---------------------------------
+            SetDrawBlendMode(
+                DX_BLENDMODE_ADD,
+                12 +
+                static_cast<int>(
+                    blink * 10.0f
+                    )
+            );
+
+            DrawBox(
+                rankX - 20,
+                drawY,
+                moneyRightX + 15,
+                drawY + 46,
+                color,
+                TRUE
+            );
+
+            SetDrawBlendMode(
+                DX_BLENDMODE_NOBLEND,
+                0
             );
         }
 
-        const int width =
+        //---------------------------------
+        // 順位を描画
+        //---------------------------------
+        DrawStringToHandle(
+            rankX,
+            drawY,
+            rankText,
+            color,
+            rankingFontHandle_
+        );
+
+        //---------------------------------
+        // 名前を描画
+        //---------------------------------
+        DrawStringToHandle(
+            nameX,
+            drawY,
+            name.c_str(),
+            color,
+            rankingFontHandle_
+        );
+
+        //---------------------------------
+        // 金額を右揃え
+        //---------------------------------
+        const int moneyWidth =
             GetDrawStringWidthToHandle(
-                text,
+                moneyText,
                 static_cast<int>(
-                    strlen(text)
+                    strlen(moneyText)
                     ),
                 rankingFontHandle_
             );
 
         DrawStringToHandle(
-            centerX - width / 2,
-            startY +
-            index * lineHeight,
-            text,
+            moneyRightX -
+            moneyWidth,
+            drawY,
+            moneyText,
             color,
             rankingFontHandle_
         );
     }
+
+    //---------------------------------
+    // 描画モードを元に戻す
+    //---------------------------------
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
 }
 
 //--------------------------------------------------
@@ -938,5 +1457,261 @@ void ResultScene::MakeMoneyText(
         destinationSize,
         "%d G",
         money
+    );
+}
+
+//--------------------------------------------------
+// 名前入力描画
+//--------------------------------------------------
+void ResultScene::DrawNameInput(void)
+{
+    if (nameInputHandle_ == -1)
+    {
+        return;
+    }
+
+    const int centerX =
+        Application::SCREEN_SIZE_X / 2;
+
+    //---------------------------------
+    // 名前入力案内
+    //---------------------------------
+    const char* titleText =
+        "ENTER YOUR NAME";
+
+    const int titleWidth =
+        GetDrawStringWidthToHandle(
+            titleText,
+            static_cast<int>(
+                strlen(titleText)
+                ),
+            nameFontHandle_
+        );
+
+    //---------------------------------
+    // タイトルの弱い発光
+    //---------------------------------
+    SetDrawBlendMode(
+        DX_BLENDMODE_ADD,
+        50
+    );
+
+    DrawStringToHandle(
+        centerX - titleWidth / 2 - 1,
+        337,
+        titleText,
+        GetColor(90, 255, 220),
+        nameFontHandle_
+    );
+
+    DrawStringToHandle(
+        centerX - titleWidth / 2 + 1,
+        337,
+        titleText,
+        GetColor(90, 255, 220),
+        nameFontHandle_
+    );
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
+
+    //---------------------------------
+    // タイトル本体
+    //---------------------------------
+    DrawStringToHandle(
+        centerX - titleWidth / 2,
+        337,
+        titleText,
+        GetColor(130, 255, 220),
+        nameFontHandle_
+    );
+
+    //---------------------------------
+    // 入力欄の座標
+    //---------------------------------
+    const int inputLeft =
+        centerX - 360;
+
+    const int inputTop =
+        420;
+
+    const int inputRight =
+        centerX + 360;
+
+    const int inputBottom =
+        510;
+
+    //---------------------------------
+    // 入力欄の影
+    //---------------------------------
+    SetDrawBlendMode(
+        DX_BLENDMODE_ALPHA,
+        130
+    );
+
+    DrawBox(
+        inputLeft + 8,
+        inputTop + 8,
+        inputRight + 8,
+        inputBottom + 8,
+        GetColor(0, 0, 0),
+        TRUE
+    );
+
+    //---------------------------------
+    // 入力欄の背景
+    //---------------------------------
+    SetDrawBlendMode(
+        DX_BLENDMODE_ALPHA,
+        235
+    );
+
+    DrawBox(
+        inputLeft,
+        inputTop,
+        inputRight,
+        inputBottom,
+        GetColor(14, 42, 43),
+        TRUE
+    );
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
+
+    //---------------------------------
+    // 入力欄の外側の発光
+    //---------------------------------
+    const float borderBlink =
+        (
+            std::sin(
+                totalTimer_ * 3.5f
+            ) +
+            1.0f
+            ) *
+        0.5f;
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_ADD,
+        35 +
+        static_cast<int>(
+            borderBlink * 30.0f
+            )
+    );
+
+    DrawBox(
+        inputLeft - 3,
+        inputTop - 3,
+        inputRight + 3,
+        inputBottom + 3,
+        GetColor(70, 255, 220),
+        FALSE
+    );
+
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
+
+    //---------------------------------
+    // 入力欄の枠
+    //---------------------------------
+    DrawBox(
+        inputLeft,
+        inputTop,
+        inputRight,
+        inputBottom,
+        GetColor(130, 255, 220),
+        FALSE
+    );
+
+    //---------------------------------
+    // 入力中の文字列を取得
+    //---------------------------------
+    char inputText[256] = {};
+
+    GetKeyInputString(
+        inputText,
+        nameInputHandle_
+    );
+
+    //---------------------------------
+    // 入力文字の座標
+    //---------------------------------
+    const int textX =
+        inputLeft + 25;
+
+    const int textY =
+        inputTop + 14;
+
+    //---------------------------------
+    // 入力文字を大きなフォントで描画
+    //---------------------------------
+    DrawStringToHandle(
+        textX,
+        textY,
+        inputText,
+        GetColor(235, 255, 248),
+        nameFontHandle_
+    );
+
+    //---------------------------------
+    // 入力カーソルを点滅表示
+    //---------------------------------
+    const bool showCursor =
+        static_cast<int>(
+            totalTimer_ * 2.0f
+            ) %
+        2 == 0;
+
+    if (showCursor)
+    {
+        const int inputTextWidth =
+            GetDrawStringWidthToHandle(
+                inputText,
+                static_cast<int>(
+                    strlen(inputText)
+                    ),
+                nameFontHandle_
+            );
+
+        DrawBox(
+            textX +
+            inputTextWidth +
+            5,
+            textY + 4,
+            textX +
+            inputTextWidth +
+            9,
+            textY + 58,
+            GetColor(160, 255, 230),
+            TRUE
+        );
+    }
+
+    //---------------------------------
+    // 操作案内
+    //---------------------------------
+    const char* guideText =
+        "ENTER : DECIDE";
+
+    const int guideWidth =
+        GetDrawStringWidthToHandle(
+            guideText,
+            static_cast<int>(
+                strlen(guideText)
+                ),
+            guideFontHandle_
+        );
+
+    DrawStringToHandle(
+        centerX - guideWidth / 2,
+        545,
+        guideText,
+        GetColor(200, 225, 218),
+        guideFontHandle_
     );
 }

@@ -147,7 +147,6 @@ void RankingManager::Load(void)
 
         return;
     }
-
     //---------------------------------
     // ランキングデータを読み込む
     //---------------------------------
@@ -202,6 +201,9 @@ void RankingManager::Load(void)
                     )
             );
 
+            //---------------------------------
+            // 読み込みに失敗した場合
+            //---------------------------------
             if (!file)
             {
                 ranking_.clear();
@@ -220,6 +222,9 @@ void RankingManager::Load(void)
             sizeof(record.money)
         );
 
+        //---------------------------------
+        // 読み込みに失敗した場合
+        //---------------------------------
         if (!file)
         {
             ranking_.clear();
@@ -256,17 +261,19 @@ void RankingManager::Load(void)
 
     //---------------------------------
     // 金額が高い順に並べ替える
+    //
+    // 同額の場合は、読み込んだ順番を
+    // そのまま維持する
     //---------------------------------
-    std::sort(
+    std::stable_sort(
         ranking_.begin(),
         ranking_.end(),
-        const RankingRecord & left,
-        const RankingRecord & right
-        {
-            return left.money >
-                right.money;
-        }
-    );
+        [](const RankingRecord& left,
+            const RankingRecord& right)
+            {
+                return left.money > right.money;
+            }
+            );
 
     //---------------------------------
     // 最大10件に制限
@@ -329,6 +336,9 @@ void RankingManager::Save(void) const
         std::ios::trunc
     );
 
+    //---------------------------------
+    // ファイルを開けなかった場合
+    //---------------------------------
     if (!file.is_open())
     {
         return;
@@ -374,6 +384,16 @@ void RankingManager::Save(void) const
             ),
         sizeof(count)
     );
+
+    //---------------------------------
+    // ヘッダーの書き込みに失敗した場合
+    //---------------------------------
+    if (!file)
+    {
+        file.close();
+
+        return;
+    }
 
     //---------------------------------
     // 各記録を書き込む
@@ -468,10 +488,10 @@ int RankingManager::RegisterRecord(
     }
 
     //---------------------------------
-    // 名前が異常に長い場合は切り詰める
+    // 名前が長い場合は切り詰める
     //
-    // 日本語は複数バイトで構成されるため、
-    // 通常は入力側で長さを制限する
+    // 日本語は複数バイトになるため、
+    // 基本的には入力側でも制限する
     //---------------------------------
     if (newRecord.name.size() >
         static_cast<std::size_t>(
@@ -509,8 +529,7 @@ int RankingManager::RegisterRecord(
             ) &&
         ranking_[
             insertIndex
-        ].money >=
-        newRecord.money)
+        ].money >= newRecord.money)
     {
         ++insertIndex;
     }
@@ -520,6 +539,15 @@ int RankingManager::RegisterRecord(
     //---------------------------------
     const int newRank =
         insertIndex + 1;
+
+    //---------------------------------
+    // 10位より下ならランキング外
+    //---------------------------------
+    if (newRank >
+        MAX_RANKING_COUNT)
+    {
+        return -1;
+    }
 
     //---------------------------------
     // ランキングへ追加
@@ -541,15 +569,6 @@ int RankingManager::RegisterRecord(
         ranking_.resize(
             MAX_RANKING_COUNT
         );
-    }
-
-    //---------------------------------
-    // 10位より下ならランキング外
-    //---------------------------------
-    if (newRank >
-        MAX_RANKING_COUNT)
-    {
-        return -1;
     }
 
     return newRank;
@@ -596,6 +615,9 @@ std::string RankingManager::GetName(
             rank
         );
 
+    //---------------------------------
+    // 指定した順位が存在しない場合
+    //---------------------------------
     if (record == nullptr)
     {
         return "";
@@ -615,6 +637,9 @@ int RankingManager::GetMoney(
             rank
         );
 
+    //---------------------------------
+    // 指定した順位が存在しない場合
+    //---------------------------------
     if (record == nullptr)
     {
         return 0;
@@ -647,9 +672,18 @@ int RankingManager::GetRankingCount(void) const
 //--------------------------------------------------
 void RankingManager::Clear(void)
 {
+    //---------------------------------
+    // メモリ上のランキングを削除
+    //---------------------------------
     ranking_.clear();
 
+    //---------------------------------
+    // 読み込み済みにする
+    //---------------------------------
     isLoaded_ = true;
 
+    //---------------------------------
+    // 空のランキングを保存する
+    //---------------------------------
     Save();
 }
