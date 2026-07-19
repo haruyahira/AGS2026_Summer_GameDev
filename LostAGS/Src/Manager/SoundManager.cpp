@@ -1,66 +1,184 @@
 #include "SoundManager.h"
 #include "ResourceManager.h"
 #include "../Application.h"
+
 #include <DxLib.h>
 #include <string>
 #include <algorithm>
+
+namespace
+{
+    // äÓñ{âπó Ç∆î{ó¶Ç©ÇÁÅADXÉâÉCÉuÉâÉäópÇÃâπó ÇåvéZ
+    int CalculateActualVolume(
+        int baseVolume,
+        float volumeScale)
+    {
+        int actualVolume =
+            static_cast<int>(
+                static_cast<float>(baseVolume) *
+                volumeScale
+                );
+
+        return std::clamp(
+            actualVolume,
+            0,
+            255
+        );
+    }
+}
 
 SoundManager& SoundManager::GetInstance()
 {
     static SoundManager instance;
     return instance;
 }
+
 SoundManager::SoundManager()
 {
     currentBGM_ = -1;
 
-    bgmVolume_ = 255;
-    seVolume_ = 255;
+    // 255ÇæÇ∆1.0î{Ç≈Ç∑Ç≈Ç…ç≈ëÂâπó Ç…Ç»ÇÈÇΩÇﬂÅA
+    // 1.1î{à»è„ÇégÇ¢ÇΩÇ¢èÍçáÇÕ180Å`200íˆìxÇ™Ç®Ç∑Ç∑Çﬂ
+    bgmVolume_ = 180;
+    seVolume_ = 200;
+
+    // èâä˙î{ó¶ÇÕ1.0î{
+    bgmVolumeScale_ = 1.0f;
+    seVolumeScale_ = 1.0f;
 
     sePitch_ = 1.0f;
 }
 
 void SoundManager::Init()
 {
-    auto& res = ResourceManager::GetInstance();
+    ResourceManager& res =
+        ResourceManager::GetInstance();
 
+    // ========================================
     // BGM
+    // ========================================
+
     bgms_[BGM::GAME] =
-        res.Load(ResourceManager::SRC::GAME_BGM).handleId_;
+        res.Load(
+            ResourceManager::SRC::GAME_BGM
+        ).handleId_;
 
     bgms_[BGM::TITLE] =
-        res.Load(ResourceManager::SRC::TITLE_BGM).handleId_;
+        res.Load(
+            ResourceManager::SRC::TITLE_BGM
+        ).handleId_;
 
     bgms_[BGM::CHASE] =
-        res.Load(ResourceManager::SRC::CHASE_BGM).handleId_; 
-    
-    bgms_[BGM::CLEAR] =
-        res.Load(ResourceManager::SRC::CLEAR_BGM).handleId_;
+        res.Load(
+            ResourceManager::SRC::CHASE_BGM
+        ).handleId_;
 
+    bgms_[BGM::CLEAR] =
+        res.Load(
+            ResourceManager::SRC::CLEAR_BGM
+        ).handleId_;
+
+    // ========================================
     // SE
+    // ========================================
+
     ses_[SE::WALK] =
-        res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
+        res.Load(
+            ResourceManager::SRC::WALK_SE
+        ).handleId_;
+
     ses_[SE::E_WALK] =
-        res.Load(ResourceManager::SRC::WALK_E_SE).handleId_;  
-  
+        res.Load(
+            ResourceManager::SRC::WALK_E_SE
+        ).handleId_;
+
     ses_[SE::RUN] =
-        res.Load(ResourceManager::SRC::WALK_SE).handleId_;  
+        res.Load(
+            ResourceManager::SRC::WALK_SE
+        ).handleId_;
+
     ses_[SE::ATTACK] =
-        res.Load(ResourceManager::SRC::ATTACK_SE).handleId_;  
+        res.Load(
+            ResourceManager::SRC::ATTACK_SE
+        ).handleId_;
+
     ses_[SE::HIT] =
-        res.Load(ResourceManager::SRC::HIT_SE).handleId_;
+        res.Load(
+            ResourceManager::SRC::HIT_SE
+        ).handleId_;
+
     ses_[SE::DISE] =
-        res.Load(ResourceManager::SRC::DISC_SE).handleId_;
+        res.Load(
+            ResourceManager::SRC::DISC_SE
+        ).handleId_;
+
     ses_[SE::DOOROP] =
-        res.Load(ResourceManager::SRC::DOOROP_SE).handleId_;
+        res.Load(
+            ResourceManager::SRC::DOOROP_SE
+        ).handleId_;
+
+    // ========================================
+    // ì«Ç›çûÇ›çœÇ›ÉTÉEÉìÉhÇ÷åªç›ÇÃâπó ÇîΩâf
+    // ========================================
+
+    const int actualBGMVolume =
+        CalculateActualVolume(
+            bgmVolume_,
+            bgmVolumeScale_
+        );
+
+    for (auto& bgm : bgms_)
+    {
+        if (bgm.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualBGMVolume,
+                bgm.second
+            );
+        }
+    }
+
+    const int actualSEVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    for (auto& se : ses_)
+    {
+        if (se.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualSEVolume,
+                se.second
+            );
+        }
+    }
 }
 
-void SoundManager::PlayBGM(BGM bgm, bool loop)
+void SoundManager::PlayBGM(
+    BGM bgm,
+    bool loop)
 {
-    int handle = bgms_[bgm];
+    auto found =
+        bgms_.find(bgm);
 
-    // ìØÇ∂BGMÇ»ÇÁçƒê∂ÇµÇ»Ç¢
-    if (currentBGM_ == handle)
+    if (found == bgms_.end())
+    {
+        return;
+    }
+
+    const int handle =
+        found->second;
+
+    if (handle == -1)
+    {
+        return;
+    }
+
+    // ìØÇ∂BGMÇ™çƒê∂íÜÇ»ÇÁçƒê∂ÇµíºÇ≥Ç»Ç¢
+    if (currentBGM_ == handle &&
+        CheckSoundMem(handle) == 1)
     {
         return;
     }
@@ -69,154 +187,194 @@ void SoundManager::PlayBGM(BGM bgm, bool loop)
 
     currentBGM_ = handle;
 
-    ChangeVolumeSoundMem(bgmVolume_, handle);
+    const int actualVolume =
+        CalculateActualVolume(
+            bgmVolume_,
+            bgmVolumeScale_
+        );
+
+    ChangeVolumeSoundMem(
+        actualVolume,
+        currentBGM_
+    );
 
     PlaySoundMem(
-        handle,
-        loop ? DX_PLAYTYPE_LOOP : DX_PLAYTYPE_BACK);
+        currentBGM_,
+        loop
+        ? DX_PLAYTYPE_LOOP
+        : DX_PLAYTYPE_BACK,
+        TRUE
+    );
 }
 
 void SoundManager::StopBGM()
 {
     for (auto& bgm : bgms_)
     {
-        StopSoundMem(bgm.second);
+        if (bgm.second != -1)
+        {
+            StopSoundMem(
+                bgm.second
+            );
+        }
     }
 
     currentBGM_ = -1;
 }
 
-void SoundManager::SetBGMVolume(int volume)
+void SoundManager::SetBGMVolume(
+    int volume)
 {
-    bgmVolume_ = volume;
-}
+    // äÓñ{âπó Ç0Å`255Ç…êßå¿
+    bgmVolume_ =
+        std::clamp(
+            volume,
+            0,
+            255
+        );
 
-void SoundManager::PlaySE(SE se)
-{
-    int handle = ses_[se];
+    const int actualVolume =
+        CalculateActualVolume(
+            bgmVolume_,
+            bgmVolumeScale_
+        );
 
-    StopSoundMem(handle);
+    // çƒê∂íÜÇÃBGMÇ÷ë¶éûîΩâf
+    if (currentBGM_ != -1)
+    {
+        ChangeVolumeSoundMem(
+            actualVolume,
+            currentBGM_
+        );
+    }
 
-    ChangeVolumeSoundMem(seVolume_, handle);
-
-    PlaySoundMem(handle, DX_PLAYTYPE_BACK);
-}
-
-void SoundManager::SetSEVolume(int volume)
-{
-    seVolume_ = volume;
-}
-
-void SoundManager::SetSEPitch(float pitch)
-{
-    sePitch_ = pitch;
-}
-
-void SoundManager::SetBGMPlaySpeed(float speed, BGM bgm)
-{
-    int handle = bgms_[bgm];
-
-    SetFrequencySoundMem(
-        static_cast<int>(44100 * speed),
-        handle);
-}
-
-void SoundManager::SetSEPlaySpeed(float speed, SE se)
-{
-    speed = std::clamp(speed, 0.1f, 4.0f);
-
-    int handle = ses_[se];
-
-    int baseFreq = GetFrequencySoundMem(handle);
-
-    SetFrequencySoundMem(
-        static_cast<int>(baseFreq * speed),
-        handle);
-}
-void SoundManager::StopSE(SE se)
-{
-    StopSoundMem(ses_[se]);
-}
-
-void SoundManager::StopAllSound()
-{
-    //====================
-    // BGMí‚é~
-    //====================
+    // ì«Ç›çûÇ›çœÇ›ÇÃëSBGMÇ…Ç‡îΩâf
     for (auto& bgm : bgms_)
     {
-        StopSoundMem(bgm.second);
-    }
-
-    //====================
-    // SEí‚é~
-    //====================
-    for (auto& se : ses_)
-    {
-        StopSoundMem(se.second);
-    }
-
-    currentBGM_ = -1;
-}
-
-int SoundManager::Create3DSE(SE se, float radius)
-{
-    std::string path;
-
-    switch (se)
-    {
-    case SE::E_WALK:
-        path = Application::PATH_SOUND + "Se/EnemyWalk.mp3";
-        break;
-
-    case SE::WALK:
-        path = Application::PATH_SOUND + "Se/Walk.mp3";
-        break;
-
-    default:
-        return -1;
-    }
-
-    // Ç±ÇÃå„Ç…ì«Ç›çûÇﬁâπÇ3DÉTÉEÉìÉhÇ∆ÇµÇƒçÏÇÈ
-    SetCreate3DSoundFlag(TRUE);
-
-    int handle = LoadSoundMem(path.c_str());
-
-    // ïKÇ∏ñﬂÇ∑
-    SetCreate3DSoundFlag(FALSE);
-
-    if (handle == -1)
-    {
-
-        return -1;
-    }
-
-    Set3DRadiusSoundMem(radius, handle);
-    ChangeVolumeSoundMem(seVolume_, handle);
-
-
-    return handle;
-}
-
-void SoundManager::Delete3DSE(int& handle)
-{
-    if (handle != -1)
-    {
-        DeleteSoundMem(handle);
-        handle = -1;
+        if (bgm.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualVolume,
+                bgm.second
+            );
+        }
     }
 }
 
-void SoundManager::Play3DSE(int handle, const VECTOR& pos)
+int SoundManager::GetBGMVolume() const
 {
+    return bgmVolume_;
+}
+
+void SoundManager::SetBGMVolumeScale(
+    float scale)
+{
+    // âπó î{ó¶Ç0.0Å`2.0î{Ç…êßå¿
+    bgmVolumeScale_ =
+        std::clamp(
+            scale,
+            0.0f,
+            2.0f
+        );
+
+    const int actualVolume =
+        CalculateActualVolume(
+            bgmVolume_,
+            bgmVolumeScale_
+        );
+
+    // çƒê∂íÜÇÃBGMÇ÷ë¶éûîΩâf
+    if (currentBGM_ != -1)
+    {
+        ChangeVolumeSoundMem(
+            actualVolume,
+            currentBGM_
+        );
+    }
+
+    // ì«Ç›çûÇ›çœÇ›ÇÃëSBGMÇ…Ç‡îΩâf
+    for (auto& bgm : bgms_)
+    {
+        if (bgm.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualVolume,
+                bgm.second
+            );
+        }
+    }
+}
+
+float SoundManager::GetBGMVolumeScale() const
+{
+    return bgmVolumeScale_;
+}
+
+void SoundManager::SetBGMPlaySpeed(
+    float speed,
+    BGM bgm)
+{
+    speed =
+        std::clamp(
+            speed,
+            0.1f,
+            4.0f
+        );
+
+    auto found =
+        bgms_.find(bgm);
+
+    if (found == bgms_.end())
+    {
+        return;
+    }
+
+    const int handle =
+        found->second;
+
     if (handle == -1)
     {
         return;
     }
 
-    Set3DPositionSoundMem(pos, handle);
+    SetFrequencySoundMem(
+        static_cast<int>(
+            44100.0f * speed
+            ),
+        handle
+    );
+}
 
-    ChangeVolumeSoundMem(seVolume_, handle);
+void SoundManager::PlaySE(SE se)
+{
+    auto found =
+        ses_.find(se);
+
+    if (found == ses_.end())
+    {
+        return;
+    }
+
+    const int handle =
+        found->second;
+
+    if (handle == -1)
+    {
+        return;
+    }
+
+    StopSoundMem(handle);
+
+    const int actualVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    ChangeVolumeSoundMem(
+        actualVolume,
+        handle
+    );
 
     PlaySoundMem(
         handle,
@@ -225,9 +383,302 @@ void SoundManager::Play3DSE(int handle, const VECTOR& pos)
     );
 }
 
-void SoundManager::Set3DListener(const VECTOR& pos, const VECTOR& target)
+void SoundManager::StopSE(SE se)
 {
-    Set3DSoundOneMetre(100.0f);
+    auto found =
+        ses_.find(se);
+
+    if (found == ses_.end())
+    {
+        return;
+    }
+
+    const int handle =
+        found->second;
+
+    if (handle != -1)
+    {
+        StopSoundMem(handle);
+    }
+}
+
+void SoundManager::SetSEVolume(
+    int volume)
+{
+    // äÓñ{âπó Ç0Å`255Ç…êßå¿
+    seVolume_ =
+        std::clamp(
+            volume,
+            0,
+            255
+        );
+
+    const int actualVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    // ì«Ç›çûÇ›çœÇ›ÇÃëSSEÇ÷ë¶éûîΩâf
+    for (auto& se : ses_)
+    {
+        if (se.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualVolume,
+                se.second
+            );
+        }
+    }
+}
+
+int SoundManager::GetSEVolume() const
+{
+    return seVolume_;
+}
+
+void SoundManager::SetSEVolumeScale(
+    float scale)
+{
+    // âπó î{ó¶Ç0.0Å`2.0î{Ç…êßå¿
+    seVolumeScale_ =
+        std::clamp(
+            scale,
+            0.0f,
+            2.0f
+        );
+
+    const int actualVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    // ì«Ç›çûÇ›çœÇ›ÇÃëSSEÇ÷ë¶éûîΩâf
+    for (auto& se : ses_)
+    {
+        if (se.second != -1)
+        {
+            ChangeVolumeSoundMem(
+                actualVolume,
+                se.second
+            );
+        }
+    }
+}
+
+float SoundManager::GetSEVolumeScale() const
+{
+    return seVolumeScale_;
+}
+
+void SoundManager::SetSEPitch(
+    float pitch)
+{
+    sePitch_ =
+        std::clamp(
+            pitch,
+            0.1f,
+            4.0f
+        );
+}
+
+void SoundManager::SetSEPlaySpeed(
+    float speed,
+    SE se)
+{
+    speed =
+        std::clamp(
+            speed,
+            0.1f,
+            4.0f
+        );
+
+    auto found =
+        ses_.find(se);
+
+    if (found == ses_.end())
+    {
+        return;
+    }
+
+    const int handle =
+        found->second;
+
+    if (handle == -1)
+    {
+        return;
+    }
+
+    const int baseFrequency =
+        GetFrequencySoundMem(handle);
+
+    if (baseFrequency <= 0)
+    {
+        return;
+    }
+
+    SetFrequencySoundMem(
+        static_cast<int>(
+            static_cast<float>(baseFrequency) *
+            speed
+            ),
+        handle
+    );
+}
+
+void SoundManager::StopAllSound()
+{
+    // ========================================
+    // BGMí‚é~
+    // ========================================
+
+    for (auto& bgm : bgms_)
+    {
+        if (bgm.second != -1)
+        {
+            StopSoundMem(
+                bgm.second
+            );
+        }
+    }
+
+    // ========================================
+    // SEí‚é~
+    // ========================================
+
+    for (auto& se : ses_)
+    {
+        if (se.second != -1)
+        {
+            StopSoundMem(
+                se.second
+            );
+        }
+    }
+
+    currentBGM_ = -1;
+}
+
+int SoundManager::Create3DSE(
+    SE se,
+    float radius)
+{
+    std::string path;
+
+    switch (se)
+    {
+    case SE::E_WALK:
+        path =
+            Application::PATH_SOUND +
+            "Se/EnemyWalk.mp3";
+        break;
+
+    case SE::WALK:
+        path =
+            Application::PATH_SOUND +
+            "Se/Walk.mp3";
+        break;
+
+    default:
+        return -1;
+    }
+
+    // éüÇ…ì«Ç›çûÇﬁÉTÉEÉìÉhÇ3DÉTÉEÉìÉhÇ…Ç∑ÇÈ
+    SetCreate3DSoundFlag(TRUE);
+
+    const int handle =
+        LoadSoundMem(
+            path.c_str()
+        );
+
+    // ïKÇ∏í èÌÇÃì«Ç›çûÇ›Ç÷ñﬂÇ∑
+    SetCreate3DSoundFlag(FALSE);
+
+    if (handle == -1)
+    {
+        return -1;
+    }
+
+    // îºåaÇ™É}ÉCÉiÉXÇ…Ç»ÇÁÇ»Ç¢ÇÊÇ§Ç…Ç∑ÇÈ
+    if (radius < 0.0f)
+    {
+        radius = 0.0f;
+    }
+
+    Set3DRadiusSoundMem(
+        radius,
+        handle
+    );
+
+    const int actualVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    ChangeVolumeSoundMem(
+        actualVolume,
+        handle
+    );
+
+    return handle;
+}
+
+void SoundManager::Delete3DSE(
+    int& handle)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    StopSoundMem(handle);
+    DeleteSoundMem(handle);
+
+    handle = -1;
+}
+
+void SoundManager::Play3DSE(
+    int handle,
+    const VECTOR& pos)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    Set3DPositionSoundMem(
+        pos,
+        handle
+    );
+
+    const int actualVolume =
+        CalculateActualVolume(
+            seVolume_,
+            seVolumeScale_
+        );
+
+    // çƒê∂éûÇ…åªç›ÇÃäÓñ{âπó Ç∆î{ó¶ÇîΩâf
+    ChangeVolumeSoundMem(
+        actualVolume,
+        handle
+    );
+
+    PlaySoundMem(
+        handle,
+        DX_PLAYTYPE_BACK,
+        TRUE
+    );
+}
+
+void SoundManager::Set3DListener(
+    const VECTOR& pos,
+    const VECTOR& target)
+{
+    Set3DSoundOneMetre(
+        100.0f
+    );
 
     Set3DSoundListenerPosAndFrontPos_UpVecY(
         pos,
@@ -235,13 +686,22 @@ void SoundManager::Set3DListener(const VECTOR& pos, const VECTOR& target)
     );
 }
 
-
-void SoundManager::Set3DSERadius(int handle, float radius)
+void SoundManager::Set3DSERadius(
+    int handle,
+    float radius)
 {
     if (handle == -1)
     {
         return;
     }
 
-    Set3DRadiusSoundMem(radius, handle);
+    if (radius < 0.0f)
+    {
+        radius = 0.0f;
+    }
+
+    Set3DRadiusSoundMem(
+        radius,
+        handle
+    );
 }

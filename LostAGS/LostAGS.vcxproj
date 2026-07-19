@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\UI\PauseMenu.cpp" />
     <ClCompile Include="Src\Scene\RankingScene.cpp" />
     <ClCompile Include="Src\Manager\RankingManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyPolice.cpp" />
@@ -217,6 +218,7 @@
     <ClCompile Include="Src\Object\Furniture\Trashcan.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\UI\PauseMenu.h" />
     <ClInclude Include="Src\Scene\RankingScene.h" />
     <ClInclude Include="Src\Manager\RankingManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyPolice.h" />

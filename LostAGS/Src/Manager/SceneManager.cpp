@@ -12,6 +12,7 @@
 #include "../Scene/GameClearScene.h"
 #include "../Manager/SoundManager.h"
 #include "../Application.h"
+#include "../UI/PauseMenu.h"
 #include "Camera.h"
 #include "ResourceManager.h"
 #include "InputManager.h"
@@ -45,11 +46,15 @@ SceneManager::SceneManager(void)
 	isNowLoading_ = false;
 	isLoadingStarted_ = false;
 	isLoadingDrawn_ = false;
+	
 	loadingStartTime_ = 0;
 
 	deltaTime_ = 1.0f / 60.0f;
 
 	camera_ = nullptr;
+	pauseMenu_ = nullptr;
+
+	isQuitRequested_ = false;
 }
 
 
@@ -71,6 +76,12 @@ void SceneManager::Init(void)
 	// カメラ
 	camera_ = new Camera();
 	camera_->Init();
+
+	// ポーズメニュー
+	pauseMenu_ = new PauseMenu();
+	pauseMenu_->Init();
+
+	isQuitRequested_ = false;
 	
 	// デルタタイム
 	preTime_ = std::chrono::system_clock::now();
@@ -134,67 +145,6 @@ void SceneManager::Init3D(void)
 
 }
 
-void SceneManager::Update(void)
-{
-
-	// scene_ が nullptr でも、シーン遷移中なら Fade は動かしたい
-	if (scene_ == nullptr && !isSceneChanging_ && !isNowLoading_)
-	{
-		return;
-	}
-
-
-	// フルスクリーン＜－＞ウィンドウの切り替え
-	InputManager& ins = InputManager::GetInstance();
-	// Alt + Enter を検知
-	if ((ins.IsNew(KEY_INPUT_LALT) || ins.IsNew(KEY_INPUT_RALT)) && ins.IsTrgDown(KEY_INPUT_RETURN))
-	{
-		// ウィンドウならtrue,フルスクリーンならfalse
-	    isWindow_ = (GetWindowModeFlag() == FALSE);
-		ChangeWindowMode(isWindow_);
-
-		// 切り替え後の再設定
-		SetGraphMode(Application::SCREEN_SIZE_X, Application::adjustedSizeY_, 32);
-
-	}
-
-	// シーンがプレイシーンなら
-	if (sceneId_ == SCENE_ID::GAME)
-	{
-		// マウスを隠して中央に固定する
-		SetMouseDispFlag(FALSE);
-		InputManager::GetInstance().SetFixMouse(true);
-	}
-	else
-	{
-		// メニュー画面ならマウスを表示して自由に動かせる
-		SetMouseDispFlag(TRUE);
-		InputManager::GetInstance().SetFixMouse(false);
-	}
-
-	// デルタタイム
-	auto nowTime = std::chrono::system_clock::now();
-	deltaTime_ = static_cast<float>(
-		std::chrono::duration_cast<std::chrono::nanoseconds>(nowTime - preTime_).count() / 1000000000.0);
-	preTime_ = nowTime;
-
-	fader_->Update();
-	if (isSceneChanging_)
-	{
-		Fade();
-	}
-	else
-	{
-		if (scene_ != nullptr) {
-			scene_->Update();
-		}
-	}
-
-	// カメラ更新
-	camera_->Update();
-
-}
-
 void SceneManager::Draw(void)
 {
 	// =========================
@@ -253,23 +203,219 @@ void SceneManager::Draw(void)
 	}
 
 	fader_->Draw();
+
+	if (pauseMenu_ != nullptr)
+	{
+		pauseMenu_->Draw();
+	}
+}
+
+void SceneManager::Update(void)
+{
+	// scene_がnullptrでも、シーン遷移中ならFadeを動かす
+	if (scene_ == nullptr &&
+		!isSceneChanging_ &&
+		!isNowLoading_)
+	{
+		return;
+	}
+
+	InputManager& input =
+		InputManager::GetInstance();
+
+	// ========================================
+	// Alt + Enter
+	// ========================================
+
+	if ((input.IsNew(KEY_INPUT_LALT) ||
+		input.IsNew(KEY_INPUT_RALT)) &&
+		input.IsTrgDown(KEY_INPUT_RETURN))
+	{
+		isWindow_ =
+			(GetWindowModeFlag() == FALSE);
+
+		ChangeWindowMode(isWindow_);
+
+		SetGraphMode(
+			Application::SCREEN_SIZE_X,
+			Application::adjustedSizeY_,
+			32
+		);
+	}
+
+	// ========================================
+	// デルタタイム
+	// ========================================
+
+	auto nowTime =
+		std::chrono::system_clock::now();
+
+	deltaTime_ = static_cast<float>(
+		std::chrono::duration_cast<
+		std::chrono::nanoseconds
+		>(nowTime - preTime_).count()
+		/ 1000000000.0
+		);
+
+	preTime_ = nowTime;
+
+	// ========================================
+	// ポーズメニュー更新
+	// ========================================
+
+	const bool canUsePause =
+		scene_ != nullptr &&
+		!isSceneChanging_ &&
+		!isNowLoading_;
+
+	if (canUsePause && pauseMenu_ != nullptr)
+	{
+		const PauseMenu::Result result =
+			pauseMenu_->Update();
+
+		// ゲーム終了
+		if (result == PauseMenu::Result::QuitGame)
+		{
+			isQuitRequested_ = true;
+			return;
+		}
+
+		// ゲームを続ける
+		if (result == PauseMenu::Result::Resume)
+		{
+			if (sceneId_ == SCENE_ID::GAME)
+			{
+				// マウスを画面中央へ戻す
+				SetMousePoint(
+					Application::SCREEN_SIZE_X / 2,
+					Application::adjustedSizeY_ / 2
+				);
+
+				// ゲーム中のマウス状態へ戻す
+				SetMouseDispFlag(FALSE);
+				input.SetFixMouse(true);
+			}
+
+			// ボタンのクリックをシーンへ貫通させない
+			ResetDeltaTime();
+			return;
+		}
+	}
+
+	const bool isPaused =
+		pauseMenu_ != nullptr &&
+		pauseMenu_->IsActive();
+
+	// ========================================
+	// ポーズ中
+	// ========================================
+
+	if (isPaused)
+	{
+		// マウスカーソルを表示
+		SetMouseDispFlag(TRUE);
+
+		// マウス中央固定を解除
+		input.SetFixMouse(false);
+
+		// シーンとカメラを更新しない
+		ResetDeltaTime();
+		return;
+	}
+
+	// ========================================
+	// ポーズしていないときのマウス設定
+	// ========================================
+
+	if (sceneId_ == SCENE_ID::GAME)
+	{
+		// ゲーム中はマウスを非表示
+		SetMouseDispFlag(FALSE);
+
+		// マウスを中央固定
+		input.SetFixMouse(true);
+	}
+	else
+	{
+		// タイトルなどではマウスを表示
+		SetMouseDispFlag(TRUE);
+
+		// 中央固定を解除
+		input.SetFixMouse(false);
+	}
+
+	// ========================================
+	// 通常更新
+	// ========================================
+
+	if (fader_ != nullptr)
+	{
+		fader_->Update();
+	}
+
+	if (isSceneChanging_)
+	{
+		Fade();
+	}
+	else if (scene_ != nullptr)
+	{
+		scene_->Update();
+	}
+
+	// ポーズ中は上でreturnするため、ここには来ない
+	if (camera_ != nullptr)
+	{
+		camera_->Update();
+	}
 }
 
 void SceneManager::Destroy(void)
 {
+	if (instance_ == nullptr)
+	{
+		return;
+	}
 
+	// 現在のシーンを解放
 	if (scene_ != nullptr)
 	{
 		delete scene_;
 		scene_ = nullptr;
 	}
 
-	delete fader_;
-	delete camera_;
+	// ポーズメニューを解放
+	if (pauseMenu_ != nullptr)
+	{
+		delete pauseMenu_;
+		pauseMenu_ = nullptr;
+	}
 
-	DeleteGraph(mainScrenn_);
-	delete instance_;
+	// フェーダーを解放
+	if (fader_ != nullptr)
+	{
+		delete fader_;
+		fader_ = nullptr;
+	}
 
+	// カメラを解放
+	if (camera_ != nullptr)
+	{
+		delete camera_;
+		camera_ = nullptr;
+	}
+
+	// メインスクリーンを解放
+	if (mainScrenn_ != -1)
+	{
+		DeleteGraph(mainScrenn_);
+		mainScrenn_ = -1;
+	}
+
+	// SceneManager自身を最後に解放
+	SceneManager* deleteInstance = instance_;
+	instance_ = nullptr;
+
+	delete deleteInstance;
 }
 
 void SceneManager::ChangeScene(SCENE_ID nextId)
@@ -293,6 +439,12 @@ void SceneManager::ChangeScene(SCENE_ID nextId)
 
 void SceneManager::DoChangeScene(SCENE_ID sceneId)
 {
+
+	if (pauseMenu_ != nullptr)
+	{
+		pauseMenu_->Close();
+	}
+
 	// 全サウンド停止
 	SoundManager::GetInstance().StopAllSound();
 
@@ -383,6 +535,12 @@ void SceneManager::ResetDeltaTime(void)
 
 void SceneManager::StartAsyncChangeScene(SCENE_ID sceneId)
 {
+
+	if (pauseMenu_ != nullptr)
+	{
+		pauseMenu_->Close();
+	}
+
 	SoundManager::GetInstance().StopAllSound();
 
 
@@ -1027,4 +1185,9 @@ void SceneManager::SetResultRank(
 int SceneManager::GetResultRank(void) const
 {
 	return resultRank_;
+}
+
+bool SceneManager::IsQuitRequested() const
+{
+	return isQuitRequested_;
 }

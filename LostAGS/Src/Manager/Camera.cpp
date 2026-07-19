@@ -29,8 +29,32 @@ void Camera::Init(void)
 
 void Camera::Update(void)
 {
-}
+	switch (mode_)
+	{
+	case MODE::FIXED_POINT:
+		// 固定カメラなので更新なし
+		break;
 
+	case MODE::FOLLOW:
+		// マウス、右スティックによる回転
+		ProcessRot();
+
+		// 追従対象との位置同期
+		SyncFollow();
+		break;
+
+	case MODE::FIRST_PERSON:
+		// マウス、右スティックによる回転
+		ProcessRot();
+
+		// 一人称カメラの位置と注視点を同期
+		SyncFirstPerson();
+		break;
+
+	default:
+		break;
+	}
+}
 void Camera::SetBeforeDraw(void)
 {
 
@@ -324,11 +348,11 @@ void Camera::SetBeforeDrawFixedPoint(void)
 void Camera::SetBeforeDrawFollow(void)
 {
 
-	// カメラ操作
-	ProcessRot();
+	//// カメラ操作
+	//ProcessRot();
 
-	// 追従対象との相対位置を同期
-	SyncFollow();
+	//// 追従対象との相対位置を同期
+	//SyncFollow();
 
 }
 
@@ -338,9 +362,9 @@ void Camera::SetBeforeDrawSelfShot(void)
 
 void Camera::SetBeforeDrawFirstPerson(void)
 {
-	// カメラ操作
-	ProcessRot();
+	//// カメラ操作
+	//ProcessRot();
 
-	// 追従対象との相対位置を同期
-	SyncFirstPerson();
+	//// 追従対象との相対位置を同期
+	//SyncFirstPerson();
 }

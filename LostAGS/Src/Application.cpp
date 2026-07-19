@@ -111,14 +111,14 @@ void Application::Run(void)
 	int debugLogFrame = 0;
 
 	// ゲームループ
-	while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+	while (ProcessMessage() == 0 && sceneManager.IsQuitRequested() == 0)
 	{
 
 		inputManager.Update();
 		sceneManager.Update();
 
 		sceneManager.Draw();
-
+		
 		// 画面にもメモリ表示
 		DrawDebugMemoryInfo();
 

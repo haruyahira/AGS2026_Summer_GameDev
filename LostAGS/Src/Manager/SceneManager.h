@@ -4,6 +4,7 @@
 class SceneBase;
 class Fader;
 class Camera;
+class PauseMenu;
 
 class SceneManager
 {
@@ -81,6 +82,8 @@ public:
 	);
 
 	int GetResultRank(void) const;
+
+	bool IsQuitRequested() const;
 private:
 
 	// 静的インスタンス
@@ -98,10 +101,16 @@ private:
 	// カメラ
 	Camera* camera_;
 
+	// ポーズメニュー
+	PauseMenu* pauseMenu_;
+
 	// シーン遷移中判定
 	bool isSceneChanging_;
 	// ウィンドウ判定
 	bool isWindow_;
+
+	// ポーズメニュー
+	bool  isQuitRequested_;
 
 	// デルタタイム
 	std::chrono::system_clock::time_point preTime_;

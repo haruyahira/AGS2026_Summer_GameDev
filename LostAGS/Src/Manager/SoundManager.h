@@ -40,6 +40,7 @@ public:
 
     void SetBGMVolume(int volume);
     void SetBGMPlaySpeed(float speed, BGM bgm);
+    int GetBGMVolume() const;
 
     //====================
     // SE
@@ -48,6 +49,7 @@ public:
     void PlaySE(SE se);
 
     void SetSEVolume(int volume);
+    int GetSEVolume() const;
 
     void SetSEPitch(float pitch);
     void SetSEPlaySpeed(float speed, SE se);
@@ -60,6 +62,16 @@ public:
     void Play3DSE(int handle, const VECTOR& pos);
     void Set3DListener(const VECTOR& pos, const VECTOR& target);
     void Set3DSERadius(int handle, float radius);
+
+    void SetBGMVolumeScale(float scale);
+    void SetSEVolumeScale(float scale);
+
+    float GetBGMVolumeScale() const;
+    float GetSEVolumeScale() const;
+  
+
+  
+   
 private:
 
     SoundManager();
@@ -73,4 +85,7 @@ private:
     int seVolume_ = 255;
 
     float sePitch_ = 1.0f;
+
+    float bgmVolumeScale_;
+    float seVolumeScale_;
 };
