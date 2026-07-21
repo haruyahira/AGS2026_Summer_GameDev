@@ -23,6 +23,7 @@ public:
         HIT,
         DISE,
         DOOROP,
+        SIREN,
     };
 
 public:
@@ -57,11 +58,17 @@ public:
     void StopSE(SE se);
     void StopAllSound();
 
+    void Play3DSE(int handle, const VECTOR& position, bool loop);
+
     int Create3DSE(SE se, float radius);
     void Delete3DSE(int& handle);
     void Play3DSE(int handle, const VECTOR& pos);
     void Set3DListener(const VECTOR& pos, const VECTOR& target);
     void Set3DSERadius(int handle, float radius);
+
+    void Stop3DSE(int handle);
+
+    void Set3DSEPosition(int handle, const VECTOR& position);
 
     void SetBGMVolumeScale(float scale);
     void SetSEVolumeScale(float scale);
@@ -89,3 +96,4 @@ private:
     float bgmVolumeScale_;
     float seVolumeScale_;
 };
+

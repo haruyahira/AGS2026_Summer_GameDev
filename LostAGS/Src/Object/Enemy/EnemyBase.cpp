@@ -1185,67 +1185,144 @@ void EnemyBase::ResetChasingEnemyCount()
     chasingEnemyCount_ = 0;
 }
 
-void EnemyBase::UpdateFootstepSound(Player* player, const VECTOR& beforePos)
+void EnemyBase::UpdateFootstepSound(
+    Player* player,
+    const VECTOR& beforePos)
 {
     (void)player;
 
+    //---------------------------------
+    // Sound handle check
+    //---------------------------------
     if (footstepSeHandle_ == -1)
     {
         return;
     }
 
-    VECTOR diff =
-        VSub(transform_.pos, beforePos);
+    //---------------------------------
+    // Calculate movement distance
+    //---------------------------------
+    VECTOR movement =
+        VSub(
+            transform_.pos,
+            beforePos
+        );
 
-    diff.y = 0.0f;
+    movement.y = 0.0f;
 
-    float moveDistance =
-        VSize(diff);
+    const float moveDistance =
+        VSize(
+            movement
+        );
 
-    // ÇŸÇ⁄ìÆÇ¢ÇƒÇ¢Ç»Ç¢ÅAÇ‹ÇΩÇÕçUåÇíÜÇ»ÇÁë´âπÇ»Çµ
-    if (moveDistance < 0.5f || isAttacking_)
+    //---------------------------------
+    // Do not play while attacking
+    //---------------------------------
+    if (isAttacking_)
     {
         isFootstepActive_ = false;
         footstepTimer_ = 0.0f;
-        footstepRange_ = 0.0f;
+
+        return;
+    }
+
+    //---------------------------------
+    // Enemy is not moving
+    //
+    // Do not reset the timer here.
+    //---------------------------------
+    if (moveDistance < 0.01f)
+    {
+        isFootstepActive_ = false;
+
         return;
     }
 
     isFootstepActive_ = true;
 
+    //---------------------------------
+    // Chasing footstep
+    //---------------------------------
     if (isChasing_)
     {
         footstepInterval_ = 0.28f;
-        footstepRange_ = 900.0f;
+        footstepRange_ = 3000.0f;
     }
+    //---------------------------------
+    // Patrol footstep
+    //---------------------------------
     else
     {
         footstepInterval_ = 0.45f;
-        footstepRange_ = 500.0f;
+        footstepRange_ = 1000.0f;
     }
 
-    SoundManager::GetInstance().Set3DSERadius(
-        footstepSeHandle_,
-        footstepRange_
-    );
+    //---------------------------------
+    // Update audible radius
+    //---------------------------------
+    SoundManager::GetInstance().
+        Set3DSERadius(
+            footstepSeHandle_,
+            footstepRange_
+        );
+
+    //---------------------------------
+    // Update timer
+    //---------------------------------
+    const float deltaTime =
+        SceneManager::GetInstance().
+        GetDeltaTime();
 
     footstepTimer_ +=
-        SceneManager::GetInstance().GetDeltaTime();
+        deltaTime;
 
+    //---------------------------------
+    // Wait until the next footstep
+    //---------------------------------
     if (footstepTimer_ < footstepInterval_)
     {
         return;
     }
 
-    footstepTimer_ = 0.0f;
+    //---------------------------------
+    // Keep remaining time
+    //---------------------------------
+    footstepTimer_ -=
+        footstepInterval_;
 
-    VECTOR soundPos = transform_.pos;
-    soundPos.y += 30.0f;
+    //---------------------------------
+    // Footstep sound position
+    //---------------------------------
+    VECTOR soundPosition =
+        transform_.pos;
 
-    SoundManager::GetInstance().Play3DSE(
-        footstepSeHandle_,
-        soundPos
-    );
+    soundPosition.y +=
+        20.0f;
+
+    //---------------------------------
+    // Play one footstep sound
+    //---------------------------------
+    SoundManager::GetInstance().
+        Play3DSE(
+            footstepSeHandle_,
+            soundPosition,
+            false
+        );
+
+#ifdef _DEBUG
+
+    const VECTOR cameraPosition =
+        GetCameraPosition();
+
+    const float distance =
+        VSize(
+            VSub(
+                soundPosition,
+                cameraPosition
+            )
+        );
+
+#endif
 }
 
 void EnemyBase::InitFootstep3DSound(void)

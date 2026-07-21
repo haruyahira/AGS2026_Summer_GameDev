@@ -577,30 +577,46 @@ int SoundManager::Create3DSE(
     case SE::WALK:
         path =
             Application::PATH_SOUND +
-            "Se/Walk.mp3";
+            "Se/Walk.wav";
+        break;
+
+    case SE::SIREN:
+        path =
+            Application::PATH_SOUND +
+            "Se/Siren.mp3";
         break;
 
     default:
+        printfDx(
+            "Create3DSE: invalid SE type\n"
+        );
+
         return -1;
     }
 
-    // 次に読み込むサウンドを3Dサウンドにする
-    SetCreate3DSoundFlag(TRUE);
+    SetCreate3DSoundFlag(
+        TRUE
+    );
 
     const int handle =
         LoadSoundMem(
             path.c_str()
         );
 
-    // 必ず通常の読み込みへ戻す
-    SetCreate3DSoundFlag(FALSE);
+    SetCreate3DSoundFlag(
+        FALSE
+    );
 
     if (handle == -1)
     {
+        printfDx(
+            "3D sound load FAILED: %s\n",
+            path.c_str()
+        );
+
         return -1;
     }
 
-    // 半径がマイナスにならないようにする
     if (radius < 0.0f)
     {
         radius = 0.0f;
@@ -622,6 +638,8 @@ int SoundManager::Create3DSE(
         handle
     );
 
+  
+
     return handle;
 }
 
@@ -641,33 +659,44 @@ void SoundManager::Delete3DSE(
 
 void SoundManager::Play3DSE(
     int handle,
-    const VECTOR& pos)
+    const VECTOR& position,
+    bool loop)
 {
     if (handle == -1)
     {
         return;
     }
 
+    //---------------------------------
+    // Set sound position
+    //---------------------------------
     Set3DPositionSoundMem(
-        pos,
+        position,
         handle
     );
 
+    //---------------------------------
+    // Apply current volume
+    //---------------------------------
     const int actualVolume =
         CalculateActualVolume(
             seVolume_,
             seVolumeScale_
         );
 
-    // 再生時に現在の基本音量と倍率を反映
     ChangeVolumeSoundMem(
         actualVolume,
         handle
     );
 
+    //---------------------------------
+    // Play sound
+    //---------------------------------
     PlaySoundMem(
         handle,
-        DX_PLAYTYPE_BACK,
+        loop
+        ? DX_PLAYTYPE_LOOP
+        : DX_PLAYTYPE_BACK,
         TRUE
     );
 }
@@ -702,6 +731,34 @@ void SoundManager::Set3DSERadius(
 
     Set3DRadiusSoundMem(
         radius,
+        handle
+    );
+}
+
+void SoundManager::Stop3DSE(
+    int handle)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    StopSoundMem(
+        handle
+    );
+}
+
+void SoundManager::Set3DSEPosition(
+    int handle,
+    const VECTOR& position)
+{
+    if (handle == -1)
+    {
+        return;
+    }
+
+    Set3DPositionSoundMem(
+        position,
         handle
     );
 }

@@ -8,6 +8,7 @@
 #include "../../Manager/SceneManager.h"
 #include "../../Manager/ResourceManager.h"
 #include "../../Manager/InputManager.h"
+#include "../../Manager/SoundManager.h"
 #include "../Player.h"
 #include "Planet.h"
 #include "../Collider/Collider.h"
@@ -74,6 +75,16 @@ Stage::Stage(Player* player)
 
 	lastRegisterItemCount_ = 0;
 	lastRegisterMoney_ = 0;
+
+	lastRegisterItemCount_ = 0;
+	lastRegisterMoney_ = 0;
+
+	// サイレン
+	sirenSoundHandle_ = -1;
+	sirenPos_ = VGet(0.0f, 0.0f, 0.0f);
+	sirenRadius_ = 4000.0f;
+	isSirenPlaying_ = false;
+
 }
 Stage::~Stage(void)
 {
@@ -122,6 +133,9 @@ Stage::~Stage(void)
 		miniMapScreen_ = -1;
 	}
 
+	SoundManager::GetInstance().Delete3DSE(
+		sirenSoundHandle_);
+
 
 	ceilingLights_.clear();
 	ReleasePostOutline();
@@ -155,6 +169,9 @@ void Stage::Init(void)
 
 	// ステージ
 	MakeMainStage();
+
+	// MakeMainStage内で脱出ボタン座標が決まった後に初期化
+	InitSiren();
 
 	stoneDevice_ = new StoneDevice(player_);
 	stoneDevice_->Init();
@@ -244,6 +261,7 @@ void Stage::Update(void)
 	UpdateItemPickup();
 	UpdateStoneDeviceRegister();
 	UpdateEscapeButton();
+	UpdateSiren();
 
 
 	if (isEscapeButtonActivated_)
@@ -284,11 +302,13 @@ void Stage::Update(void)
 
 	int nowTime = GetNowCount();
 	int elapsedTime = nowTime - escapeStartTime_;
-
-	// 5分経過したら予備の強制脱出装置モードへ
-	if (elapsedTime >= escapeTimeLimit_)
+	// 5分経過した瞬間に緊急モードへ移行してサイレン開始
+	if (!isEmergencyEscape_ &&
+		elapsedTime >= escapeTimeLimit_)
 	{
 		isEmergencyEscape_ = true;
+
+		StartSiren();
 	}
 
 	// 5分 + 1分 経過したらリザルトへ
@@ -296,6 +316,8 @@ void Stage::Update(void)
 		elapsedTime >= escapeTimeLimit_ + emergencyEscapeTime_)
 	{
 		isResultChanged_ = true;
+
+		StopSiren();
 
 		int stolenMoney = CalcTotalMoney();
 
@@ -465,6 +487,55 @@ void Stage::DrawUI(void) const
 
 			continue;
 		}
+	}
+
+
+
+	if (sirenSoundHandle_ != -1 &&
+		player_ != nullptr)
+	{
+		VECTOR listenerPos =
+			player_->GetPos();
+
+		listenerPos.y += 80.0f;
+
+		VECTOR diff =
+			VSub(
+				sirenPos_,
+				listenerPos
+			);
+
+		const float distance =
+			VSize(diff);
+
+		DrawFormatString(
+			20,
+			500,
+			GetColor(255, 255, 0),
+			"Siren Distance: %.1f / Radius: %.1f",
+			distance,
+			sirenRadius_
+		);
+
+		DrawFormatString(
+			20,
+			520,
+			GetColor(255, 255, 255),
+			"Player: %.1f %.1f %.1f",
+			listenerPos.x,
+			listenerPos.y,
+			listenerPos.z
+		);
+
+		DrawFormatString(
+			20,
+			540,
+			GetColor(255, 180, 100),
+			"Siren: %.1f %.1f %.1f",
+			sirenPos_.x,
+			sirenPos_.y,
+			sirenPos_.z
+		);
 	}
 
 }
@@ -3044,26 +3115,6 @@ void Stage::DrawMiniMap(void) const
 		FALSE
 	);
 
-	// プレイヤーの向き
-	VECTOR forward = player_->GetForward();
-	forward.y = 0.0f;
-
-	if (VSize(forward) > 0.001f)
-	{
-		forward = VNorm(forward);
-
-		int dirX = (int)(forward.x * 28.0f);
-		int dirY = (int)(-forward.z * 28.0f);
-
-		DrawLine(
-			px,
-			py,
-			px + dirX,
-			py + dirY,
-			GetColor(255, 80, 80),
-			3
-		);
-	}
 
 	// =========================
 	// 説明
@@ -3435,6 +3486,8 @@ void Stage::StartEscapeTimer(void)
 	isEscapeTimerStarted_ = true;
 	isEmergencyEscape_ = false;
 	isResultChanged_ = false;
+
+	StopSiren();
 }
 
 void Stage::UpdateEscapeButton()
@@ -3483,6 +3536,8 @@ void Stage::ActivateEscapeButton()
 
 	isEscapeButtonActivated_ = true;
 	isResultChanged_ = true;
+
+	StopSiren();
 
 	// 持っているアイテム + StoneDeviceに転送済みのアイテムを換金する
 	int stolenMoney = CalcTotalMoney();
@@ -4842,6 +4897,8 @@ void Stage::DrawOpaqueSceneForOutline(
 		item->Draw();
 	}
 
+	DebugDrawSiren();
+
 	lightEffect_.End();
 
 	// =========================
@@ -5163,4 +5220,266 @@ void Stage::DrawPostOutlineOverlay(void)
 	SetWriteZBuffer3D(TRUE);
 	SetUseBackCulling(TRUE);
 	SetUseLighting(TRUE);
+}
+
+void Stage::InitSiren(void)
+{
+	// すでに作成済みなら削除
+	SoundManager::GetInstance().Delete3DSE(
+		sirenSoundHandle_
+	);
+
+	// 脱出ボタンの上にサイレンを配置
+	sirenPos_ = VAdd(
+		{-4270.0f, 0.0f, 1680.0f},
+		VGet(0.0f, 180.0f, 0.0f)
+	);
+
+	// ステージ全体で確認しやすい距離
+	sirenRadius_ = 4000.0f;
+
+	sirenSoundHandle_ =
+		SoundManager::GetInstance().Create3DSE(
+			SoundManager::SE::SIREN,
+			sirenRadius_
+		);
+
+	if (sirenSoundHandle_ == -1)
+	{
+		printfDx(
+			"Siren load failed.\n"
+		);
+
+		return;
+	}
+
+	SoundManager::GetInstance().Set3DSEPosition(
+		sirenSoundHandle_,
+		sirenPos_
+	);
+
+	isSirenPlaying_ = false;
+
+#ifdef _DEBUG
+	printfDx(
+		"Siren loaded Handle=%d Pos=(%.1f, %.1f, %.1f)\n",
+		sirenSoundHandle_,
+		sirenPos_.x,
+		sirenPos_.y,
+		sirenPos_.z
+	);
+#endif
+}
+
+void Stage::StartSiren(void)
+{
+	if (sirenSoundHandle_ == -1)
+	{
+		return;
+	}
+
+	if (isSirenPlaying_)
+	{
+		return;
+	}
+
+	// trueでループ再生
+	SoundManager::GetInstance().Play3DSE(
+		sirenSoundHandle_,
+		sirenPos_,
+		true
+	);
+	ChangeVolumeSoundMem(
+		255,
+		sirenSoundHandle_
+	);
+
+	isSirenPlaying_ = true;
+
+#ifdef _DEBUG
+	printfDx(
+		"Siren started.\n"
+	);
+#endif
+}
+
+void Stage::StopSiren(void)
+{
+	if (sirenSoundHandle_ == -1)
+	{
+		isSirenPlaying_ = false;
+		return;
+	}
+
+	SoundManager::GetInstance().Stop3DSE(
+		sirenSoundHandle_
+	);
+
+	isSirenPlaying_ = false;
+}
+
+void Stage::UpdateSiren(void)
+{
+	if (sirenSoundHandle_ == -1 ||
+		player_ == nullptr)
+	{
+		return;
+	}
+
+	// =========================
+	// 3Dリスナー更新
+	// =========================
+
+	VECTOR listenerPos =
+		player_->GetPos();
+
+	listenerPos.y += 80.0f;
+
+	VECTOR forward =
+		player_->GetForward();
+
+	forward.y = 0.0f;
+
+	if (VSize(forward) < 0.001f)
+	{
+		forward =
+			VGet(0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		forward =
+			VNorm(forward);
+	}
+
+	VECTOR listenerTarget =
+		VAdd(
+			listenerPos,
+			VScale(forward, 100.0f)
+		);
+
+	SoundManager::GetInstance().Set3DListener(
+		listenerPos,
+		listenerTarget
+	);
+
+	// =========================
+	// サイレン開始前は移動させない
+	// =========================
+
+	if (!isSirenPlaying_)
+	{
+		return;
+	}
+
+	// =========================
+	// Z = 0まで移動
+	// =========================
+
+	const float targetZ = 0.0f;
+	const float moveSpeed = 168.0f;
+
+	const float deltaTime =
+		SceneManager::GetInstance().GetDeltaTime();
+
+	if (sirenPos_.z > targetZ)
+	{
+		sirenPos_.z -=
+			moveSpeed * deltaTime;
+
+		if (sirenPos_.z <= targetZ)
+		{
+			sirenPos_.z = targetZ;
+		}
+	}
+
+	SoundManager::GetInstance().Set3DSEPosition(
+		sirenSoundHandle_,
+		sirenPos_
+	);
+}
+
+void Stage::DebugDrawSiren(void) const
+{
+
+	const int color = isSirenPlaying_
+		? GetColor(255, 0, 0)
+		: GetColor(255, 255, 0);
+
+	// シェーダーを解除
+	SetUseVertexShader(-1);
+	SetUsePixelShader(-1);
+
+	SetUseTextureToShader(0, -1);
+	SetUseTextureToShader(1, -1);
+	SetUseTextureToShader(2, -1);
+
+	// 壁越しでも見えるデバッグ表示
+	SetUseLighting(FALSE);
+	SetUseZBuffer3D(FALSE);
+	SetWriteZBuffer3D(FALSE);
+	SetUseBackCulling(FALSE);
+
+	// サイレン位置の球
+	DrawSphere3D(
+		sirenPos_,
+		50.0f,
+		16,
+		color,
+		GetColor(255, 255, 255),
+		FALSE
+	);
+
+	// X軸
+	DrawLine3D(
+		VAdd(sirenPos_, VGet(-100.0f, 0.0f, 0.0f)),
+		VAdd(sirenPos_, VGet(100.0f, 0.0f, 0.0f)),
+		color
+	);
+
+	// Y軸
+	DrawLine3D(
+		VAdd(sirenPos_, VGet(0.0f, -150.0f, 0.0f)),
+		VAdd(sirenPos_, VGet(0.0f, 150.0f, 0.0f)),
+		color
+	);
+
+	// Z軸
+	DrawLine3D(
+		VAdd(sirenPos_, VGet(0.0f, 0.0f, -100.0f)),
+		VAdd(sirenPos_, VGet(0.0f, 0.0f, 100.0f)),
+		color
+	);
+
+	// ワールド座標を画面座標へ変換
+	VECTOR screenPos =
+		ConvWorldPosToScreenPos(sirenPos_);
+
+	if (screenPos.z >= 0.0f &&
+		screenPos.z <= 1.0f)
+	{
+		DrawFormatString(
+			static_cast<int>(screenPos.x) + 10,
+			static_cast<int>(screenPos.y) - 20,
+			color,
+			"SIREN %s",
+			isSirenPlaying_ ? "PLAYING" : "WAITING"
+		);
+
+		DrawFormatString(
+			static_cast<int>(screenPos.x) + 10,
+			static_cast<int>(screenPos.y),
+			GetColor(255, 255, 255),
+			"X:%.1f Y:%.1f Z:%.1f",
+			sirenPos_.x,
+			sirenPos_.y,
+			sirenPos_.z
+		);
+	}
+
+	// 描画状態を戻す
+	SetUseBackCulling(TRUE);
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+	SetUseLighting(TRUE);
+
 }

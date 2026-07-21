@@ -153,10 +153,10 @@ void EnemyManager::Update(Player* player)
 	VECTOR cameraPos = GetCameraPosition();
 	VECTOR cameraTarget = GetCameraTarget();
 
-	SoundManager::GetInstance().Set3DListener(
+	/*SoundManager::GetInstance().Set3DListener(
 		cameraPos,
 		cameraTarget
-	);
+	);*/
 
 	// =========================
 	// ‹Ù‹}’Eoƒ‚[ƒh‚É‚È‚Á‚½‚çŒx@“G‚ğˆê“x‚¾‚¯o‚·

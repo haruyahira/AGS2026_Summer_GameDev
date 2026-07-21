@@ -62,7 +62,7 @@ public:
 
     void StartEscapeTimer(void);
 public:
-   
+
 
 public:
 
@@ -75,7 +75,7 @@ public:
         const std::function<void()>& drawActors
     );
 
-  /*  void Draw(void);*/
+    /*  void Draw(void);*/
 
     void DrawUI(void) const;
 
@@ -87,7 +87,7 @@ public:
 
     void CreateFurniture(const FurnitureData& data);
     void CreateCeilingLight(const FurnitureData& data);
- 
+
 
     bool IsLineBlocked(const VECTOR& from, const VECTOR& to) const;
 
@@ -230,7 +230,7 @@ private:
     bool isMiniMapVisible_;
 
     void DrawMiniMap(void) const;
-  
+
     struct MiniMapRect
     {
         int left;
@@ -243,7 +243,7 @@ private:
 
     void DebugDrawPickupRange(void) const;
     void DebugDrawItemPickupCheck(void) const;
-    
+
     int escapeTimeLimit_;          // 通常脱出時間 5分
     int emergencyEscapeTime_;      // 予備脱出装置起動まで 1分
     int escapeStartTime_;          // ゲーム開始時間
@@ -263,9 +263,9 @@ private:
     void ActivateEscapeButton();
     void DrawPickupUI(void) const;
 
- // =========================
-// ライト遮蔽用：エリア別の壁
-// =========================
+    // =========================
+   // ライト遮蔽用：エリア別の壁
+   // =========================
     std::vector<LightBlocker*> hallBlockers_;
     std::vector<LightBlocker*> kitchenBlockers_;
     std::vector<LightBlocker*> corridorBlockers_;
@@ -298,5 +298,21 @@ private:
     void DrawRegisterItemUI(void) const;
     void DrawStoneDeviceRegisterUI(void) const;
     void DrawFlashLightUI(void) const;
+
+
+
+    void InitSiren(void);
+    void UpdateSiren(void);
+    void StartSiren(void);
+    void StopSiren(void);
+
+    void DebugDrawSiren(void) const;
+
+
+
+    int sirenSoundHandle_;
+    VECTOR sirenPos_;
+    float sirenRadius_;
+    bool isSirenPlaying_;
 
 };

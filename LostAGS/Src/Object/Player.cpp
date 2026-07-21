@@ -189,7 +189,7 @@ void Player::Draw(void)
 	DrawFootstepDebug();
 
 	DrawFormatString(
-		20,
+		100,
 		20,
 		GetColor(255, 255, 0),
 		"Player Pos X: %.2f  Y: %.2f  Z: %.2f",
