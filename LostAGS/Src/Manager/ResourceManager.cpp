@@ -64,6 +64,9 @@ void ResourceManager::Init(void)
 	// 選択肢（光る終了）
 	resourcesMap_.emplace(SRC::TITLE_SELECT_BRIGHT3,
 		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "TitleSelectBright3.png"));
+	// 選択中のボタン
+	resourcesMap_.emplace(SRC::TITLE_SELECT_ICON,
+		std::make_unique<RES>(RES_T::IMG, PATH_IMG + "SelectIcon.png"));
 	//---------------------------------------------------------------------------
 
 	// 家具

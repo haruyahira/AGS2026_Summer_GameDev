@@ -508,15 +508,7 @@ void Stage::DrawUI(void) const
 		const float distance =
 			VSize(diff);
 
-		DrawFormatString(
-			20,
-			500,
-			GetColor(255, 255, 0),
-			"Siren Distance: %.1f / Radius: %.1f",
-			distance,
-			sirenRadius_
-		);
-
+	
 		DrawFormatString(
 			20,
 			520,
@@ -525,16 +517,6 @@ void Stage::DrawUI(void) const
 			listenerPos.x,
 			listenerPos.y,
 			listenerPos.z
-		);
-
-		DrawFormatString(
-			20,
-			540,
-			GetColor(255, 180, 100),
-			"Siren: %.1f %.1f %.1f",
-			sirenPos_.x,
-			sirenPos_.y,
-			sirenPos_.z
 		);
 	}
 
@@ -3649,32 +3631,223 @@ void Stage::DrawPickupUI(void) const
 		slotSize
 	);
 
-	// Fキー枠
-	int keyBoxX = boxX + boxW - 120;
-	int keyBoxY = boxY + 28;
+	// ========================================
+	// キー入力表示
+	// Eキーは四角、Yボタンは丸で表示
+	// ========================================
+
+	const char* keyboardText = "E";
+	const char* separatorText = "/";
+	const char* padText = "Y";
+	const char* actionText = "拾う";
+
+	const int keyboardTextLength =
+		static_cast<int>(
+			strlen(keyboardText)
+			);
+
+	const int separatorTextLength =
+		static_cast<int>(
+			strlen(separatorText)
+			);
+
+	const int padTextLength =
+		static_cast<int>(
+			strlen(padText)
+			);
+
+	const int actionTextLength =
+		static_cast<int>(
+			strlen(actionText)
+			);
+
+	const int keyboardTextW =
+		GetDrawStringWidth(
+			keyboardText,
+			keyboardTextLength
+		);
+
+	const int separatorTextW =
+		GetDrawStringWidth(
+			separatorText,
+			separatorTextLength
+		);
+
+	const int padTextW =
+		GetDrawStringWidth(
+			padText,
+			padTextLength
+		);
+
+	const int actionTextW =
+		GetDrawStringWidth(
+			actionText,
+			actionTextLength
+		);
+
+	// ========================================
+	// 各パーツのサイズ
+	// ========================================
+
+	const int keyBoxW = 48;
+	const int keyBoxH = 48;
+
+	const int padRadius = 22;
+	const int padDiameter = padRadius * 2;
+
+	const int partMargin = 10;
+	const int actionMargin = 16;
+
+	// Eキー、スラッシュ、Yボタン、「拾う」の合計横幅
+	const int totalInputW =
+		keyBoxW
+		+ partMargin
+		+ separatorTextW
+		+ partMargin
+		+ padDiameter
+		+ actionMargin
+		+ actionTextW;
+
+	// 全体をUI右側へ配置
+	const int inputStartX =
+		boxX + boxW - 25 - totalInputW;
+
+	const int inputY =
+		boxY + 28;
+
+	// 持てるかどうかで色を変える
+	const int inputColor =
+		canPickup
+		? GetColor(255, 255, 255)
+		: GetColor(120, 60, 60);
+
+	// ========================================
+	// Eキーの四角
+	// ========================================
+
+	const int keyBoxX =
+		inputStartX;
+
+	const int keyBoxY =
+		inputY;
 
 	DrawBox(
 		keyBoxX,
 		keyBoxY,
-		keyBoxX + 48,
-		keyBoxY + 48,
-		canPickup ? GetColor(255, 255, 255) : GetColor(120, 60, 60),
+		keyBoxX + keyBoxW,
+		keyBoxY + keyBoxH,
+		inputColor,
 		FALSE
 	);
 
+	// Eを四角の中央に表示
+	const int keyboardTextX =
+		keyBoxX
+		+ keyBoxW / 2
+		- keyboardTextW / 2;
+
+	const int keyboardTextY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
+
 	DrawString(
-		keyBoxX + 17,
-		keyBoxY + 14,
-		"E ",
+		keyboardTextX,
+		keyboardTextY,
+		keyboardText,
 		mainColor
 	);
+
+	// ========================================
+	// 区切りの「/」
+	// ========================================
+
+	const int separatorX =
+		keyBoxX
+		+ keyBoxW
+		+ partMargin;
+
+	const int separatorY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
+
+	DrawString(
+		separatorX,
+		separatorY,
+		separatorText,
+		mainColor
+	);
+
+	// ========================================
+	// Yボタンの丸
+	// ========================================
+
+	const int padCenterX =
+		separatorX
+		+ separatorTextW
+		+ partMargin
+		+ padRadius;
+
+	const int padCenterY =
+		keyBoxY
+		+ keyBoxH / 2;
+
+	// 外側の丸
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius,
+		inputColor,
+		FALSE
+	);
+
+	// 内側にも薄い丸を描く
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius - 3,
+		canPickup
+		? GetColor(130, 130, 130)
+		: GetColor(80, 40, 40),
+		FALSE
+	);
+
+	// Yを丸の中央に表示
+	const int padTextX =
+		padCenterX
+		- padTextW / 2;
+
+	const int padTextY =
+		padCenterY - 8;
+
+	DrawString(
+		padTextX,
+		padTextY,
+		padText,
+		mainColor
+	);
+
+	// ========================================
+	// 「拾う」表示
+	// ========================================
+
+	const int actionTextX =
+		padCenterX
+		+ padRadius
+		+ actionMargin;
+
+	const int actionTextY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
 
 	if (canPickup)
 	{
 		DrawString(
-			keyBoxX + 60,
-			keyBoxY + 15,
-			"拾う",
+			actionTextX,
+			actionTextY,
+			actionText,
 			GetColor(255, 255, 255)
 		);
 	}
@@ -3686,6 +3859,7 @@ void Stage::DrawPickupUI(void) const
 			"インベントリがいっぱいです",
 			GetColor(255, 80, 80)
 		);
+	
 	}
 }
 
@@ -3813,40 +3987,165 @@ void Stage::DrawEscapeButtonUI(void) const
 		GetColor(255, 220, 120)
 	);
 
-	// 左クリック枠
-	int keyBoxX = boxX + boxW - 200;
-	int keyBoxY = boxY + 25;
+	// ========================================
+	// 左クリック / X 脱出
+	// ========================================
 
-	const char* keyText = "左クリック";
+	const char* mouseText = "左クリック";
+	const char* separatorText = "/";
+	const char* padText = "RT";
 	const char* actionText = "脱出";
 
-	int keyTextW = GetDrawStringWidth(keyText, strlen(keyText));
+	const int mouseTextW =
+		GetDrawStringWidth(
+			mouseText,
+			static_cast<int>(strlen(mouseText))
+		);
 
-	const int paddingX = 16;
-	const int keyBoxW = keyTextW + paddingX * 2;
-	const int keyBoxH = 42;
+	const int separatorTextW =
+		GetDrawStringWidth(
+			separatorText,
+			static_cast<int>(strlen(separatorText))
+		);
+
+	const int padTextW =
+		GetDrawStringWidth(
+			padText,
+			static_cast<int>(strlen(padText))
+		);
+
+	const int actionTextW =
+		GetDrawStringWidth(
+			actionText,
+			static_cast<int>(strlen(actionText))
+		);
+
+	// 各パーツのサイズ
+	const int mousePaddingX = 12;
+	const int mouseBoxW =
+		mouseTextW + mousePaddingX * 2;
+
+	const int mouseBoxH = 42;
+
+	const int padRadius = 20;
+	const int padDiameter = padRadius * 2;
+
+	const int partMargin = 9;
+	const int actionMargin = 14;
+
+	// 全体の横幅
+	const int totalInputW =
+		mouseBoxW
+		+ partMargin
+		+ separatorTextW
+		+ partMargin
+		+ padDiameter
+		+ actionMargin
+		+ actionTextW;
+
+	// UI右側へ配置
+	const int inputStartX =
+		boxX + boxW - 20 - totalInputW;
+
+	const int inputY =
+		boxY + 25;
+
+	const int whiteColor =
+		GetColor(255, 255, 255);
+
+	const int xButtonColor =
+		GetColor(70, 160, 255);
+
+	// ========================================
+	// 左クリックの四角
+	// ========================================
 
 	DrawBox(
-		keyBoxX,
-		keyBoxY,
-		keyBoxX + keyBoxW,
-		keyBoxY + keyBoxH,
-		GetColor(255, 255, 255),
+		inputStartX,
+		inputY,
+		inputStartX + mouseBoxW,
+		inputY + mouseBoxH,
+		whiteColor,
 		FALSE
 	);
 
 	DrawString(
-		keyBoxX + paddingX,
-		keyBoxY + 12,
-		keyText,
-		GetColor(255, 255, 255)
+		inputStartX + mousePaddingX,
+		inputY + mouseBoxH / 2 - 8,
+		mouseText,
+		whiteColor
 	);
 
+	// ========================================
+	// 区切りの「/」
+	// ========================================
+
+	const int separatorX =
+		inputStartX
+		+ mouseBoxW
+		+ partMargin;
+
+	const int separatorY =
+		inputY
+		+ mouseBoxH / 2
+		- 8;
+
 	DrawString(
-		keyBoxX + keyBoxW + 14,
-		keyBoxY + 12,
+		separatorX,
+		separatorY,
+		separatorText,
+		whiteColor
+	);
+
+	// ========================================
+	// Xボタンの丸
+	// ========================================
+
+	const int padCenterX =
+		separatorX
+		+ separatorTextW
+		+ partMargin
+		+ padRadius;
+
+	const int padCenterY =
+		inputY
+		+ mouseBoxH / 2;
+
+	// 外側の青い丸
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius,
+		xButtonColor,
+		FALSE
+	);
+
+	// 内側の丸
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius - 3,
+		GetColor(35, 90, 150),
+		FALSE
+	);
+
+	// Xを中央に表示
+	DrawString(
+		padCenterX - padTextW / 2,
+		padCenterY - 8,
+		padText,
+		xButtonColor
+	);
+
+	// ========================================
+	// 「脱出」
+	// ========================================
+
+	DrawString(
+		padCenterX + padRadius + actionMargin,
+		padCenterY - 8,
 		actionText,
-		GetColor(255, 255, 255)
+		whiteColor
 	);
 }
 
@@ -4188,7 +4487,7 @@ void Stage::DrawStoneDeviceRegisterUI(void) const
 		DrawString(
 			boxX + 24,
 			boxY + 76,
-			"視線を外すとFキーで登録できます",
+			"視線を外すとF / Xキーで登録できます",
 			GetColor(220, 220, 220)
 		);
 
@@ -4214,52 +4513,175 @@ void Stage::DrawStoneDeviceRegisterUI(void) const
 		return;
 	}
 
-	// Fキー表示
-	const int keyBoxX = boxX + 24;
-	const int keyBoxY = boxY + 52;
-	const int keyBoxW = 48;
+	// ========================================
+// 登録入力表示
+// Fキーは四角、Xボタンは丸
+// ========================================
+
+	const char* keyboardText = "F";
+	const char* separatorText = "/";
+	const char* padText = "X";
+	const char* actionText = "アイテムを登録";
+
+	const int keyboardTextW =
+		GetDrawStringWidth(
+			keyboardText,
+			static_cast<int>(strlen(keyboardText))
+		);
+
+	const int separatorTextW =
+		GetDrawStringWidth(
+			separatorText,
+			static_cast<int>(strlen(separatorText))
+		);
+
+	const int padTextW =
+		GetDrawStringWidth(
+			padText,
+			static_cast<int>(strlen(padText))
+		);
+
+	const int keyBoxW = 42;
 	const int keyBoxH = 42;
+
+	const int padRadius = 20;
+	const int partMargin = 9;
+	const int actionMargin = 14;
+
+	const int inputColor =
+		GetColor(255, 255, 255);
+
+	// 全体の開始位置
+	const int keyBoxX =
+		boxX + 24;
+
+	const int keyBoxY =
+		boxY + 56;
+
+	// ========================================
+	// Fキーの四角
+	// ========================================
 
 	DrawBox(
 		keyBoxX,
 		keyBoxY,
 		keyBoxX + keyBoxW,
 		keyBoxY + keyBoxH,
-		GetColor(255, 255, 255),
+		inputColor,
 		FALSE
 	);
 
+	const int keyboardTextX =
+		keyBoxX
+		+ keyBoxW / 2
+		- keyboardTextW / 2;
+
+	const int keyboardTextY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
+
 	DrawString(
-		keyBoxX + 17,
-		keyBoxY + 12,
-		"F",
+		keyboardTextX,
+		keyboardTextY,
+		keyboardText,
+		inputColor
+	);
+
+	// ========================================
+	// 区切り
+	// ========================================
+
+	const int separatorX =
+		keyBoxX
+		+ keyBoxW
+		+ partMargin;
+
+	const int separatorY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
+
+	DrawString(
+		separatorX,
+		separatorY,
+		separatorText,
+		inputColor
+	);
+
+	// ========================================
+	// Xボタンの丸
+	// ========================================
+
+	const int padCenterX =
+		separatorX
+		+ separatorTextW
+		+ partMargin
+		+ padRadius;
+
+	const int padCenterY =
+		keyBoxY
+		+ keyBoxH / 2;
+
+	// Xbox風に青色
+	const int padColor =
+		GetColor(70, 160, 255);
+
+	// 外側
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius,
+		padColor,
+		FALSE
+	);
+
+	// 内側
+	DrawCircle(
+		padCenterX,
+		padCenterY,
+		padRadius - 3,
+		GetColor(35, 90, 150),
+		FALSE
+	);
+
+	// X文字
+	const int padTextX =
+		padCenterX
+		- padTextW / 2;
+
+	const int padTextY =
+		padCenterY - 8;
+
+	DrawString(
+		padTextX,
+		padTextY,
+		padText,
+		padColor
+	);
+
+	// ========================================
+	// 登録文字
+	// ========================================
+
+	const int actionTextX =
+		padCenterX
+		+ padRadius
+		+ actionMargin;
+
+	const int actionTextY =
+		keyBoxY
+		+ keyBoxH / 2
+		- 8;
+
+	DrawString(
+		actionTextX,
+		actionTextY,
+		actionText,
 		GetColor(255, 255, 255)
 	);
 
-	DrawString(
-		keyBoxX + 64,
-		keyBoxY + 12,
-		"アイテムを登録",
-		GetColor(255, 255, 255)
-	);
-
-	// 所持アイテム数
-	DrawFormatString(
-		boxX + 300,
-		boxY + 48,
-		GetColor(210, 255, 240),
-		"所持アイテム：%d個",
-		totalItemCount
-	);
-
-	// 登録予定金額
-	DrawFormatString(
-		boxX + 300,
-		boxY + 76,
-		GetColor(255, 230, 120),
-		"登録予定額：%d円",
-		registerMoney
-	);
+	
 }
 
 void Stage::DrawFlashLightUI(void) const

@@ -378,9 +378,6 @@ void ResultScene::UpdateMoneyCount(void)
 //--------------------------------------------------
 // 金額確定演出
 //--------------------------------------------------
-//--------------------------------------------------
-// 金額確定演出
-//--------------------------------------------------
 void ResultScene::UpdateMoneyFix(void)
 {
     constexpr float fixTime =
@@ -617,14 +614,17 @@ void ResultScene::UpdateWaitInput(void)
         return;
     }
 
-    InputManager& input =
+    InputManager& ins =
         InputManager::GetInstance();
 
     //---------------------------------
     // 決定入力
     //---------------------------------
-    if (input.IsTrgDown(
-        KEY_INPUT_RETURN))
+    if (ins.IsClickMouseLeft() ||
+        ins.IsPadBtnTrgDown(
+            InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::DOWN)
+        )
     {
         step_ =
             STEP::FINISH;
@@ -1397,12 +1397,12 @@ void ResultScene::DrawNextGuide(void)
         IsGameClear())
     {
         guideText =
-            "ENTER : STAFF ROLL";
+            "左クリック / A : STAFF ROLL";
     }
     else
     {
         guideText =
-            "ENTER : GAME OVER";
+            "左クリック / A : GAME OVER";
     }
 
     const int width =

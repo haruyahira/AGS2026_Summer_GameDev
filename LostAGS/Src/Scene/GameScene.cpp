@@ -179,9 +179,7 @@ void GameScene::Update(void)
 	if (step_ == STEP::INTRO)
 	{
 		if (
-			ins.IsTrgDown(KEY_INPUT_RETURN) ||
-			ins.IsTrgDown(KEY_INPUT_SPACE) ||
-			ins.IsTrgDown(KEY_INPUT_F) ||
+			ins.IsTrgMouseLeft() ||
 			ins.IsPadBtnTrgDown(
 				InputManager::JOYPAD_NO::PAD1,
 				InputManager::JOYPAD_BTN::DOWN)
@@ -441,7 +439,7 @@ void GameScene::DrawIntroUI(void) const
 
 	int color = 120 + (int)(blink * 135.0f);
 
-	const char* startText = "ENTER / SPACE / F で開始";
+	const char* startText = "左クリック / A で開始";
 
 	int startTextW = GetDrawStringWidthToHandle(
 		startText,

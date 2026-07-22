@@ -730,10 +730,10 @@ void GameOverScene::Draw(void)
 
     // 操作案内
     const char* guide1 =
-        "MOVE  :  LEFT STICK / MOUSE";
+        "MOVE  :  マウス / 左スティック";
 
     const char* guide2 =
-        "DECIDE  :  BUTTON / LEFT CLICK";
+        "DECIDE  :  左クリック / A";
 
     const int guide1Width =
         GetDrawStringWidthToHandle(

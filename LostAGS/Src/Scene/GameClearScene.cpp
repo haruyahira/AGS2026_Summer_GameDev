@@ -527,9 +527,7 @@ void GameClearScene::Update(void)
         InputManager::GetInstance();
 
     const bool isDecision =
-        ins.IsTrgDown(KEY_INPUT_RETURN) ||
-        ins.IsTrgDown(KEY_INPUT_SPACE) ||
-        ins.IsTrgDown(KEY_INPUT_F) ||
+        ins.IsClickMouseLeft() ||
         ins.IsPadBtnTrgDown(
             InputManager::JOYPAD_NO::PAD1,
             InputManager::JOYPAD_BTN::DOWN
@@ -1082,7 +1080,7 @@ void GameClearScene::DrawGuide(void) const
             );
 
     const char* guide =
-        "決定キー  タイトルへ";
+        "左クリック／A タイトルへ";
 
     const int guideLength =
         static_cast<int>(

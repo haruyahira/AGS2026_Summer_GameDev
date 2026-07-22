@@ -353,7 +353,7 @@ void Player::InitFlashLight(void)
 #else
 	
 	// 懐中電灯の初期設定（一直線っぽくするために数値を調整）
-	flashlight_.isOn = false;
+	flashlight_.isOn = true;
 	flashlight_.range = 1500.0f;    //  少し遠くまで光を届かせる（元 1000.0f）
 	flashlight_.outerAngle = 0.80f; //  光の広がりを狭くする（元 0.4f）
 	flashlight_.innerAngle = 0.1f;  //  中心の強い光を狭くする（元 0.2f）

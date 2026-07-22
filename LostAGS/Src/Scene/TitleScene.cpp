@@ -19,6 +19,7 @@ TitleScene::TitleScene(void)
 	imgPandaX_ = 0;
 	imgPandaY_ = 0;
 
+	imgSelectIcon_ = -1;
 	imgTitleBack_ = -1;
 	imgTitleLogo_ = -1;
 	imgTitleRedpanda_ = -1;
@@ -42,6 +43,7 @@ void TitleScene::Init(void)
 	imgSelectHandles_[1] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT1).handleId_;
 	imgSelectHandles_[2] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT2).handleId_;
 	imgSelectHandles_[3] = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_BRIGHT3).handleId_;
+	imgSelectIcon_ = resMng_.Load(ResourceManager::SRC::TITLE_SELECT_ICON).handleId_;
 
 	// 選択肢の当たり判定用矩形を初期化
 	InitSelect();
@@ -237,7 +239,7 @@ void TitleScene::UpdateSelect(void)
 	// =========================
 	if (drawIndex_ > 0)
 	{
-		fadeCount_ += RAISE＿FADE;
+		fadeCount_ += RAISE_FADE;
 	}
 	else
 	{
@@ -348,6 +350,9 @@ void TitleScene::DrawSelect(void)
 
 		// 重要：描画が終わったらブレンドモードを通常（不透明）に戻す
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+		// 選択中の場所にアイコンを表示
+		DrawSelectIcon();
 	}
 
 
@@ -372,6 +377,46 @@ void TitleScene::DrawSelect(void)
 	}
 #endif
 	
+}
+
+void TitleScene::DrawSelectIcon(void)
+{
+	if (drawIndex_ < 1 || drawIndex_ > 3)
+	{
+		return;
+	}
+
+	if (imgSelectIcon_ == -1)
+	{
+		return;
+	}
+
+	const Rect& selectedRect =
+		btnRects_[drawIndex_ - 1];
+
+	constexpr int ICON_WIDTH = 40;
+	constexpr int ICON_HEIGHT = 40;
+	constexpr int INNER_MARGIN = 30;
+
+	// 選択肢の右端より少し内側
+	const int iconCenterX =
+		selectedRect.x
+		+ selectedRect.w
+		- INNER_MARGIN;
+
+	// 選択肢の上下中央
+	const int iconCenterY =
+		selectedRect.y
+		+ selectedRect.h / 1.3;
+
+	DrawExtendGraph(
+		iconCenterX - ICON_WIDTH / 2,
+		iconCenterY - ICON_HEIGHT / 2,
+		iconCenterX + ICON_WIDTH / 2,
+		iconCenterY + ICON_HEIGHT / 2,
+		imgSelectIcon_,
+		TRUE
+	);
 }
 
 void TitleScene::DrawTelop()

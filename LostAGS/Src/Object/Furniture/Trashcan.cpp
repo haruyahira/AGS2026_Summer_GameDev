@@ -188,52 +188,89 @@ bool Trashcan::CanInteract(const Player& player) const
     return distance <= interactDistance_;
 }
 
-bool Trashcan::DrawInteractUI(const Player& player) const
+bool Trashcan::DrawInteractUI(
+    const Player& player
+) const
 {
     if (!CanInteract(player))
     {
         return false;
     }
 
-    int screenW, screenH;
+    int screenW = 0;
+    int screenH = 0;
 
     GetDrawScreenSize(
         &screenW,
         &screenH
     );
 
-    const int boxW = 260;
-    const int boxH = 60;
+    // =========================
+    // UIの大きさと位置
+    // =========================
 
-    int x = screenW / 2 - boxW / 2;
-    int y = screenH / 2 - boxH / 2;
+    const int boxW = 420;
+    const int boxH = 82;
 
-    const char* text = "";
+    const int boxX =
+        screenW / 2 - boxW / 2;
+
+    const int boxY =
+        screenH / 2 - boxH / 2;
+
+    // =========================
+    // ゴミ箱の状態で文字を切り替える
+    // =========================
+
+    const char* actionText = "";
 
     switch (state_)
     {
     case TrashcanState::Closed:
     case TrashcanState::Closing:
-        text = "F 開ける";
+        actionText = "開ける";
         break;
 
     case TrashcanState::Open:
     case TrashcanState::Opening:
-        text = "F 閉める";
+        actionText = "閉める";
         break;
     }
 
+    // =========================
+    // 枠の点滅
+    // =========================
+
+    const float time =
+        static_cast<float>(
+            GetNowCount()
+            ) / 1000.0f;
+
+    const float blink =
+        (sinf(time * 5.0f) + 1.0f)
+        * 0.5f;
+
+    const int borderAlpha =
+        150
+        + static_cast<int>(
+            blink * 90.0f
+            );
+
+    // =========================
+    // 背景
+    // =========================
+
     SetDrawBlendMode(
         DX_BLENDMODE_ALPHA,
-        170
+        190
     );
 
     DrawBox(
-        x,
-        y,
-        x + boxW,
-        y + boxH,
-        GetColor(0, 0, 0),
+        boxX,
+        boxY,
+        boxX + boxW,
+        boxY + boxH,
+        GetColor(5, 10, 18),
         TRUE
     );
 
@@ -242,20 +279,247 @@ bool Trashcan::DrawInteractUI(const Player& player) const
         0
     );
 
+    // 外枠
+    SetDrawBlendMode(
+        DX_BLENDMODE_ALPHA,
+        borderAlpha
+    );
+
     DrawBox(
-        x,
-        y,
-        x + boxW,
-        y + boxH,
-        GetColor(255, 255, 255),
+        boxX,
+        boxY,
+        boxX + boxW,
+        boxY + boxH,
+        GetColor(120, 220, 255),
         FALSE
     );
 
+    SetDrawBlendMode(
+        DX_BLENDMODE_NOBLEND,
+        0
+    );
+
+    // 内側の枠
+    DrawBox(
+        boxX + 4,
+        boxY + 4,
+        boxX + boxW - 4,
+        boxY + boxH - 4,
+        GetColor(35, 80, 100),
+        FALSE
+    );
+
+    // =========================
+    // F / X の表示情報
+    // =========================
+
+    const char* keyboardText = "F";
+    const char* separatorText = "/";
+    const char* padText = "X";
+
+    const int keyboardTextW =
+        GetDrawStringWidth(
+            keyboardText,
+            static_cast<int>(
+                strlen(keyboardText)
+                )
+        );
+
+    const int separatorTextW =
+        GetDrawStringWidth(
+            separatorText,
+            static_cast<int>(
+                strlen(separatorText)
+                )
+        );
+
+    const int padTextW =
+        GetDrawStringWidth(
+            padText,
+            static_cast<int>(
+                strlen(padText)
+                )
+        );
+
+    const int actionTextW =
+        GetDrawStringWidth(
+            actionText,
+            static_cast<int>(
+                strlen(actionText)
+                )
+        );
+
+    // =========================
+    // 各部品のサイズ
+    // =========================
+
+    const int keyBoxW = 46;
+    const int keyBoxH = 46;
+
+    const int padRadius = 21;
+    const int padDiameter =
+        padRadius * 2;
+
+    const int partMargin = 10;
+    const int actionMargin = 18;
+
+    const int totalInputW =
+        keyBoxW
+        + partMargin
+        + separatorTextW
+        + partMargin
+        + padDiameter
+        + actionMargin
+        + actionTextW;
+
+    // 入力表示全体を中央揃え
+    const int inputStartX =
+        boxX
+        + boxW / 2
+        - totalInputW / 2;
+
+    const int inputY =
+        boxY
+        + boxH / 2
+        - keyBoxH / 2;
+
+    const int whiteColor =
+        GetColor(255, 255, 255);
+
+    const int xButtonColor =
+        GetColor(70, 160, 255);
+
+    // =========================
+    // Fキーの四角
+    // =========================
+
+    const int keyBoxX =
+        inputStartX;
+
+    const int keyBoxY =
+        inputY;
+
+    DrawBox(
+        keyBoxX,
+        keyBoxY,
+        keyBoxX + keyBoxW,
+        keyBoxY + keyBoxH,
+        whiteColor,
+        FALSE
+    );
+
+    // 内側の枠
+    DrawBox(
+        keyBoxX + 3,
+        keyBoxY + 3,
+        keyBoxX + keyBoxW - 3,
+        keyBoxY + keyBoxH - 3,
+        GetColor(100, 100, 110),
+        FALSE
+    );
+
+    const int keyboardTextX =
+        keyBoxX
+        + keyBoxW / 2
+        - keyboardTextW / 2;
+
+    const int keyboardTextY =
+        keyBoxY
+        + keyBoxH / 2
+        - 8;
+
     DrawString(
-        x + 85,
-        y + 20,
-        text,
-        GetColor(255, 255, 255)
+        keyboardTextX,
+        keyboardTextY,
+        keyboardText,
+        whiteColor
+    );
+
+    // =========================
+    // 区切りの「/」
+    // =========================
+
+    const int separatorX =
+        keyBoxX
+        + keyBoxW
+        + partMargin;
+
+    const int separatorY =
+        keyBoxY
+        + keyBoxH / 2
+        - 8;
+
+    DrawString(
+        separatorX,
+        separatorY,
+        separatorText,
+        GetColor(200, 200, 200)
+    );
+
+    // =========================
+    // Xボタンの丸
+    // =========================
+
+    const int padCenterX =
+        separatorX
+        + separatorTextW
+        + partMargin
+        + padRadius;
+
+    const int padCenterY =
+        keyBoxY
+        + keyBoxH / 2;
+
+    // 外側の青い丸
+    DrawCircle(
+        padCenterX,
+        padCenterY,
+        padRadius,
+        xButtonColor,
+        FALSE
+    );
+
+    // 内側の丸
+    DrawCircle(
+        padCenterX,
+        padCenterY,
+        padRadius - 3,
+        GetColor(35, 90, 150),
+        FALSE
+    );
+
+    // Xを中央へ配置
+    const int padTextX =
+        padCenterX
+        - padTextW / 2;
+
+    const int padTextY =
+        padCenterY - 8;
+
+    DrawString(
+        padTextX,
+        padTextY,
+        padText,
+        xButtonColor
+    );
+
+    // =========================
+    // 「開ける」「閉める」
+    // =========================
+
+    const int actionTextX =
+        padCenterX
+        + padRadius
+        + actionMargin;
+
+    const int actionTextY =
+        padCenterY - 8;
+
+    DrawString(
+        actionTextX,
+        actionTextY,
+        actionText,
+        whiteColor
     );
 
     return true;

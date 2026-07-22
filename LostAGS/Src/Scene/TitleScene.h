@@ -35,16 +35,20 @@ private:
 	static constexpr float CENTER_DIVIDER = 2.0f;    // 中心計算用
 	static constexpr int REDPANDA_ADJUST_Y = 200; // レッサーパンダのY座標調整用値
 	static constexpr float RESET_FADE = 0.0f;      // フェードの速さをリセットする値
-	static constexpr float RAISE＿FADE = 0.035f;      // フェードの速さを上げる値
+	static constexpr float RAISE_FADE = 0.035f;      // フェードの速さを上げる値
 	static constexpr float ALPHA_HALF_RANGE = 0.5f; // サイン波の振幅調整用
 	static constexpr float ALPHA_OFFSET = 0.5f;     // サイン波の底上げ用
 	static constexpr int   MAX_ALPHA = 255;          // 最大不透明度
+	static constexpr int SELECT_ICON_OFFSET_X = 40;
+	static constexpr int SELECT_ICON_OFFSET_Y = 0;
+	static constexpr int SELECT_ICON_SCALE = 0.5;
 
 	void InitSelect(void);
 
 	// 描画
 	void DrawRedpanda(void);
 	void DrawSelect(void);
+	void DrawSelectIcon(void);
 	void DrawTelop(void);
 
 	// 更新
@@ -89,6 +93,7 @@ private:
 	// 変数
 	int imgPandaX_;
 	int imgPandaY_; // レッサーパンダの画像サイズ
+	int imgSelectIcon_;
 
 	int textX_; // 文字の横幅
 

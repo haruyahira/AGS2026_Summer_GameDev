@@ -170,16 +170,18 @@ void RankingScene::Update(void)
         return;
     }
 
-    InputManager& input =
+    InputManager& ins =
         InputManager::GetInstance();
 
     //---------------------------------
-    // EnterÇ‹ÇΩÇÕEscapeÇ≈ñﬂÇÈ
+    // Enter
     //---------------------------------
-    if (input.IsTrgDown(
-        KEY_INPUT_RETURN) ||
-        input.IsTrgDown(
-            KEY_INPUT_ESCAPE))
+    if (
+        ins.IsClickMouseLeft() ||
+        ins.IsPadBtnTrgDown(
+            InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::DOWN))
+
     {
         SceneManager::GetInstance().
             ChangeScene(
@@ -1699,7 +1701,7 @@ void RankingScene::DrawGuide(void)
             );
 
     const char* guide =
-        "[ ENTER / ESC ]  BACK TO TITLE";
+        "[ ç∂ÉNÉäÉbÉN / A ]  BACK TO TITLE";
 
     const int width =
         GetDrawStringWidthToHandle(
