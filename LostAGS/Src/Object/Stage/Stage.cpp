@@ -27,7 +27,9 @@
 #include "../Furniture/Door.h"
 #include "../Furniture/ShelfDoor.h"
 #include "../Furniture/Trashcan.h"
+#include "../Furniture/TV.h"
 #include "../Furniture/Button.h"
+#include "../Furniture/ShelfBox.h"
 #include "../../Shader/Light/LightManager.h"
 #include "../../Shader/Light/LightEffect.h"
 #include "../../Shader/RimLightEffect.h"
@@ -189,6 +191,8 @@ void Stage::Init(void)
 
 void Stage::Update(void)
 {
+
+
 	// 惑星
 	for (const auto& s : stages_)
 	{
@@ -217,6 +221,14 @@ void Stage::Update(void)
 		if (shelfDorr != nullptr)
 		{
 			shelfDorr->Update(*player_);
+			continue;
+		}
+
+		ShelfBox* shelfBox = dynamic_cast<ShelfBox*>(furniture);
+
+		if (shelfBox != nullptr)
+		{
+			shelfBox->Update(*player_);
 			continue;
 		}
 
@@ -262,6 +274,7 @@ void Stage::Update(void)
 	UpdateStoneDeviceRegister();
 	UpdateEscapeButton();
 	UpdateSiren();
+	Update3DListener();
 
 
 	if (isEscapeButtonActivated_)
@@ -328,93 +341,7 @@ void Stage::Update(void)
 	}
 
 }
-//void Stage::Draw(void)
-//{
-//	// SceneManager が設定している描画先を保存する
-//	// 通常は mainScrenn_ が入っている
-//	int oldScreen = GetDrawScreen();
-//
-//	VECTOR cameraPos = GetCameraPosition();
-//	VECTOR cameraTarget = GetCameraTarget();
-//
-//	// 描画直前の正しいカメラ方向でライトを更新
-//	UpdateFlashLightForShader(cameraPos, cameraTarget);
-//
-//	// ステージ専用RTに、
-//	// 不透明物、半透明物、ライト、輪郭線用情報を描画
-//	DrawOpaqueSceneForOutline(cameraPos, cameraTarget);
-//
-//	// 完成したアウトライン付きステージ画像を、
-//	// 元の描画先に描く
-//	DrawPostOutline(oldScreen);
-//
-//	// =========================
-//	// Stage外の3D描画用に状態を戻す
-//	// =========================
-//
-//	SetDrawScreen(oldScreen);
-//
-//	SetCameraNearFar(10.0f, 7000);
-//	SetupCamera_Perspective(DX_PI_F / 3.0f);
-//	SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
-//
-//	SetUseZBuffer3D(TRUE);
-//	SetWriteZBuffer3D(TRUE);
-//	SetUseBackCulling(TRUE);
-//	SetUseLighting(TRUE);
-//
-//	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-//
-//	SetUseVertexShader(-1);
-//	SetUsePixelShader(-1);
-//
-//	SetUseTextureToShader(0, -1);
-//	SetUseTextureToShader(1, -1);
-//	SetUseTextureToShader(2, -1);
-//
-//
-//#ifdef _DEBUG
-//	DebugDrawItemPickupCheck();
-//	DebugDrawPickupRange();
-//
-//	if (player_ != nullptr)
-//	{
-//		for (auto furniture : furnitures_)
-//		{
-//			if (furniture == nullptr)
-//			{
-//				continue;
-//			}
-//
-//			Door* door = dynamic_cast<Door*>(furniture);
-//
-//			if (door != nullptr)
-//			{
-//				door->DebugDrawInteractRange(*player_);
-//				door->DebugDrawCollision();
-//				continue;
-//			}
-//			ShelfDoor* shelfDoor = dynamic_cast<ShelfDoor*>(furniture);
-//
-//			if (shelfDoor != nullptr)
-//			{
-//				shelfDoor->DebugDrawInteractRange(*player_);
-//				shelfDoor->DebugDrawCollision();
-//				continue;
-//			}
-//
-//			Trashcan* trashcan = dynamic_cast<Trashcan*>(furniture);
-//
-//			if (trashcan != nullptr)
-//			{
-//				trashcan->DebugDrawCollision();
-//				continue;
-//			}
-//		}
-//	}
-//#endif
-//
-//}
+
 
 
 void Stage::DrawUI(void) const
@@ -469,6 +396,18 @@ void Stage::DrawUI(void) const
 		if (shelfDoor != nullptr)
 		{
 			if (shelfDoor->DrawInteractUI(*player_))
+			{
+				return;
+			}
+
+			continue;
+		}
+
+		ShelfBox* shelfBox = dynamic_cast<ShelfBox*>(furniture);
+
+		if (shelfBox != nullptr)
+		{
+			if (shelfBox->DrawInteractUI(*player_))
 			{
 				return;
 			}
@@ -876,6 +815,15 @@ void Stage::MakeMainStage(void)
 	{ 0.93f, 0.5f, 1.0f },
 	{0.0f, AsoUtility::Deg2RadF(-90.0f), 0.0f }
 		});
+	// テレビ-------------------------------------------
+	CreateFurniture({
+	ResourceManager::SRC::TV,
+	{ -500.0f, -100.0f, -1100.0f },
+	{ 0.3f, 0.3f, 0.3f },
+	{0.0f, AsoUtility::Deg2RadF(180.0f), 0.0f }
+		});
+
+	
 
 	// ドア付き棚------------------------------------------------
 	struct ShelfDoorData {
@@ -1329,6 +1277,13 @@ void Stage::CreateFurniture(const FurnitureData& data)
 	{
 		f = new Book(&trans);
 	}
+	else if (
+		data.modelSrc ==
+		ResourceManager::SRC::TV
+		)
+	{
+		f = new TV(&trans);
+	}
 	else if (data.modelSrc == ResourceManager::SRC::DOOR)
 	{
 
@@ -1341,6 +1296,15 @@ void Stage::CreateFurniture(const FurnitureData& data)
 
 		f = new ShelfDoor(
 			&trans, data.rot.y, data.doorHingeSide, data.doorOpenSign
+		);
+	}
+	else if (data.modelSrc == ResourceManager::SRC::SHELFBOX)
+	{
+		f = new ShelfBox(
+			&trans,
+			data.rot.y,
+			data.doorHingeSide,
+			data.doorOpenSign
 		);
 	}
 	else if (data.modelSrc == ResourceManager::SRC::BUTTON)
@@ -5319,7 +5283,7 @@ void Stage::DrawOpaqueSceneForOutline(
 		item->Draw();
 	}
 
-	DebugDrawSiren();
+	//DebugDrawSiren();
 
 	lightEffect_.End();
 
@@ -5742,52 +5706,12 @@ void Stage::StopSiren(void)
 
 void Stage::UpdateSiren(void)
 {
-	if (sirenSoundHandle_ == -1 ||
-		player_ == nullptr)
+	if (sirenSoundHandle_ == -1)
 	{
 		return;
 	}
 
-	// =========================
-	// 3Dリスナー更新
-	// =========================
-
-	VECTOR listenerPos =
-		player_->GetPos();
-
-	listenerPos.y += 80.0f;
-
-	VECTOR forward =
-		player_->GetForward();
-
-	forward.y = 0.0f;
-
-	if (VSize(forward) < 0.001f)
-	{
-		forward =
-			VGet(0.0f, 0.0f, 1.0f);
-	}
-	else
-	{
-		forward =
-			VNorm(forward);
-	}
-
-	VECTOR listenerTarget =
-		VAdd(
-			listenerPos,
-			VScale(forward, 100.0f)
-		);
-
-	SoundManager::GetInstance().Set3DListener(
-		listenerPos,
-		listenerTarget
-	);
-
-	// =========================
-	// サイレン開始前は移動させない
-	// =========================
-
+	// サイレンが鳴っていない間は移動させない
 	if (!isSirenPlaying_)
 	{
 		return;
@@ -5814,6 +5738,7 @@ void Stage::UpdateSiren(void)
 		}
 	}
 
+	// サイレンの3D音源位置を更新
 	SoundManager::GetInstance().Set3DSEPosition(
 		sirenSoundHandle_,
 		sirenPos_
@@ -5904,4 +5829,60 @@ void Stage::DebugDrawSiren(void) const
 	SetWriteZBuffer3D(TRUE);
 	SetUseLighting(TRUE);
 
+}
+
+void Stage::Update3DListener()
+{
+	if (player_ == nullptr)
+	{
+		return;
+	}
+
+	// =========================
+	// リスナー位置
+	// =========================
+
+	VECTOR listenerPos =
+		player_->GetPos();
+
+	// 耳の高さ
+	listenerPos.y += 80.0f;
+
+	// =========================
+	// リスナーの正面方向
+	// =========================
+
+	VECTOR forward =
+		player_->GetForward();
+
+	if (VSize(forward) < 0.001f)
+	{
+		forward =
+			VGet(
+				0.0f,
+				0.0f,
+				1.0f
+			);
+	}
+	else
+	{
+		forward =
+			VNorm(
+				forward
+			);
+	}
+
+	VECTOR listenerTarget =
+		VAdd(
+			listenerPos,
+			VScale(
+				forward,
+				100.0f
+			)
+		);
+
+	SoundManager::GetInstance().Set3DListener(
+		listenerPos,
+		listenerTarget
+	);
 }

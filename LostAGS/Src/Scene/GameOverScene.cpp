@@ -131,7 +131,15 @@ void GameOverScene::Update(void)
             InputManager::JOYPAD_NO::PAD1
         );
 
-    constexpr int deadZone = 8000;
+    const bool isXInput =
+        ins.IsXInputPad(
+            InputManager::JOYPAD_NO::PAD1
+        );
+
+    const int deadZone =
+        isXInput
+        ? 8000
+        : 100;
 
     if (stickInputWait_ <= 0.0f)
     {

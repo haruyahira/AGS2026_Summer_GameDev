@@ -682,25 +682,31 @@ void Player::ProcessMove(void)
 	// コントローラ左スティック移動
 	// -----------------------------
 
-	int lx = ins.GetPadAKeyLX(InputManager::JOYPAD_NO::PAD1);
-	int ly = ins.GetPadAKeyLY(InputManager::JOYPAD_NO::PAD1);
+	int lx =
+		ins.GetPadAKeyLX(
+			InputManager::JOYPAD_NO::PAD1
+		);
 
-	// コントローラーの種類を取得
-	auto padType =
-		ins.GetJPadType(InputManager::JOYPAD_NO::PAD1);
+	int ly =
+		ins.GetPadAKeyLY(
+			InputManager::JOYPAD_NO::PAD1
+		);
 
-	// 基本は Xbox / XInput 用
+	const bool isXInput =
+		ins.IsXInputPad(
+			InputManager::JOYPAD_NO::PAD1
+		);
+
 	int deadZone = 8000;
 	float stickMax = 32767.0f;
 
-	// PS5 DualSense は DirectInput 扱いなので値が小さい
-	if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
+	// DualSenseなどのDirectInput
+	if (!isXInput)
 	{
-		deadZone = 300;
+		deadZone = 100;
 		stickMax = 1000.0f;
 	}
 
-	// デッドゾーン
 	if (abs(lx) < deadZone)
 	{
 		lx = 0;
@@ -711,48 +717,79 @@ void Player::ProcessMove(void)
 		ly = 0;
 	}
 
-	if (lx != 0 || ly != 0)
+	if (lx != 0 ||
+		ly != 0)
 	{
 		float stickX =
-			static_cast<float>(lx) / stickMax;
+			static_cast<float>(lx) /
+			stickMax;
 
 		float stickY =
-			static_cast<float>(ly) / stickMax;
+			static_cast<float>(ly) /
+			stickMax;
 
-		// 念のため -1.0 ～ 1.0 に制限
-		if (stickX > 1.0f) stickX = 1.0f;
-		if (stickX < -1.0f) stickX = -1.0f;
+		if (stickX > 1.0f)
+		{
+			stickX = 1.0f;
+		}
+		else if (stickX < -1.0f)
+		{
+			stickX = -1.0f;
+		}
 
-		if (stickY > 1.0f) stickY = 1.0f;
-		if (stickY < -1.0f) stickY = -1.0f;
+		if (stickY > 1.0f)
+		{
+			stickY = 1.0f;
+		}
+		else if (stickY < -1.0f)
+		{
+			stickY = -1.0f;
+		}
 
-		VECTOR padDir = AsoUtility::VECTOR_ZERO;
+		VECTOR padDir =
+			AsoUtility::VECTOR_ZERO;
 
 		// 左右
-		padDir = VAdd(
-			padDir,
-			VScale(cameraRot.GetRight(), stickX)
-		);
-
-		// 前後
-		if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
-		{
-			// プレステは元の挙動を維持
-			padDir = VAdd(
+		padDir =
+			VAdd(
 				padDir,
-				VScale(cameraRot.GetForward(), -stickY)
+				VScale(
+					cameraRot.GetRight(),
+					stickX
+				)
 			);
+
+		if (!isXInput)
+		{
+			// DualSense
+			// 上方向がマイナスなので反転
+			padDir =
+				VAdd(
+					padDir,
+					VScale(
+						cameraRot.GetForward(),
+						-stickY
+					)
+				);
 		}
 		else
 		{
-			// Xboxで前後が逆だったので反転
-			padDir = VAdd(
-				padDir,
-				VScale(cameraRot.GetForward(), stickY)
-			);
+			// Xboxは現在動いている処理を維持
+			padDir =
+				VAdd(
+					padDir,
+					VScale(
+						cameraRot.GetForward(),
+						stickY
+					)
+				);
 		}
 
-		dir = VAdd(dir, padDir);
+		dir =
+			VAdd(
+				dir,
+				padDir
+			);
 	}
 	// 斜め移動で速くなりすぎないよう正規化
 	if (!AsoUtility::EqualsVZero(dir))

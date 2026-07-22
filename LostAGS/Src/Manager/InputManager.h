@@ -115,6 +115,7 @@ public:
 
     // デバッグ確認用：ボタンの生値を取得
     int GetPadButtonValue(JOYPAD_NO no, JOYPAD_BTN btn) const;
+    bool IsXInputPad(JOYPAD_NO no) const;
     DINPUT_JOYSTATE GetJPadDInputState(JOYPAD_NO no);
     JOYPAD_TYPE GetJPadType(JOYPAD_NO no);
 

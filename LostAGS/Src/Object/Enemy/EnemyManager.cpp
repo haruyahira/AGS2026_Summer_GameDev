@@ -24,11 +24,6 @@ void EnemyManager::Init(void)
 
 	isPoliceSpawned_ = false;
 
-	//// テスト用に、普通の敵(EnemyNormal)を1体生成して配列に追加
-	EnemyNormal* testEnemy = new EnemyNormal();
-	testEnemy->Init();
-	//EnemyNormal* enemy2 = new EnemyNormal();
-	//enemy2->Init();
 
 
 
@@ -133,7 +128,7 @@ void EnemyManager::Init(void)
 	//enemies_.push_back(enemy2);
 
 
-	for (int i = 0; i < 5; i++)
+	/*for (int i = 0; i < 5; i++)
 	{
 		EnemyNormal* enemy = new EnemyNormal();
 
@@ -143,7 +138,7 @@ void EnemyManager::Init(void)
 		enemy->SetPatrolLinks(links);
 
 		enemies_.push_back(enemy);
-	}
+	}*/
 
 	CreatePoliceEnemies();
 

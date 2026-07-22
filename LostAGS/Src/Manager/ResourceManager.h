@@ -45,6 +45,8 @@ public:
 		SINK, // シンク
 		BUTTON, // ボタン
 		TRASHCAN, // ゴミ箱
+		SHELFBOX,
+		TV,
 
 
 

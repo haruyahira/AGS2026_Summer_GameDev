@@ -20,5 +20,6 @@ enum class NAME
     DESKTOPPC, // デスクトップPC
     SINK, // シンク
 	BUTTON, // ボタン
-    TRANSCAN
+    TRANSCAN,
+    TV
 };

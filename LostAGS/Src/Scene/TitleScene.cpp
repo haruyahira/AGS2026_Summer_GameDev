@@ -165,27 +165,53 @@ void TitleScene::UpdateRedpanda(void)
 
 void TitleScene::UpdateSelect(void)
 {
-	InputManager& ins = InputManager::GetInstance();
-	SceneManager& sceneMng = SceneManager::GetInstance();
+	InputManager& ins =
+		InputManager::GetInstance();
 
-	// 左スティック入力の連続移動待ち時間
-	stickInputWait_ -= sceneMng.GetDeltaTime();
+	SceneManager& sceneMng =
+		SceneManager::GetInstance();
 
-	// 左スティックY軸
-	int ly = ins.GetPadAKeyLY(InputManager::JOYPAD_NO::PAD1);
+	stickInputWait_ -=
+		sceneMng.GetDeltaTime();
 
-	const int DEAD_ZONE = 8000;
+	// =========================
+	// 左スティック入力
+	// =========================
+
+	int leftStickY =
+		ins.GetPadAKeyLY(
+			InputManager::JOYPAD_NO::PAD1
+		);
+
+	const bool isXInput =
+		ins.IsXInputPad(
+			InputManager::JOYPAD_NO::PAD1
+		);
+
+	const int deadZone =
+		isXInput
+		? 8000
+		: 100;
 
 	// =========================
 	// パッド・キーボード選択
 	// =========================
+
 	if (stickInputWait_ <= 0.0f)
 	{
-		// 下入力
-		if (
-			ins.IsTrgDown(KEY_INPUT_DOWN) ||
-			ly < -DEAD_ZONE
-			)
+		const bool isDown =
+			ins.IsTrgDown(
+				KEY_INPUT_DOWN
+			) ||
+			leftStickY > deadZone;
+
+		const bool isUp =
+			ins.IsTrgDown(
+				KEY_INPUT_UP
+			) ||
+			leftStickY < -deadZone;
+
+		if (isDown)
 		{
 			drawIndex_++;
 
@@ -194,14 +220,13 @@ void TitleScene::UpdateSelect(void)
 				drawIndex_ = 1;
 			}
 
-			fadeCount_ = RESET_FADE;
-			stickInputWait_ = 0.2f;
+			fadeCount_ =
+				RESET_FADE;
+
+			stickInputWait_ =
+				0.2f;
 		}
-		// 上入力
-		else if (
-			ins.IsTrgDown(KEY_INPUT_UP) ||
-			ly > DEAD_ZONE
-			)
+		else if (isUp)
 		{
 			drawIndex_--;
 
@@ -210,11 +235,15 @@ void TitleScene::UpdateSelect(void)
 				drawIndex_ = 3;
 			}
 
-			fadeCount_ = RESET_FADE;
-			stickInputWait_ = 0.2f;
+			fadeCount_ =
+				RESET_FADE;
+
+			stickInputWait_ =
+				0.2f;
 		}
 	}
 
+	
 	// =========================
 	// マウス選択
 	// =========================

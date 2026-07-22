@@ -145,6 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Furniture\ShelfBox.cpp" />
     <ClCompile Include="Src\UI\PauseMenu.cpp" />
     <ClCompile Include="Src\Scene\RankingScene.cpp" />
     <ClCompile Include="Src\Manager\RankingManager.cpp" />
@@ -216,8 +217,10 @@
     <ClCompile Include="Src\Utility\AsoUtility.cpp" />
     <ClCompile Include="Src\Utility\ColorUtility.cpp" />
     <ClCompile Include="Src\Object\Furniture\Trashcan.cpp" />
+    <ClCompile Include="Src\Object\Furniture\TV.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Furniture\ShelfBox.h" />
     <ClInclude Include="Src\UI\PauseMenu.h" />
     <ClInclude Include="Src\Scene\RankingScene.h" />
     <ClInclude Include="Src\Manager\RankingManager.h" />
@@ -289,6 +292,7 @@
     <ClInclude Include="Src\Utility\AsoUtility.h" />
     <ClInclude Include="Src\Utility\ColorUtility.h" />
     <ClInclude Include="Src\Object\Furniture\Trashcan.h" />
+    <ClInclude Include="Src\Object\Furniture\TV.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Src\Shader\ItemRimLightPS.hlsl">

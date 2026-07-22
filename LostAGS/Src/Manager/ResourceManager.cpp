@@ -83,6 +83,9 @@ void ResourceManager::Init(void)
 	// 扉つきの棚
 	resourcesMap_.emplace(SRC::SHELFDOOR,
 		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/ShelfDoor.mv1"));
+	// 大きい棚
+	resourcesMap_.emplace(SRC::SHELFBOX,
+		std::make_unique<RES>(RES_T::MODEL, PATH_MDL + "Stage/ShelfBox.mv1"));
 
 	// ロッカー
 	resourcesMap_.emplace(SRC::LOCKER,
@@ -121,6 +124,9 @@ void ResourceManager::Init(void)
 	// 本
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Book.mv1");
 	resourcesMap_.emplace(SRC::BOOK, res);
+	// 本
+	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/TV.mv1");
+	resourcesMap_.emplace(SRC::TV, res);
 	// ショーケース
 	res = new RES(RES_T::MODEL, PATH_MDL + "Stage/Showcase_frame.mv1");
 	resourcesMap_.emplace(SRC::F_F, res);

@@ -228,116 +228,189 @@ void Camera::SyncFirstPerson(void)
 
 void Camera::ProcessRot(void)
 {
+    auto& ins =
+        InputManager::GetInstance();
 
-	auto& ins = InputManager::GetInstance();
+    // =============================
+    // マウス視点移動
+    // =============================
 
-	float movePow = 5.0f;
+    const int mouseDiffX =
+        ins.GetMouseDiffX();
 
-	// マウスの横移動量を取得
-	// --- マウス操作 ---
-	int mDiffX = ins.GetMouseDiffX();
-	int mDiffY = ins.GetMouseDiffY();
+    const int mouseDiffY =
+        ins.GetMouseDiffY();
 
-	// 感度の設定
-	float sensitivity = 0.002f;
+    const float mouseSensitivity =
+        0.002f;
 
-	// 勝手に回るのを防ぐガード (デッドゾーン)
-	// InputManager側で修正済みの場合は不要ですが、ここでも念のため 0 以外を条件にします
-	if (mDiffX != 0)
-	{
-		// 直接カメラの角度(angles_.y)を更新する
-		angles_.y += (float)mDiffX * sensitivity;
-	}
+    if (mouseDiffX != 0)
+    {
+        angles_.y +=
+            static_cast<float>(mouseDiffX) *
+            mouseSensitivity;
+    }
 
-	if (mDiffY != 0)
-	{
-		// 縦方向も同様に更新
-		angles_.x -= (float)mDiffY * sensitivity;
-	}
+    if (mouseDiffY != 0)
+    {
+        angles_.x -=
+            static_cast<float>(mouseDiffY) *
+            mouseSensitivity;
+    }
 
+    // =============================
+    // 右スティックを取得
+    // =============================
 
-	// =============================
-	// 右スティック視点移動
-	// =============================
+    int rightX =
+        ins.GetPadAKeyRX(
+            InputManager::JOYPAD_NO::PAD1
+        );
 
-	int rx =
-		ins.GetPadAKeyRX(
-			InputManager::JOYPAD_NO::PAD1);
+    int rightY =
+        ins.GetPadAKeyRY(
+            InputManager::JOYPAD_NO::PAD1
+        );
 
-	int ry =
-		ins.GetPadAKeyRY(
-			InputManager::JOYPAD_NO::PAD1);
+    const bool isXInput =
+        ins.IsXInputPad(
+            InputManager::JOYPAD_NO::PAD1
+        );
 
-	// コントローラーの種類を取得
-	auto padType =
-		ins.GetJPadType(
-			InputManager::JOYPAD_NO::PAD1);
+    // =============================
+    // DualSenseなどのDirectInput
+    // =============================
 
-	// デフォルトは Xbox / XInput 用
-	int deadZone = 8000;
-	float stickMax = 32767.0f;
+    if (!isXInput)
+    {
+        // GetJoypadAnalogInputRight()の値は
+        // 基本的に-1000から1000
+        const int deadZone = 100;
 
-	// DualSense は DirectInput 用
-	if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
-	{
-		deadZone = 100;
-		stickMax = 1000.0f;
-	}
+        if (abs(rightX) < deadZone)
+        {
+            rightX = 0;
+        }
 
-	// デッドゾーン
-	if (abs(rx) < deadZone)
-	{
-		rx = 0;
-	}
+        if (abs(rightY) < deadZone)
+        {
+            rightY = 0;
+        }
 
-	if (abs(ry) < deadZone)
-	{
-		ry = 0;
-	}
+        float stickX =
+            static_cast<float>(rightX) /
+            1000.0f;
 
-	if (rx != 0 || ry != 0)
-	{
-		float stickX =
-			static_cast<float>(rx) / stickMax;
+        float stickY =
+            static_cast<float>(rightY) /
+            1000.0f;
 
-		float stickY =
-			static_cast<float>(ry) / stickMax;
+        // -1.0から1.0へ制限
+        if (stickX > 1.0f)
+        {
+            stickX = 1.0f;
+        }
+        else if (stickX < -1.0f)
+        {
+            stickX = -1.0f;
+        }
 
-		// -1.0 ～ 1.0 に制限
-		if (stickX > 1.0f) stickX = 1.0f;
-		if (stickX < -1.0f) stickX = -1.0f;
+        if (stickY > 1.0f)
+        {
+            stickY = 1.0f;
+        }
+        else if (stickY < -1.0f)
+        {
+            stickY = -1.0f;
+        }
 
-		if (stickY > 1.0f) stickY = 1.0f;
-		if (stickY < -1.0f) stickY = -1.0f;
+        const float dualSenseSensitivity =
+            0.04f;
 
-		const float padSensitivity = 0.04f;
+        // 左右
+        angles_.y +=
+            stickX *
+            dualSenseSensitivity;
 
-		// 横
-		angles_.y += stickX * padSensitivity;
+        // 上がマイナス、下がプラスなので反転
+        angles_.x -=
+            stickY *
+            dualSenseSensitivity;
+    }
+    // =============================
+    // XboxのXInput
+    // =============================
+    else
+    {
+        const int deadZone = 8000;
 
-		// 縦
-		// プレステは元の挙動を維持
-		if (padType == InputManager::JOYPAD_TYPE::DUAL_SENSE)
-		{
-			angles_.x -= stickY * padSensitivity;
-		}
-		else
-		{
-			// Xboxで上下が逆ならこっち
-			angles_.x += stickY * padSensitivity;
-		}
-	}
+        if (abs(rightX) < deadZone)
+        {
+            rightX = 0;
+        }
 
-	// --- 角度の制限 ---
-	if (angles_.x > LIMIT_X_UP_RAD)
-	{
-		angles_.x = LIMIT_X_UP_RAD;
-	}
+        if (abs(rightY) < deadZone)
+        {
+            rightY = 0;
+        }
 
-	if (angles_.x < -LIMIT_X_DW_RAD)
-	{
-		angles_.x = -LIMIT_X_DW_RAD;
-	}
+        float stickX =
+            static_cast<float>(rightX) /
+            32767.0f;
+
+        float stickY =
+            static_cast<float>(rightY) /
+            32767.0f;
+
+        // -1.0から1.0へ制限
+        if (stickX > 1.0f)
+        {
+            stickX = 1.0f;
+        }
+        else if (stickX < -1.0f)
+        {
+            stickX = -1.0f;
+        }
+
+        if (stickY > 1.0f)
+        {
+            stickY = 1.0f;
+        }
+        else if (stickY < -1.0f)
+        {
+            stickY = -1.0f;
+        }
+
+        const float xboxSensitivity =
+            0.04f;
+
+        // Xbox側は既存の向きを維持
+        angles_.y +=
+            stickX *
+            xboxSensitivity;
+
+        angles_.x +=
+            stickY *
+            xboxSensitivity;
+    }
+
+    // =============================
+    // 上下角度制限
+    // =============================
+
+    if (angles_.x >
+        LIMIT_X_UP_RAD)
+    {
+        angles_.x =
+            LIMIT_X_UP_RAD;
+    }
+
+    if (angles_.x <
+        -LIMIT_X_DW_RAD)
+    {
+        angles_.x =
+            -LIMIT_X_DW_RAD;
+    }
 }
 
 void Camera::SetBeforeDrawFixedPoint(void)

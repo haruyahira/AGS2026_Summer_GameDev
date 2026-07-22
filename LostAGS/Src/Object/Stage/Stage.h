@@ -100,6 +100,9 @@ public:
 public:
     bool IsEmergencyEscape(void) const;
 
+    void Update3DListener();
+
+
 private:
 
     // HLSLƒ‰ƒCƒg
